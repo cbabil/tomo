@@ -1,0 +1,82 @@
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { motion } from "framer-motion";
+import { colors } from "../../app/theme";
+import type { InstalledApp } from "../../types";
+
+interface AppIconProps {
+  name: string;
+  icon: string;
+  status?: InstalledApp["status"];
+  onClick?: () => void;
+  onContextMenu?: (e: React.MouseEvent<HTMLElement>) => void;
+}
+
+const STATUS_COLORS: Record<InstalledApp["status"], string> = {
+  running: colors.success,
+  stopped: "#94a3b8",
+  error: colors.error,
+};
+
+export function AppIcon({ name, icon, status, onClick, onContextMenu }: AppIconProps) {
+  return (
+    <motion.div whileHover={{ y: -4 }} transition={{ type: "tween", duration: 0.15 }}>
+      <Box
+        onClick={onClick}
+        onContextMenu={onContextMenu}
+        sx={styles.root}
+      >
+        <Box
+          sx={{
+            ...styles.iconWrapper,
+            ...(status && {
+              boxShadow: `0 0 0 2px ${STATUS_COLORS[status]}, 0 0 8px ${STATUS_COLORS[status]}40`,
+              borderRadius: 3,
+            }),
+          }}
+        >
+          <Box
+            component="img"
+            src={icon}
+            alt={name}
+            sx={styles.icon}
+          />
+        </Box>
+        <Typography variant="caption" sx={styles.label} noWrap>
+          {name}
+        </Typography>
+      </Box>
+    </motion.div>
+  );
+}
+
+const styles = {
+  root: {
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    gap: 0.5,
+    cursor: "pointer",
+    userSelect: "none" as const,
+    p: 1,
+  },
+  iconWrapper: {
+    position: "relative" as const,
+    width: 56,
+    height: 56,
+  },
+  icon: {
+    width: 56,
+    height: 56,
+    borderRadius: 3,
+    objectFit: "cover" as const,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+  },
+  label: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: "0.7rem",
+    textAlign: "center" as const,
+    maxWidth: 72,
+    textShadow: "0 1px 4px rgba(0,0,0,0.5)",
+  },
+};

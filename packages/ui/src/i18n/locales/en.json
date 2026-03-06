@@ -1,0 +1,166 @@
+{
+  "login": {
+    "title": "Welcome back",
+    "password": "Password",
+    "unlock": "Unlock Tomo",
+    "error": "Incorrect password. Please try again.",
+    "placeholder": "Enter your password"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Welcome to Tomo",
+      "tagline": "Your server. Your apps.",
+      "taglineAccent": "Your rules.",
+      "subtitle": "Self-host your favorite services with ease and full privacy. Experience total digital sovereignty.",
+      "getStarted": "Get Started",
+      "private": "Private",
+      "fast": "Fast",
+      "local": "Local"
+    },
+    "createAccount": {
+      "title": "Create your account",
+      "name": "Username",
+      "namePlaceholder": "Enter your username",
+      "password": "Password",
+      "passwordPlaceholder": "At least 12 characters",
+      "confirm": "Confirm password",
+      "confirmPlaceholder": "Re-enter your password",
+      "submit": "Create Account",
+      "mismatch": "Passwords do not match",
+      "tooShort": "Password does not meet all requirements",
+      "reqLength": "At least 12 characters",
+      "reqUppercase": "One uppercase letter",
+      "reqLowercase": "One lowercase letter",
+      "reqNumber": "One number",
+      "reqSpecial": "One special character",
+      "strength": {
+        "weak": "Weak",
+        "fair": "Fair",
+        "good": "Good",
+        "strong": "Strong",
+        "veryStrong": "Very strong"
+      }
+    },
+    "complete": {
+      "title": "You're all set!",
+      "subtitle": "Your Tomo instance is ready to use.",
+      "goToDesktop": "Go to Desktop"
+    }
+  },
+  "desktop": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "widgets": {
+      "cpu": "CPU",
+      "memory": "Memory",
+      "disk": "Disk"
+    },
+    "apps": {
+      "empty": "No apps installed yet",
+      "installFirst": "Install your first app",
+      "stop": "Stop",
+      "restart": "Restart",
+      "remove": "Remove",
+      "open": "Open"
+    },
+    "dock": {
+      "home": "Home",
+      "appStore": "App Store",
+      "settings": "Settings",
+      "system": "System"
+    }
+  },
+  "appStore": {
+    "title": "App Store",
+    "search": "Search apps...",
+    "allCategories": "All",
+    "install": "Install",
+    "installing": "Installing...",
+    "open": "Open",
+    "installed": "Installed",
+    "noResults": "No apps found",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "settings": {
+    "title": "Settings",
+    "account": {
+      "title": "Account",
+      "displayName": "Display name",
+      "changePassword": "Change password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "save": "Save",
+      "passwordChanged": "Password changed successfully"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "wallpaper": "Wallpaper",
+      "theme": "Theme",
+      "dark": "Dark",
+      "light": "Light"
+    },
+    "language": {
+      "title": "Language",
+      "select": "Select language"
+    },
+    "appStore": {
+      "title": "App Store",
+      "defaultLabel": "Default",
+      "addRepo": "Add repository",
+      "url": "URL",
+      "urlPlaceholder": "https://github.com/user/repo",
+      "branch": "Branch",
+      "add": "Add",
+      "remove": "Remove",
+      "alreadyExists": "This repository is already added"
+    },
+    "update": {
+      "title": "Update",
+      "currentVersion": "Current version",
+      "latestVersion": "Latest version",
+      "upToDate": "Up to date",
+      "updateAvailable": "Update available",
+      "updateNow": "Update now",
+      "updating": "Updating...",
+      "restartWarning": "Tomo will restart automatically after the update.",
+      "checkFailed": "Could not check for updates",
+      "status": "Status"
+    },
+    "logout": "Log out"
+  },
+  "system": {
+    "title": "System",
+    "hostname": "Hostname",
+    "os": "Operating System",
+    "platform": "Platform",
+    "uptime": "Uptime",
+    "kernel": "Kernel",
+    "version": "Version",
+    "docker": "Docker",
+    "dockerVersion": "Docker Version",
+    "apiVersion": "API Version",
+    "containers": "Containers",
+    "running": "running",
+    "total": "total",
+    "status": "Status",
+    "connected": "Connected",
+    "unavailable": "Unavailable"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "back": "Back",
+    "next": "Next"
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "login": {
+    "title": "Willkommen zurück",
+    "password": "Passwort",
+    "unlock": "Tomo entsperren",
+    "error": "Falsches Passwort. Bitte versuchen Sie es erneut.",
+    "placeholder": "Passwort eingeben"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Willkommen bei Tomo",
+      "tagline": "Dein Server. Deine Apps.",
+      "taglineAccent": "Deine Regeln.",
+      "subtitle": "Hoste deine Lieblingsdienste selbst — einfach und privat. Erlebe vollständige digitale Souveränität.",
+      "getStarted": "Loslegen",
+      "private": "Privat",
+      "fast": "Schnell",
+      "local": "Lokal"
+    },
+    "createAccount": {
+      "title": "Konto erstellen",
+      "name": "Benutzername",
+      "namePlaceholder": "Benutzernamen eingeben",
+      "password": "Passwort",
+      "passwordPlaceholder": "Mindestens 12 Zeichen",
+      "confirm": "Passwort bestätigen",
+      "confirmPlaceholder": "Passwort erneut eingeben",
+      "submit": "Konto erstellen",
+      "mismatch": "Passwörter stimmen nicht überein",
+      "tooShort": "Passwort muss mindestens 8 Zeichen lang sein",
+      "reqSpecial": "Ein Sonderzeichen",
+      "strength": {
+        "weak": "Schwach",
+        "fair": "Ausreichend",
+        "good": "Gut",
+        "strong": "Stark",
+        "veryStrong": "Sehr stark"
+      },
+      "reqLength": "Mindestens 12 Zeichen",
+      "reqUppercase": "Ein Großbuchstabe",
+      "reqLowercase": "Ein Kleinbuchstabe",
+      "reqNumber": "Eine Zahl"
+    },
+    "complete": {
+      "title": "Alles bereit!",
+      "subtitle": "Ihre Tomo-Instanz ist einsatzbereit.",
+      "goToDesktop": "Zum Desktop"
+    }
+  },
+  "desktop": {
+    "greeting": {
+      "morning": "Guten Morgen",
+      "afternoon": "Guten Nachmittag",
+      "evening": "Guten Abend"
+    },
+    "widgets": {
+      "cpu": "CPU",
+      "memory": "Speicher",
+      "disk": "Festplatte"
+    },
+    "apps": {
+      "empty": "Keine Apps installiert",
+      "installFirst": "Installieren Sie Ihre erste App",
+      "stop": "Stoppen",
+      "restart": "Neustart",
+      "remove": "Entfernen",
+      "open": "Öffnen"
+    },
+    "dock": {
+      "home": "Startseite",
+      "appStore": "App Store",
+      "settings": "Einstellungen",
+      "system": "System"
+    }
+  },
+  "appStore": {
+    "title": "App Store",
+    "search": "Apps suchen...",
+    "allCategories": "Alle",
+    "install": "Installieren",
+    "installing": "Wird installiert...",
+    "open": "Öffnen",
+    "installed": "Installiert",
+    "noResults": "Keine Apps gefunden",
+    "previous": "Zurück",
+    "next": "Weiter"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "account": {
+      "title": "Konto",
+      "displayName": "Anzeigename",
+      "changePassword": "Passwort ändern",
+      "currentPassword": "Aktuelles Passwort",
+      "newPassword": "Neues Passwort",
+      "confirmPassword": "Neues Passwort bestätigen",
+      "save": "Speichern",
+      "passwordChanged": "Passwort erfolgreich geändert"
+    },
+    "appearance": {
+      "title": "Darstellung",
+      "wallpaper": "Hintergrundbild",
+      "theme": "Design",
+      "dark": "Dunkel",
+      "light": "Hell"
+    },
+    "language": {
+      "title": "Sprache",
+      "select": "Sprache auswählen"
+    },
+    "appStore": {
+      "title": "App Store",
+      "defaultLabel": "Standard",
+      "addRepo": "Repository hinzufügen",
+      "url": "URL",
+      "urlPlaceholder": "https://github.com/user/repo",
+      "branch": "Branch",
+      "add": "Hinzufügen",
+      "remove": "Entfernen",
+      "alreadyExists": "Dieses Repository wurde bereits hinzugefügt"
+    },
+    "update": {
+      "title": "Aktualisierung",
+      "currentVersion": "Aktuelle Version",
+      "latestVersion": "Neueste Version",
+      "upToDate": "Aktuell",
+      "updateAvailable": "Update verfügbar",
+      "updateNow": "Jetzt aktualisieren",
+      "updating": "Aktualisierung...",
+      "restartWarning": "Tomo wird nach dem Update automatisch neu gestartet.",
+      "checkFailed": "Updates konnten nicht geprüft werden",
+      "status": "Status"
+    },
+    "logout": "Abmelden"
+  },
+  "system": {
+    "title": "System",
+    "hostname": "Hostname",
+    "os": "Betriebssystem",
+    "platform": "Plattform",
+    "uptime": "Betriebszeit",
+    "kernel": "Kernel",
+    "version": "Version",
+    "docker": "Docker",
+    "dockerVersion": "Docker-Version",
+    "apiVersion": "API-Version",
+    "containers": "Container",
+    "running": "aktiv",
+    "total": "gesamt",
+    "status": "Status",
+    "connected": "Verbunden",
+    "unavailable": "Nicht verfügbar"
+  },
+  "common": {
+    "loading": "Wird geladen...",
+    "error": "Ein Fehler ist aufgetreten",
+    "retry": "Erneut versuchen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "close": "Schließen",
+    "confirm": "Bestätigen",
+    "delete": "Löschen",
+    "back": "Zurück",
+    "next": "Weiter"
+  }
+}

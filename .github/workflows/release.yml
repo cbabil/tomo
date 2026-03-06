@@ -1,0 +1,146 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    name: CI gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install
+
+      - run: make lint
+
+      - run: make typecheck
+
+      - run: make test
+
+  build-deb:
+    name: Build .deb (${{ matrix.arch }})
+    needs: check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up QEMU (for cross-arch native builds)
+        if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build .deb package
+        run: bash packaging/build-deb.sh --arch ${{ matrix.arch }}
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ matrix.arch }}
+          path: packaging/build/*.deb
+          retention-days: 5
+
+  release:
+    name: Create GitHub Release
+    needs: build-deb
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Download amd64 .deb
+        uses: actions/download-artifact@v4
+        with:
+          name: deb-amd64
+          path: dist/
+
+      - name: Download arm64 .deb
+        uses: actions/download-artifact@v4
+        with:
+          name: deb-arm64
+          path: dist/
+
+      - name: Generate checksums
+        working-directory: dist
+        run: sha256sum *.deb > checksums.sha256
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          # Find the previous tag
+          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^${{ github.ref_name }}$" | head -1)
+          if [ -z "$PREV_TAG" ]; then
+            RANGE="HEAD"
+          else
+            RANGE="${PREV_TAG}..${{ github.ref_name }}"
+          fi
+
+          # Collect commits grouped by conventional-commit type
+          {
+            echo "## What's Changed"
+            echo ""
+
+            # Features
+            FEATS=$(git log "$RANGE" --pretty=format:"%s" | grep -E "^feat" | sed 's/^feat(\([^)]*\)): /- **\1**: /' | sed 's/^feat: /- /' || true)
+            if [ -n "$FEATS" ]; then
+              echo "### Features"
+              echo "$FEATS"
+              echo ""
+            fi
+
+            # Bug fixes
+            FIXES=$(git log "$RANGE" --pretty=format:"%s" | grep -E "^fix" | sed 's/^fix(\([^)]*\)): /- **\1**: /' | sed 's/^fix: /- /' || true)
+            if [ -n "$FIXES" ]; then
+              echo "### Bug Fixes"
+              echo "$FIXES"
+              echo ""
+            fi
+
+            # Performance
+            PERFS=$(git log "$RANGE" --pretty=format:"%s" | grep -E "^perf" | sed 's/^perf(\([^)]*\)): /- **\1**: /' | sed 's/^perf: /- /' || true)
+            if [ -n "$PERFS" ]; then
+              echo "### Performance"
+              echo "$PERFS"
+              echo ""
+            fi
+
+            # Other (chore, refactor, docs, style, test, ci)
+            OTHERS=$(git log "$RANGE" --pretty=format:"%s" | grep -vE "^(feat|fix|perf)" | grep -vE "^Merge " | sed 's/^[a-z]*(\([^)]*\)): /- **\1**: /' | sed 's/^[a-z]*: /- /' || true)
+            if [ -n "$OTHERS" ]; then
+              echo "### Other"
+              echo "$OTHERS"
+              echo ""
+            fi
+
+            echo "---"
+            echo "**Full changelog**: [\`${PREV_TAG}...${GITHUB_REF_NAME}\`](https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${GITHUB_REF_NAME})"
+          } > /tmp/release-notes.md
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            dist/*.deb \
+            dist/checksums.sha256 \
+            --title "Tomo ${{ github.ref_name }}" \
+            --notes-file /tmp/release-notes.md

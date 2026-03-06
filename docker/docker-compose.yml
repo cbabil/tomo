@@ -1,0 +1,16 @@
+# Tomo app network and volumes
+# tomod runs on the host as a systemd service (not in Docker)
+# This file defines the shared network and volume that installed apps use
+
+networks:
+  tomo_main:
+    name: tomo_main
+    driver: bridge
+
+volumes:
+  tomo_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/tomo

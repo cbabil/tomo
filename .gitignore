@@ -1,0 +1,64 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.tsbuildinfo
+.vite/
+packaging/build/
+
+# Environment
+.env
+.env.local
+.env.production
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+*~
+
+# Logs
+*.log
+logs/
+
+# Data (runtime)
+data/
+/opt/tomo/
+
+# Coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/
+blob-report/
+
+# Temporary
+.tmp/
+temp/
+*.tmp
+*.bak
+
+# Secrets
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+.secrets/
+
+# Claude
+.claude/
+CLAUDE.md

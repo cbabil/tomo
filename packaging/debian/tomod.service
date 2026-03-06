@@ -1,0 +1,33 @@
+[Unit]
+Description=Tomo Daemon
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/node /opt/tomo/dist/index.js
+WorkingDirectory=/opt/tomo
+Restart=on-failure
+RestartSec=5
+
+Environment=NODE_ENV=production
+Environment=TOMO_DATA_DIR=/opt/tomo/data
+Environment=STATIC_DIR=/opt/tomo/public
+Environment=PORT=3000
+Environment=LOG_LEVEL=info
+
+# Security hardening (tomod needs root for useradd/chpasswd/shadow)
+ProtectSystem=strict
+ReadWritePaths=/opt/tomo/data /etc
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+# NoNewPrivileges must be off — tomod calls useradd/chpasswd for PAM auth
+NoNewPrivileges=no
+SupplementaryGroups=docker
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

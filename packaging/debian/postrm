@@ -1,0 +1,32 @@
+#!/bin/bash
+# Post-removal script for tomo .deb package
+set -e
+
+case "$1" in
+  remove)
+    systemctl daemon-reload
+    echo ""
+    echo "Tomo service removed. Data preserved at /opt/tomo/data/"
+    echo "Run 'sudo apt purge tomo' to delete all data."
+    echo ""
+    ;;
+  purge)
+    # Remove tomo group
+    if getent group tomo >/dev/null 2>&1; then
+      groupdel tomo 2>/dev/null || true
+      echo "Removed 'tomo' group"
+    fi
+
+    # Remove Docker network
+    if command -v docker >/dev/null 2>&1; then
+      docker network rm tomo_main 2>/dev/null || true
+      echo "Removed Docker network 'tomo_main'"
+    fi
+
+    # Remove all tomo files and data
+    rm -rf /opt/tomo
+
+    systemctl daemon-reload
+    echo "Tomo fully purged."
+    ;;
+esac

@@ -1,0 +1,12 @@
+#!/bin/bash
+# Pre-removal script for tomo .deb package
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "upgrade" ]; then
+  if systemctl is-active --quiet tomod.service 2>/dev/null; then
+    systemctl stop tomod.service
+  fi
+  if systemctl is-enabled --quiet tomod.service 2>/dev/null; then
+    systemctl disable tomod.service
+  fi
+fi

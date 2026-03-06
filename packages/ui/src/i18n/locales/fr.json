@@ -1,0 +1,166 @@
+{
+  "login": {
+    "title": "Bon retour",
+    "password": "Mot de passe",
+    "unlock": "Déverrouiller Tomo",
+    "error": "Mot de passe incorrect. Veuillez réessayer.",
+    "placeholder": "Entrez votre mot de passe"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Bienvenue sur Tomo",
+      "subtitle": "Auto-hébergez vos services préférés en toute simplicité et confidentialité. Vivez la souveraineté numérique totale.",
+      "getStarted": "Commencer",
+      "tagline": "Votre serveur. Vos apps.",
+      "taglineAccent": "Vos règles.",
+      "private": "Privé",
+      "fast": "Rapide",
+      "local": "Local"
+    },
+    "createAccount": {
+      "title": "Créez votre compte",
+      "name": "Nom d'utilisateur",
+      "namePlaceholder": "Entrez votre nom d'utilisateur",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "Au moins 12 caractères",
+      "confirm": "Confirmer le mot de passe",
+      "confirmPlaceholder": "Ressaisissez votre mot de passe",
+      "submit": "Créer le compte",
+      "mismatch": "Les mots de passe ne correspondent pas",
+      "tooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "reqSpecial": "Un caractère spécial",
+      "strength": {
+        "weak": "Faible",
+        "fair": "Passable",
+        "good": "Bon",
+        "strong": "Fort",
+        "veryStrong": "Très fort"
+      },
+      "reqLength": "Au moins 12 caractères",
+      "reqUppercase": "Une lettre majuscule",
+      "reqLowercase": "Une lettre minuscule",
+      "reqNumber": "Un chiffre"
+    },
+    "complete": {
+      "title": "Tout est prêt !",
+      "subtitle": "Votre instance Tomo est prête à l'emploi.",
+      "goToDesktop": "Aller au bureau"
+    }
+  },
+  "desktop": {
+    "greeting": {
+      "morning": "Bonjour",
+      "afternoon": "Bon après-midi",
+      "evening": "Bonsoir"
+    },
+    "widgets": {
+      "cpu": "CPU",
+      "memory": "Mémoire",
+      "disk": "Disque"
+    },
+    "apps": {
+      "empty": "Aucune application installée",
+      "installFirst": "Installez votre première application",
+      "stop": "Arrêter",
+      "restart": "Redémarrer",
+      "remove": "Supprimer",
+      "open": "Ouvrir"
+    },
+    "dock": {
+      "home": "Accueil",
+      "appStore": "App Store",
+      "settings": "Paramètres",
+      "system": "Système"
+    }
+  },
+  "appStore": {
+    "title": "App Store",
+    "search": "Rechercher des applications...",
+    "allCategories": "Toutes",
+    "install": "Installer",
+    "installing": "Installation...",
+    "open": "Ouvrir",
+    "installed": "Installée",
+    "noResults": "Aucune application trouvée",
+    "previous": "Précédent",
+    "next": "Suivant"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "account": {
+      "title": "Compte",
+      "displayName": "Nom d'affichage",
+      "changePassword": "Changer le mot de passe",
+      "currentPassword": "Mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le nouveau mot de passe",
+      "save": "Enregistrer",
+      "passwordChanged": "Mot de passe modifié avec succès"
+    },
+    "appearance": {
+      "title": "Apparence",
+      "wallpaper": "Fond d'écran",
+      "theme": "Thème",
+      "dark": "Sombre",
+      "light": "Clair"
+    },
+    "language": {
+      "title": "Langue",
+      "select": "Sélectionner la langue"
+    },
+    "appStore": {
+      "title": "App Store",
+      "defaultLabel": "Par défaut",
+      "addRepo": "Ajouter un dépôt",
+      "url": "URL",
+      "urlPlaceholder": "https://github.com/user/repo",
+      "branch": "Branche",
+      "add": "Ajouter",
+      "remove": "Supprimer",
+      "alreadyExists": "Ce dépôt est déjà ajouté"
+    },
+    "update": {
+      "title": "Mise à jour",
+      "currentVersion": "Version actuelle",
+      "latestVersion": "Dernière version",
+      "upToDate": "À jour",
+      "updateAvailable": "Mise à jour disponible",
+      "updateNow": "Mettre à jour",
+      "updating": "Mise à jour...",
+      "restartWarning": "Tomo redémarrera automatiquement après la mise à jour.",
+      "checkFailed": "Impossible de vérifier les mises à jour",
+      "status": "Statut"
+    },
+    "logout": "Se déconnecter"
+  },
+  "system": {
+    "title": "Système",
+    "hostname": "Nom d'hôte",
+    "os": "Système d'exploitation",
+    "platform": "Plateforme",
+    "uptime": "Temps de fonctionnement",
+    "kernel": "Noyau",
+    "version": "Version",
+    "docker": "Docker",
+    "dockerVersion": "Version Docker",
+    "apiVersion": "Version API",
+    "containers": "Conteneurs",
+    "running": "en cours",
+    "total": "total",
+    "status": "Statut",
+    "connected": "Connecté",
+    "unavailable": "Indisponible"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "back": "Retour",
+    "next": "Suivant"
+  }
+}

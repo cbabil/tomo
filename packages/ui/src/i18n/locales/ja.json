@@ -1,0 +1,166 @@
+{
+  "login": {
+    "title": "おかえりなさい",
+    "password": "パスワード",
+    "unlock": "Tomoをロック解除",
+    "error": "パスワードが違います。もう一度お試しください。",
+    "placeholder": "パスワードを入力"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Tomoへようこそ",
+      "subtitle": "お気に入りのサービスを簡単かつ完全なプライバシーでセルフホスト。完全なデジタル主権を体験しましょう。",
+      "getStarted": "始める",
+      "tagline": "あなたのサーバー。あなたのアプリ。",
+      "taglineAccent": "あなたのルール。",
+      "private": "プライベート",
+      "fast": "高速",
+      "local": "ローカル"
+    },
+    "createAccount": {
+      "title": "アカウントを作成",
+      "name": "ユーザー名",
+      "namePlaceholder": "ユーザー名を入力",
+      "password": "パスワード",
+      "passwordPlaceholder": "12文字以上",
+      "confirm": "パスワード確認",
+      "confirmPlaceholder": "パスワードを再入力",
+      "submit": "アカウント作成",
+      "mismatch": "パスワードが一致しません",
+      "tooShort": "パスワードは8文字以上必要です",
+      "reqSpecial": "特殊文字1つ",
+      "strength": {
+        "weak": "弱い",
+        "fair": "まあまあ",
+        "good": "良い",
+        "strong": "強い",
+        "veryStrong": "とても強い"
+      },
+      "reqLength": "12文字以上",
+      "reqUppercase": "大文字1つ",
+      "reqLowercase": "小文字1つ",
+      "reqNumber": "数字1つ"
+    },
+    "complete": {
+      "title": "準備完了！",
+      "subtitle": "Tomoインスタンスの準備ができました。",
+      "goToDesktop": "デスクトップへ"
+    }
+  },
+  "desktop": {
+    "greeting": {
+      "morning": "おはようございます",
+      "afternoon": "こんにちは",
+      "evening": "こんばんは"
+    },
+    "widgets": {
+      "cpu": "CPU",
+      "memory": "メモリ",
+      "disk": "ディスク"
+    },
+    "apps": {
+      "empty": "アプリがインストールされていません",
+      "installFirst": "最初のアプリをインストール",
+      "stop": "停止",
+      "restart": "再起動",
+      "remove": "削除",
+      "open": "開く"
+    },
+    "dock": {
+      "home": "ホーム",
+      "appStore": "App Store",
+      "settings": "設定",
+      "system": "システム"
+    }
+  },
+  "appStore": {
+    "title": "App Store",
+    "search": "アプリを検索...",
+    "allCategories": "すべて",
+    "install": "インストール",
+    "installing": "インストール中...",
+    "open": "開く",
+    "installed": "インストール済み",
+    "noResults": "アプリが見つかりません",
+    "previous": "前へ",
+    "next": "次へ"
+  },
+  "settings": {
+    "title": "設定",
+    "account": {
+      "title": "アカウント",
+      "displayName": "表示名",
+      "changePassword": "パスワード変更",
+      "currentPassword": "現在のパスワード",
+      "newPassword": "新しいパスワード",
+      "confirmPassword": "新しいパスワードの確認",
+      "save": "保存",
+      "passwordChanged": "パスワードが変更されました"
+    },
+    "appearance": {
+      "title": "外観",
+      "wallpaper": "壁紙",
+      "theme": "テーマ",
+      "dark": "ダーク",
+      "light": "ライト"
+    },
+    "language": {
+      "title": "言語",
+      "select": "言語を選択"
+    },
+    "appStore": {
+      "title": "App Store",
+      "defaultLabel": "デフォルト",
+      "addRepo": "リポジトリを追加",
+      "url": "URL",
+      "urlPlaceholder": "https://github.com/user/repo",
+      "branch": "ブランチ",
+      "add": "追加",
+      "remove": "削除",
+      "alreadyExists": "このリポジトリは既に追加されています"
+    },
+    "update": {
+      "title": "アップデート",
+      "currentVersion": "現在のバージョン",
+      "latestVersion": "最新バージョン",
+      "upToDate": "最新です",
+      "updateAvailable": "アップデートあり",
+      "updateNow": "今すぐ更新",
+      "updating": "更新中...",
+      "restartWarning": "アップデート後、Tomoは自動的に再起動します。",
+      "checkFailed": "アップデートを確認できません",
+      "status": "ステータス"
+    },
+    "logout": "ログアウト"
+  },
+  "system": {
+    "title": "システム",
+    "hostname": "ホスト名",
+    "os": "オペレーティングシステム",
+    "platform": "プラットフォーム",
+    "uptime": "稼働時間",
+    "kernel": "カーネル",
+    "version": "バージョン",
+    "docker": "Docker",
+    "dockerVersion": "Dockerバージョン",
+    "apiVersion": "APIバージョン",
+    "containers": "コンテナ",
+    "running": "実行中",
+    "total": "合計",
+    "status": "ステータス",
+    "connected": "接続済み",
+    "unavailable": "利用不可"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "問題が発生しました",
+    "retry": "再試行",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "close": "閉じる",
+    "confirm": "確認",
+    "delete": "削除",
+    "back": "戻る",
+    "next": "次へ"
+  }
+}

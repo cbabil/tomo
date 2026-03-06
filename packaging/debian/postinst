@@ -1,0 +1,101 @@
+#!/bin/bash
+# Post-install script for tomo .deb package
+set -e
+
+TOMO_DIR="/opt/tomo"
+DATA_DIR="${TOMO_DIR}/data"
+TOMO_GROUP="tomo"
+
+install_docker() {
+  echo "Docker not found. Installing Docker Engine..."
+
+  # Install prerequisites
+  apt-get update -qq
+  apt-get install -y -qq ca-certificates curl gnupg >/dev/null
+
+  # Add Docker GPG key
+  install -m 0755 -d /etc/apt/keyrings
+  if [ ! -f /etc/apt/keyrings/docker.gpg ]; then
+    curl -fsSL https://download.docker.com/linux/$(. /etc/os-release && echo "$ID")/gpg \
+      | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    chmod a+r /etc/apt/keyrings/docker.gpg
+  fi
+
+  # Add Docker apt repository
+  if [ ! -f /etc/apt/sources.list.d/docker.list ]; then
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+https://download.docker.com/linux/$(. /etc/os-release && echo "$ID") \
+$(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+      > /etc/apt/sources.list.d/docker.list
+  fi
+
+  # Install Docker Engine + Compose plugin
+  apt-get update -qq
+  apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin >/dev/null
+
+  # Enable and start Docker
+  systemctl enable docker
+  systemctl start docker
+
+  echo "Docker installed successfully"
+}
+
+case "$1" in
+  configure)
+    # Install Docker if missing
+    if ! command -v docker >/dev/null 2>&1; then
+      install_docker
+    fi
+
+    # Install docker-compose-plugin if missing
+    if ! docker compose version >/dev/null 2>&1; then
+      echo "Docker Compose plugin not found. Installing..."
+      apt-get update -qq
+      apt-get install -y -qq docker-compose-plugin >/dev/null
+      echo "Docker Compose plugin installed"
+    fi
+
+    # Create tomo system group
+    if ! getent group "${TOMO_GROUP}" >/dev/null 2>&1; then
+      groupadd --system "${TOMO_GROUP}"
+      echo "Created system group '${TOMO_GROUP}'"
+    fi
+
+    # Create data directories
+    mkdir -p "${DATA_DIR}/secrets"
+    mkdir -p "${DATA_DIR}/app-stores"
+    mkdir -p "${DATA_DIR}/app-data"
+    mkdir -p "${DATA_DIR}/backups"
+    chmod 700 "${DATA_DIR}/secrets"
+
+    # Generate JWT secret if missing (umask prevents TOCTOU race)
+    JWT_FILE="${DATA_DIR}/secrets/jwt"
+    if [ ! -f "${JWT_FILE}" ]; then
+      (umask 077 && openssl rand -hex 64 > "${JWT_FILE}")
+      echo "Generated JWT secret"
+    fi
+
+    # Create Docker network if missing
+    if ! docker network inspect tomo_main >/dev/null 2>&1; then
+      docker network create tomo_main || echo "Warning: Could not create Docker network"
+    fi
+
+    # Enable and start systemd service
+    systemctl daemon-reload
+    systemctl enable tomod.service
+    if systemctl is-active --quiet tomod.service 2>/dev/null; then
+      systemctl restart tomod.service
+    else
+      systemctl start tomod.service
+    fi
+
+    # Print success
+    IP=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "your-server-ip")
+    echo ""
+    echo "============================================"
+    echo "  Tomo installed successfully!"
+    echo "  Open http://${IP} to complete setup."
+    echo "============================================"
+    echo ""
+    ;;
+esac

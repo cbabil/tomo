@@ -1,0 +1,31 @@
+{
+  "name": "tomo",
+  "private": true,
+  "version": "0.0.29",
+  "description": "Self-hosted app platform with an Umbrel-inspired desktop experience",
+  "workspaces": [
+    "packages/*",
+    "containers/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "dev:tomod": "bun run --filter tomod dev",
+    "dev:ui": "bun run --filter @tomo/ui dev",
+    "build": "bun run --filter '*' build",
+    "build:tomod": "bun run --filter tomod build",
+    "build:ui": "bun run --filter @tomo/ui build",
+    "test": "bun run --filter '*' test",
+    "test:tomod": "bun run --filter tomod test",
+    "test:ui": "bun run --filter @tomo/ui test",
+    "lint": "bun run --filter '*' lint",
+    "typecheck": "bun run --filter '*' typecheck",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.0.0"
+  }
+}

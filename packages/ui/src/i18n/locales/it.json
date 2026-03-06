@@ -1,0 +1,166 @@
+{
+  "login": {
+    "title": "Bentornato",
+    "password": "Password",
+    "unlock": "Sblocca Tomo",
+    "error": "Password errata. Riprova.",
+    "placeholder": "Inserisci la tua password"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Benvenuto su Tomo",
+      "tagline": "Il tuo server. Le tue app.",
+      "taglineAccent": "Le tue regole.",
+      "subtitle": "Ospita i tuoi servizi preferiti in autonomia e con piena privacy. Vivi la sovranità digitale totale.",
+      "getStarted": "Inizia",
+      "private": "Privato",
+      "fast": "Veloce",
+      "local": "Locale"
+    },
+    "createAccount": {
+      "title": "Crea il tuo account",
+      "name": "Nome utente",
+      "namePlaceholder": "Inserisci il tuo nome utente",
+      "password": "Password",
+      "passwordPlaceholder": "Almeno 12 caratteri",
+      "confirm": "Conferma password",
+      "confirmPlaceholder": "Reinserisci la tua password",
+      "submit": "Crea account",
+      "mismatch": "Le password non corrispondono",
+      "tooShort": "La password deve contenere almeno 8 caratteri",
+      "reqSpecial": "Un carattere speciale",
+      "strength": {
+        "weak": "Debole",
+        "fair": "Discreta",
+        "good": "Buona",
+        "strong": "Forte",
+        "veryStrong": "Molto forte"
+      },
+      "reqLength": "Almeno 12 caratteri",
+      "reqUppercase": "Una lettera maiuscola",
+      "reqLowercase": "Una lettera minuscola",
+      "reqNumber": "Un numero"
+    },
+    "complete": {
+      "title": "Tutto pronto!",
+      "subtitle": "La tua istanza Tomo è pronta all'uso.",
+      "goToDesktop": "Vai al desktop"
+    }
+  },
+  "desktop": {
+    "greeting": {
+      "morning": "Buongiorno",
+      "afternoon": "Buon pomeriggio",
+      "evening": "Buonasera"
+    },
+    "widgets": {
+      "cpu": "CPU",
+      "memory": "Memoria",
+      "disk": "Disco"
+    },
+    "apps": {
+      "empty": "Nessuna app installata",
+      "installFirst": "Installa la tua prima app",
+      "stop": "Ferma",
+      "restart": "Riavvia",
+      "remove": "Rimuovi",
+      "open": "Apri"
+    },
+    "dock": {
+      "home": "Home",
+      "appStore": "App Store",
+      "settings": "Impostazioni",
+      "system": "Sistema"
+    }
+  },
+  "appStore": {
+    "title": "App Store",
+    "search": "Cerca app...",
+    "allCategories": "Tutte",
+    "install": "Installa",
+    "installing": "Installazione...",
+    "open": "Apri",
+    "installed": "Installata",
+    "noResults": "Nessuna app trovata",
+    "previous": "Precedente",
+    "next": "Successivo"
+  },
+  "settings": {
+    "title": "Impostazioni",
+    "account": {
+      "title": "Account",
+      "displayName": "Nome visualizzato",
+      "changePassword": "Cambia password",
+      "currentPassword": "Password attuale",
+      "newPassword": "Nuova password",
+      "confirmPassword": "Conferma nuova password",
+      "save": "Salva",
+      "passwordChanged": "Password cambiata con successo"
+    },
+    "appearance": {
+      "title": "Aspetto",
+      "wallpaper": "Sfondo",
+      "theme": "Tema",
+      "dark": "Scuro",
+      "light": "Chiaro"
+    },
+    "language": {
+      "title": "Lingua",
+      "select": "Seleziona lingua"
+    },
+    "appStore": {
+      "title": "App Store",
+      "defaultLabel": "Predefinito",
+      "addRepo": "Aggiungi repository",
+      "url": "URL",
+      "urlPlaceholder": "https://github.com/user/repo",
+      "branch": "Branch",
+      "add": "Aggiungi",
+      "remove": "Rimuovi",
+      "alreadyExists": "Questo repository è già stato aggiunto"
+    },
+    "update": {
+      "title": "Aggiornamento",
+      "currentVersion": "Versione attuale",
+      "latestVersion": "Ultima versione",
+      "upToDate": "Aggiornato",
+      "updateAvailable": "Aggiornamento disponibile",
+      "updateNow": "Aggiorna ora",
+      "updating": "Aggiornamento...",
+      "restartWarning": "Tomo si riavvierà automaticamente dopo l'aggiornamento.",
+      "checkFailed": "Impossibile verificare gli aggiornamenti",
+      "status": "Stato"
+    },
+    "logout": "Esci"
+  },
+  "system": {
+    "title": "Sistema",
+    "hostname": "Nome host",
+    "os": "Sistema operativo",
+    "platform": "Piattaforma",
+    "uptime": "Tempo di attività",
+    "kernel": "Kernel",
+    "version": "Versione",
+    "docker": "Docker",
+    "dockerVersion": "Versione Docker",
+    "apiVersion": "Versione API",
+    "containers": "Container",
+    "running": "in esecuzione",
+    "total": "totali",
+    "status": "Stato",
+    "connected": "Connesso",
+    "unavailable": "Non disponibile"
+  },
+  "common": {
+    "loading": "Caricamento...",
+    "error": "Qualcosa è andato storto",
+    "retry": "Riprova",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "close": "Chiudi",
+    "confirm": "Conferma",
+    "delete": "Elimina",
+    "back": "Indietro",
+    "next": "Avanti"
+  }
+}

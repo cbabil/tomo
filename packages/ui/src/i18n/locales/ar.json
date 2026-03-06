@@ -1,0 +1,166 @@
+{
+  "login": {
+    "title": "مرحبًا بعودتك",
+    "password": "كلمة المرور",
+    "unlock": "فتح Tomo",
+    "error": "كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.",
+    "placeholder": "أدخل كلمة المرور"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "مرحبًا بك في Tomo",
+      "subtitle": "استضف خدماتك المفضلة بسهولة وخصوصية كاملة. عش السيادة الرقمية الكاملة.",
+      "getStarted": "ابدأ",
+      "tagline": "خادمك. تطبيقاتك.",
+      "taglineAccent": "قواعدك.",
+      "private": "خاص",
+      "fast": "سريع",
+      "local": "محلي"
+    },
+    "createAccount": {
+      "title": "إنشاء حسابك",
+      "name": "اسم المستخدم",
+      "namePlaceholder": "أدخل اسم المستخدم",
+      "password": "كلمة المرور",
+      "passwordPlaceholder": "12 حرفًا على الأقل",
+      "confirm": "تأكيد كلمة المرور",
+      "confirmPlaceholder": "أعد إدخال كلمة المرور",
+      "submit": "إنشاء الحساب",
+      "mismatch": "كلمات المرور غير متطابقة",
+      "tooShort": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
+      "reqSpecial": "حرف خاص واحد",
+      "strength": {
+        "weak": "ضعيفة",
+        "fair": "مقبولة",
+        "good": "جيدة",
+        "strong": "قوية",
+        "veryStrong": "قوية جدًا"
+      },
+      "reqLength": "12 حرفًا على الأقل",
+      "reqUppercase": "حرف كبير واحد",
+      "reqLowercase": "حرف صغير واحد",
+      "reqNumber": "رقم واحد"
+    },
+    "complete": {
+      "title": "كل شيء جاهز!",
+      "subtitle": "مثيل Tomo الخاص بك جاهز للاستخدام.",
+      "goToDesktop": "الذهاب إلى سطح المكتب"
+    }
+  },
+  "desktop": {
+    "greeting": {
+      "morning": "صباح الخير",
+      "afternoon": "مساء الخير",
+      "evening": "مساء الخير"
+    },
+    "widgets": {
+      "cpu": "المعالج",
+      "memory": "الذاكرة",
+      "disk": "القرص"
+    },
+    "apps": {
+      "empty": "لا توجد تطبيقات مثبتة",
+      "installFirst": "ثبّت تطبيقك الأول",
+      "stop": "إيقاف",
+      "restart": "إعادة التشغيل",
+      "remove": "إزالة",
+      "open": "فتح"
+    },
+    "dock": {
+      "home": "الرئيسية",
+      "appStore": "متجر التطبيقات",
+      "settings": "الإعدادات",
+      "system": "النظام"
+    }
+  },
+  "appStore": {
+    "title": "متجر التطبيقات",
+    "search": "بحث عن تطبيقات...",
+    "allCategories": "الكل",
+    "install": "تثبيت",
+    "installing": "جارٍ التثبيت...",
+    "open": "فتح",
+    "installed": "مثبّت",
+    "noResults": "لم يتم العثور على تطبيقات",
+    "previous": "السابق",
+    "next": "التالي"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "account": {
+      "title": "الحساب",
+      "displayName": "اسم العرض",
+      "changePassword": "تغيير كلمة المرور",
+      "currentPassword": "كلمة المرور الحالية",
+      "newPassword": "كلمة المرور الجديدة",
+      "confirmPassword": "تأكيد كلمة المرور الجديدة",
+      "save": "حفظ",
+      "passwordChanged": "تم تغيير كلمة المرور بنجاح"
+    },
+    "appearance": {
+      "title": "المظهر",
+      "wallpaper": "خلفية",
+      "theme": "السمة",
+      "dark": "داكن",
+      "light": "فاتح"
+    },
+    "language": {
+      "title": "اللغة",
+      "select": "اختيار اللغة"
+    },
+    "appStore": {
+      "title": "متجر التطبيقات",
+      "defaultLabel": "افتراضي",
+      "addRepo": "إضافة مستودع",
+      "url": "الرابط",
+      "urlPlaceholder": "https://github.com/user/repo",
+      "branch": "الفرع",
+      "add": "إضافة",
+      "remove": "إزالة",
+      "alreadyExists": "هذا المستودع مضاف بالفعل"
+    },
+    "update": {
+      "title": "التحديث",
+      "currentVersion": "الإصدار الحالي",
+      "latestVersion": "أحدث إصدار",
+      "upToDate": "محدّث",
+      "updateAvailable": "تحديث متوفر",
+      "updateNow": "التحديث الآن",
+      "updating": "جارٍ التحديث...",
+      "restartWarning": "سيتم إعادة تشغيل Tomo تلقائيًا بعد التحديث.",
+      "checkFailed": "تعذر التحقق من التحديثات",
+      "status": "الحالة"
+    },
+    "logout": "تسجيل الخروج"
+  },
+  "system": {
+    "title": "النظام",
+    "hostname": "اسم المضيف",
+    "os": "نظام التشغيل",
+    "platform": "المنصة",
+    "uptime": "وقت التشغيل",
+    "kernel": "النواة",
+    "version": "الإصدار",
+    "docker": "Docker",
+    "dockerVersion": "إصدار Docker",
+    "apiVersion": "إصدار API",
+    "containers": "الحاويات",
+    "running": "قيد التشغيل",
+    "total": "إجمالي",
+    "status": "الحالة",
+    "connected": "متصل",
+    "unavailable": "غير متوفر"
+  },
+  "common": {
+    "loading": "جارٍ التحميل...",
+    "error": "حدث خطأ",
+    "retry": "إعادة المحاولة",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
+    "delete": "حذف",
+    "back": "رجوع",
+    "next": "التالي"
+  }
+}

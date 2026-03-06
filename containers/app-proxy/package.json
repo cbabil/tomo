@@ -1,0 +1,22 @@
+{
+  "name": "@tomo/app-proxy",
+  "version": "0.0.18",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "http-proxy": "^1.18.1",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/http-proxy": "^1.17.15",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.13.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
