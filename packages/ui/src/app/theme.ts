@@ -22,6 +22,14 @@ const sharedOptions: ThemeOptions = {
     borderRadius: 12,
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        "html, body, #root": {
+          height: "100%",
+          overflow: "hidden",
+        },
+      },
+    },
     MuiButtonBase: {
       defaultProps: {
         disableRipple: true,
