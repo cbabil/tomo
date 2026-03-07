@@ -70,8 +70,15 @@
       "home": "Startseite",
       "appStore": "App Store",
       "settings": "Einstellungen",
-      "system": "System"
+      "system": "System",
+      "search": "Suche"
     }
+  },
+  "spotlight": {
+    "placeholder": "Apps und Aktionen suchen...",
+    "noResults": "Keine Ergebnisse gefunden",
+    "apps": "Apps",
+    "actions": "Aktionen"
   },
   "appStore": {
     "title": "App Store",

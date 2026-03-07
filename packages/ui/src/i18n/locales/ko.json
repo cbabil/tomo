@@ -70,8 +70,15 @@
       "home": "홈",
       "appStore": "App Store",
       "settings": "설정",
-      "system": "시스템"
+      "system": "시스템",
+      "search": "검색"
     }
+  },
+  "spotlight": {
+    "placeholder": "앱 및 작업 검색...",
+    "noResults": "결과를 찾을 수 없습니다",
+    "apps": "앱",
+    "actions": "작업"
   },
   "appStore": {
     "title": "App Store",

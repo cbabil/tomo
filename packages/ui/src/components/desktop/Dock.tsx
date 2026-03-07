@@ -2,11 +2,13 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import HomeIcon from "@mui/icons-material/Home";
+import SearchIcon from "@mui/icons-material/Search";
 import AppsIcon from "@mui/icons-material/Apps";
 import SettingsIcon from "@mui/icons-material/Settings";
 import MonitorIcon from "@mui/icons-material/Monitor";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { colors } from "../../app/theme";
 import { useStore } from "../../hooks/useStore";
 import { GlassCard } from "../ui/GlassCard";
 import type { Sheet } from "../../types";
@@ -15,11 +17,12 @@ interface DockItem {
   id: string;
   labelKey: string;
   icon: React.ReactNode;
-  action: Sheet | "home";
+  action: Sheet | "home" | "search";
 }
 
 const dockItems: DockItem[] = [
   { id: "home", labelKey: "desktop.dock.home", icon: <HomeIcon />, action: "home" },
+  { id: "search", labelKey: "desktop.dock.search", icon: <SearchIcon />, action: "search" },
   { id: "appStore", labelKey: "desktop.dock.appStore", icon: <AppsIcon />, action: "appStore" },
   { id: "settings", labelKey: "desktop.dock.settings", icon: <SettingsIcon />, action: "settings" },
   { id: "system", labelKey: "desktop.dock.system", icon: <MonitorIcon />, action: "system" },
@@ -30,10 +33,13 @@ export function Dock() {
   const activeSheet = useStore((s) => s.activeSheet);
   const openSheet = useStore((s) => s.openSheet);
   const closeSheet = useStore((s) => s.closeSheet);
+  const openSpotlight = useStore((s) => s.openSpotlight);
 
   const handleClick = (item: DockItem) => {
     if (item.action === "home") {
       closeSheet();
+    } else if (item.action === "search") {
+      openSpotlight();
     } else if (activeSheet === item.action) {
       closeSheet();
     } else {
@@ -51,10 +57,7 @@ export function Dock() {
               <motion.div whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.95 }}>
                 <IconButton
                   onClick={() => handleClick(item)}
-                  sx={{
-                    ...styles.iconButton,
-                    color: isActive ? "primary.main" : "text.secondary",
-                  }}
+                  sx={isActive ? styles.iconButtonActive : styles.iconButtonInactive}
                 >
                   {item.icon}
                 </IconButton>
@@ -82,11 +85,20 @@ const styles = {
     py: 1,
     borderRadius: 4,
   },
-  iconButton: {
+  iconButtonActive: {
     fontSize: 28,
+    color: "primary.main",
     "&:hover": {
       backgroundColor: "transparent",
-      color: "#B388FF",
+      color: colors.iconHover,
+    },
+  },
+  iconButtonInactive: {
+    fontSize: 28,
+    color: "text.secondary",
+    "&:hover": {
+      backgroundColor: "transparent",
+      color: colors.iconHover,
     },
   },
 };

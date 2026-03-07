@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Box from "@mui/material/Box";
+import { colors } from "../../app/theme";
 import Typography from "@mui/material/Typography";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -10,6 +11,7 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useTranslation } from "react-i18next";
 import { trpc } from "../../lib/trpc";
+import { openAppUrl } from "../../lib/urls";
 import { useStore } from "../../hooks/useStore";
 import { AppIcon } from "../ui/AppIcon";
 import type { InstalledApp } from "../../types";
@@ -57,10 +59,7 @@ export function AppGrid() {
   };
 
   const handleOpen = (app: InstalledApp) => {
-    if (app.webPort) {
-      const url = `${window.location.protocol}//${window.location.hostname}:${app.webPort}/`;
-      window.open(url, "_blank");
-    }
+    openAppUrl(app.webPort);
   };
 
   if (apps.length === 0) {
@@ -148,10 +147,10 @@ const styles = {
   emptyLink: {
     color: "primary.main",
     cursor: "pointer",
-    "&:hover": { color: "#B388FF" },
+    "&:hover": { color: colors.iconHover },
   },
   menuPaper: {
-    backgroundColor: "#1e293b",
+    backgroundColor: colors.surface,
     border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: 2,
   },

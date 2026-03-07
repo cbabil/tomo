@@ -4,6 +4,7 @@ import { Greeting } from "./Greeting";
 import { WidgetBar } from "./WidgetBar";
 import { AppGrid } from "./AppGrid";
 import { Dock } from "./Dock";
+import { SpotlightSearch } from "./SpotlightSearch";
 
 export function Desktop() {
   return (
@@ -15,6 +16,7 @@ export function Desktop() {
         <AppGrid />
       </Box>
       <Dock />
+      <SpotlightSearch />
     </Box>
   );
 }

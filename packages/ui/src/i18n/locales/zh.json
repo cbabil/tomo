@@ -70,8 +70,15 @@
       "home": "主页",
       "appStore": "应用商店",
       "settings": "设置",
-      "system": "系统"
+      "system": "系统",
+      "search": "搜索"
     }
+  },
+  "spotlight": {
+    "placeholder": "搜索应用和操作...",
+    "noResults": "未找到结果",
+    "apps": "应用",
+    "actions": "操作"
   },
   "appStore": {
     "title": "应用商店",
