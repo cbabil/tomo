@@ -156,9 +156,6 @@ const styles = {
     textAlign: "center" as const,
     py: 4,
     px: 3,
-    borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.06)",
   },
   iconContainer: {
     width: 72,

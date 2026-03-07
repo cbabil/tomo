@@ -100,7 +100,13 @@ export function createSystemRouter(hardware: Hardware, docker: Docker) {
       await fs.writeFile(debPath, buffer);
 
       log.info("Installing update", { debPath });
-      await execa("dpkg", ["-i", debPath]);
+
+      // Run dpkg in background after a short delay so the response
+      // can be sent before the service restarts
+      setTimeout(() => {
+        execa("dpkg", ["-i", debPath], { detached: true, stdio: "ignore" })
+          .catch((err) => log.error("Update install failed", { error: String(err) }));
+      }, 1000);
 
       return { success: true, version: latest };
     }),
