@@ -84,7 +84,7 @@ const styles = {
   root: {
     display: "flex",
     flexDirection: "column" as const,
-    maxHeight: 480,
+    height: "100%",
   },
   tabs: {
     minHeight: 48,
@@ -103,7 +103,7 @@ const styles = {
   },
   content: {
     flex: 1,
-    overflow: "auto",
+    minHeight: 0,
     py: 3,
     px: 1,
   },
