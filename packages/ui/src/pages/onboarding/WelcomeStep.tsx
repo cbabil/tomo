@@ -69,7 +69,10 @@ const styles = {
   container: {
     position: "relative" as const,
     width: "100%",
+    height: "100%",
     maxWidth: 672,
+    display: "flex",
+    flexDirection: "column" as const,
     px: 3,
   },
   glassOverlay: {
@@ -86,8 +89,10 @@ const styles = {
     display: "flex",
     flexDirection: "column" as const,
     alignItems: "center",
+    justifyContent: "center",
     textAlign: "center" as const,
-    py: 6,
+    flex: 1,
+    py: 4,
   },
   logo: {
     fontSize: "2rem",
@@ -96,13 +101,13 @@ const styles = {
     textTransform: "uppercase" as const,
     color: "rgba(255, 255, 255, 0.9)",
     textShadow: "0 0 20px rgba(145, 71, 255, 0.8)",
-    mb: 10,
+    mb: 4,
   },
   taglineGroup: {
     display: "flex",
     flexDirection: "column" as const,
     gap: 2,
-    mb: 8,
+    mb: 4,
   },
   tagline: {
     fontWeight: 900,
@@ -132,7 +137,7 @@ const styles = {
     gridTemplateColumns: "repeat(3, 1fr)",
     gap: 4,
     width: "100%",
-    mt: 24,
+    mt: 6,
   },
   featureItem: {
     display: "flex",
