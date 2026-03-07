@@ -11,20 +11,29 @@ import { trpc } from "../../../lib/trpc";
 import { colors } from "../../../app/theme";
 
 const HEALTH_POLL_INTERVAL_MS = 2_000;
-const VERSION_STALE_TIME_MS = 60_000;
+const HEALTH_POLL_TIMEOUT_MS = 60_000;
 
 export function UpdateSection() {
   const { t } = useTranslation();
   const versionQuery = trpc.system.version.useQuery(undefined, {
-    staleTime: VERSION_STALE_TIME_MS,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
   });
   const updateMutation = trpc.system.update.useMutation();
   const [polling, setPolling] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const pollHealth = useCallback(() => {
+    if (timerRef.current) return;
     setPolling(true);
+    const started = Date.now();
     timerRef.current = setInterval(async () => {
+      if (Date.now() - started > HEALTH_POLL_TIMEOUT_MS) {
+        clearInterval(timerRef.current);
+        timerRef.current = undefined;
+        setPolling(false);
+        return;
+      }
       try {
         const res = await fetch("/trpc/system.version", {
           credentials: "include",
