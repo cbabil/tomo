@@ -70,8 +70,15 @@
       "home": "ホーム",
       "appStore": "App Store",
       "settings": "設定",
-      "system": "システム"
+      "system": "システム",
+      "search": "検索"
     }
+  },
+  "spotlight": {
+    "placeholder": "アプリとアクションを検索...",
+    "noResults": "結果が見つかりません",
+    "apps": "アプリ",
+    "actions": "アクション"
   },
   "appStore": {
     "title": "App Store",

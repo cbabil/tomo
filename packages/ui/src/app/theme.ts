@@ -8,6 +8,9 @@ const colors = {
   warning: "#f59e0b",
   info: "#4c6ef5",
   iconHover: "#B388FF",
+  textPrimary: "#e2e8f0",
+  textSecondary: "#94a3b8",
+  surface: "#1e293b",
 };
 
 const sharedOptions: ThemeOptions = {
@@ -31,18 +34,18 @@ const sharedOptions: ThemeOptions = {
           borderRadius: 8,
           "& fieldset": { borderColor: "rgba(255,255,255,0.1)" },
           "&:hover fieldset": { borderColor: "rgba(255,255,255,0.2)" },
-          "&.Mui-focused fieldset": { borderColor: "#9146FF" },
+          "&.Mui-focused fieldset": { borderColor: colors.primary },
         },
         input: {
-          color: "#e2e8f0",
+          color: colors.textPrimary,
         },
       },
     },
     MuiInputLabel: {
       styleOverrides: {
         root: {
-          color: "#94a3b8",
-          "&.Mui-focused": { color: "#9146FF" },
+          color: colors.textSecondary,
+          "&.Mui-focused": { color: colors.primary },
         },
       },
     },
@@ -53,10 +56,8 @@ const sharedOptions: ThemeOptions = {
           fontWeight: 600,
         },
         containedPrimary: {
-          backgroundColor: "#9146FF",
-          "&:hover": { backgroundColor: "#7B31FF" },
-          textTransform: "none",
-          fontWeight: 600,
+          backgroundColor: colors.primary,
+          "&:hover": { backgroundColor: colors.primaryBoost },
           borderRadius: 8,
           padding: "12px 0",
         },

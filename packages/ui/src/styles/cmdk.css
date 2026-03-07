@@ -1,0 +1,20 @@
+[cmdk-item] {
+  transition: background 0.15s ease;
+}
+
+[cmdk-item][data-selected="true"] {
+  background: rgba(145, 70, 255, 0.15);
+}
+
+[cmdk-group-heading] {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  padding: 8px 12px 4px;
+}
+
+[cmdk-input]::placeholder {
+  color: #64748b;
+}
