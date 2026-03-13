@@ -11,8 +11,6 @@ import { AppStoreSheet } from "../../components/sheets/AppStoreSheet";
 import { SettingsSheet } from "../../components/sheets/SettingsSheet";
 import { SystemSheet } from "../../components/sheets/SystemSheet";
 
-const isDev = import.meta.env.DEV;
-
 export function DesktopPage() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading, hasUser, hasUserLoading } = useAuth();
@@ -20,7 +18,6 @@ export function DesktopPage() {
   const closeSheet = useStore((s) => s.closeSheet);
 
   useEffect(() => {
-    if (isDev) return;
     if (isLoading || hasUserLoading) return;
     if (!hasUser) {
       navigate("/onboarding", { replace: true });
@@ -29,7 +26,7 @@ export function DesktopPage() {
     }
   }, [isAuthenticated, isLoading, hasUser, hasUserLoading, navigate]);
 
-  if (!isDev && (isLoading || hasUserLoading)) {
+  if (isLoading || hasUserLoading) {
     return (
       <Box sx={styles.loading}>
         <CircularProgress sx={{ color: "primary.main" }} />
@@ -37,7 +34,7 @@ export function DesktopPage() {
     );
   }
 
-  if (!isDev && !isAuthenticated) return null;
+  if (!isAuthenticated) return null;
 
   return (
     <>
