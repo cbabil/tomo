@@ -26,6 +26,7 @@
       "confirm": "Confirmer le mot de passe",
       "confirmPlaceholder": "Ressaisissez votre mot de passe",
       "submit": "Créer le compte",
+      "usernameTaken": "Ce nom d'utilisateur est déjà utilisé par le système",
       "mismatch": "Les mots de passe ne correspondent pas",
       "tooShort": "Le mot de passe doit contenir au moins 8 caractères",
       "reqSpecial": "Un caractère spécial",

@@ -39,6 +39,13 @@ export function createUserRouter(userService: User) {
       return userService.hasUser();
     }),
 
+    checkUsername: publicProcedure
+      .input(z.object({ name: z.string().min(1).max(32) }))
+      .query(async ({ input }) => {
+        const taken = await userService.isUsernameTaken(input.name);
+        return { available: !taken };
+      }),
+
     register: publicProcedure
       .input(
         z.object({

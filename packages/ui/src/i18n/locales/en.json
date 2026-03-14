@@ -26,6 +26,7 @@
       "confirm": "Confirm password",
       "confirmPlaceholder": "Re-enter your password",
       "submit": "Create Account",
+      "usernameTaken": "This username is already taken by the system",
       "mismatch": "Passwords do not match",
       "tooShort": "Password does not meet all requirements",
       "reqLength": "At least 12 characters",

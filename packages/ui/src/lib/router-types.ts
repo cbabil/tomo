@@ -12,6 +12,9 @@ const t = initTRPC.create();
 
 const userRouter = t.router({
   hasUser: t.procedure.query((): boolean => false),
+  checkUsername: t.procedure
+    .input(z.object({ name: z.string() }))
+    .query((): { available: boolean } => ({ available: true })),
   register: t.procedure
     .input(z.object({ name: z.string(), password: z.string() }))
     .mutation((): void => {}),
