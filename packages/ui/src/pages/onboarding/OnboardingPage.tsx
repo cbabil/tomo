@@ -38,20 +38,22 @@ export function OnboardingPage() {
         <WelcomeStep onNext={() => setStep("createAccount")} />
       )}
       {step === "createAccount" && (
-        <CreateAccountStep onNext={() => navigate("/", { replace: true })} />
+        <>
+          <CreateAccountStep onNext={() => navigate("/", { replace: true })} />
+          <Typography
+            variant="caption"
+            sx={{
+              position: "fixed",
+              bottom: 16,
+              right: 24,
+              color: "text.secondary",
+              opacity: 0.5,
+            }}
+          >
+            v{APP_VERSION}
+          </Typography>
+        </>
       )}
-      <Typography
-        variant="caption"
-        sx={{
-          position: "fixed",
-          bottom: 16,
-          right: 24,
-          color: "text.secondary",
-          opacity: 0.5,
-        }}
-      >
-        v{APP_VERSION}
-      </Typography>
     </Box>
   );
 }

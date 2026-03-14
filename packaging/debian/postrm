@@ -11,16 +11,33 @@ case "$1" in
     echo ""
     ;;
   purge)
-    # Remove tomo group
+    # Remove users created by tomo (members of the tomo group)
     if getent group tomo >/dev/null 2>&1; then
+      members=$(getent group tomo | cut -d: -f4)
+      if [ -n "$members" ]; then
+        IFS=',' read -ra users <<< "$members"
+        for user in "${users[@]}"; do
+          userdel "$user" 2>/dev/null || true
+          echo "Removed user '$user'"
+        done
+      fi
       groupdel tomo 2>/dev/null || true
       echo "Removed 'tomo' group"
     fi
 
-    # Remove Docker network
+    # Remove Docker resources (containers, images, network)
     if command -v docker >/dev/null 2>&1; then
+      # Stop and remove all tomo containers
+      tomo_containers=$(docker ps -a --filter "name=^tomo-" --format '{{.ID}}' 2>/dev/null)
+      if [ -n "$tomo_containers" ]; then
+        docker rm -f $tomo_containers 2>/dev/null || true
+        echo "Removed tomo containers"
+      fi
+
+      # Remove tomo network
       docker network rm tomo_main 2>/dev/null || true
       echo "Removed Docker network 'tomo_main'"
+
     fi
 
     # Remove all tomo files and data
