@@ -50,9 +50,24 @@ case "$1" in
     # Install docker-compose-plugin if missing
     if ! docker compose version >/dev/null 2>&1; then
       echo "Docker Compose plugin not found. Installing..."
-      apt-get update -qq
-      apt-get install -y -qq docker-compose-plugin >/dev/null
-      echo "Docker Compose plugin installed"
+      # Try apt first (works when Docker's official repo is configured)
+      if apt-get install -y -qq docker-compose-plugin >/dev/null 2>&1; then
+        echo "Docker Compose plugin installed via apt"
+      else
+        # Fallback: install binary directly (for docker.io from Debian repos)
+        echo "apt package not available, installing from GitHub..."
+        ARCH=$(dpkg --print-architecture)
+        case "${ARCH}" in
+          amd64) COMPOSE_ARCH="x86_64" ;;
+          arm64) COMPOSE_ARCH="aarch64" ;;
+          *) echo "Error: unsupported architecture ${ARCH}"; exit 1 ;;
+        esac
+        mkdir -p /usr/lib/docker/cli-plugins
+        curl -fsSL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-${COMPOSE_ARCH}" \
+          -o /usr/lib/docker/cli-plugins/docker-compose
+        chmod +x /usr/lib/docker/cli-plugins/docker-compose
+        echo "Docker Compose plugin installed from GitHub"
+      fi
     fi
 
     # Create tomo system group
