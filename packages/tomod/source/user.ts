@@ -99,10 +99,25 @@ export class User {
     }
   }
 
+  private async isOsUserTaken(name: string): Promise<boolean> {
+    try {
+      await execa("getent", ["passwd", name]);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private async createLinuxUser(
     name: string,
     password: string,
   ): Promise<void> {
+    if (await this.isOsUserTaken(name)) {
+      throw new Error(
+        `Username "${name}" is already taken by the operating system`,
+      );
+    }
+
     await execa("useradd", [
       "--system",
       "--no-create-home",
@@ -305,6 +320,11 @@ export class User {
     } catch {
       throw new Error("Invalid or expired token");
     }
+  }
+
+  async isUsernameTaken(name: string): Promise<boolean> {
+    if (!this.isLinux) return false;
+    return this.isOsUserTaken(name);
   }
 
   hasUser(): boolean {

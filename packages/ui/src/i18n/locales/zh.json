@@ -26,6 +26,7 @@
       "confirm": "确认密码",
       "confirmPlaceholder": "重新输入密码",
       "submit": "创建账户",
+      "usernameTaken": "此用户名已被系统占用",
       "mismatch": "密码不匹配",
       "tooShort": "密码至少需要 8 个字符",
       "reqSpecial": "一个特殊字符",

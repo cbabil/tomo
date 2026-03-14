@@ -8,6 +8,7 @@ import LinearProgress from "@mui/material/LinearProgress";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import { useTranslation } from "react-i18next";
+import { useDebounce } from "../../hooks/useDebounce";
 import { trpc } from "../../lib/trpc";
 
 const MIN_PASSWORD_LENGTH = 12;
@@ -41,6 +42,14 @@ export function CreateAccountStep({ onNext }: CreateAccountStepProps) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const debouncedName = useDebounce(name.trim(), 400);
+  const isValidLinuxName = /^[a-z_][a-z0-9_-]*$/.test(debouncedName);
+  const checkUsername = trpc.user.checkUsername.useQuery(
+    { name: debouncedName },
+    { enabled: debouncedName.length > 0 && isValidLinuxName },
+  );
+  const usernameTaken = checkUsername.data?.available === false;
 
   const requirements: PasswordRequirement[] = useMemo(
     () => [
@@ -82,6 +91,10 @@ export function CreateAccountStep({ onNext }: CreateAccountStepProps) {
     e.preventDefault();
     setError(null);
 
+    if (usernameTaken) {
+      setError(t("onboarding.createAccount.usernameTaken"));
+      return;
+    }
     if (!allRequirementsMet) {
       setError(t("onboarding.createAccount.tooShort"));
       return;
@@ -117,6 +130,8 @@ export function CreateAccountStep({ onNext }: CreateAccountStepProps) {
           placeholder={t("onboarding.createAccount.namePlaceholder")}
           value={name}
           onChange={(e) => setName(e.target.value)}
+          error={usernameTaken}
+          helperText={usernameTaken ? t("onboarding.createAccount.usernameTaken") : undefined}
           fullWidth
           autoFocus
           required

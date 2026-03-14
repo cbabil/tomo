@@ -26,6 +26,7 @@
       "confirm": "パスワード確認",
       "confirmPlaceholder": "パスワードを再入力",
       "submit": "アカウント作成",
+      "usernameTaken": "このユーザー名はシステムで既に使用されています",
       "mismatch": "パスワードが一致しません",
       "tooShort": "パスワードは8文字以上必要です",
       "reqSpecial": "特殊文字1つ",

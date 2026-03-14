@@ -26,6 +26,7 @@
       "confirm": "비밀번호 확인",
       "confirmPlaceholder": "비밀번호 재입력",
       "submit": "계정 만들기",
+      "usernameTaken": "이 사용자 이름은 시스템에서 이미 사용 중입니다",
       "mismatch": "비밀번호가 일치하지 않습니다",
       "tooShort": "비밀번호는 8자 이상이어야 합니다",
       "reqSpecial": "특수문자 1개",

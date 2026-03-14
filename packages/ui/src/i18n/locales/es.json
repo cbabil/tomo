@@ -26,6 +26,7 @@
       "confirm": "Confirmar contraseña",
       "confirmPlaceholder": "Reingresa tu contraseña",
       "submit": "Crear cuenta",
+      "usernameTaken": "Este nombre de usuario ya está en uso por el sistema",
       "mismatch": "Las contraseñas no coinciden",
       "tooShort": "La contraseña debe tener al menos 8 caracteres",
       "reqSpecial": "Un carácter especial",
