@@ -4,12 +4,12 @@ import crypto from "node:crypto";
 import { execa } from "execa";
 import jwt from "jsonwebtoken";
 import { createLogger } from "./logger.js";
-import { TOMO_DATA_DIR } from "./config.js";
+import { TOMO_DATA_DIR, SESSION_DURATION_DAYS } from "./config.js";
 
 const log = createLogger("user");
 
 const TOMO_GROUP = "tomo";
-const JWT_EXPIRY = "7d";
+const JWT_EXPIRY = `${SESSION_DURATION_DAYS}d`;
 const SCRYPT_KEYLEN = 64;
 
 export interface TokenPayload {
@@ -256,6 +256,18 @@ export class User {
     }
   }
 
+  issueToken(): string {
+    if (!this.adminUser) {
+      throw new Error("No user registered");
+    }
+
+    return jwt.sign(
+      { sub: this.adminUser } satisfies TokenPayload,
+      this.jwtSecret,
+      { expiresIn: JWT_EXPIRY, algorithm: "HS256" },
+    );
+  }
+
   async login(password: string): Promise<string> {
     if (!this.adminUser) {
       throw new Error("Invalid credentials");
@@ -270,14 +282,8 @@ export class User {
       throw new Error("Invalid credentials");
     }
 
-    const token = jwt.sign(
-      { sub: this.adminUser } satisfies TokenPayload,
-      this.jwtSecret,
-      { expiresIn: JWT_EXPIRY, algorithm: "HS256" },
-    );
-
     log.info("User logged in", { name: this.adminUser });
-    return token;
+    return this.issueToken();
   }
 
   async changePassword(

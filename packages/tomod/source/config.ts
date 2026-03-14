@@ -48,6 +48,9 @@ export const LOG_LEVEL = (process.env.LOG_LEVEL ?? "info") as
 /** Cookie name used for auth token */
 export const AUTH_COOKIE_NAME = "tomo_token";
 
+/** Session duration in days — shared between JWT expiry and cookie max-age */
+export const SESSION_DURATION_DAYS = 7;
+
 /** Docker network name for app containers */
 export const DOCKER_NETWORK_NAME = "tomo_main";
 
