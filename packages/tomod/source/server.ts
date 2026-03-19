@@ -166,10 +166,32 @@ export function createServer(
   );
 
   const absoluteStaticDir = path.resolve(config.staticDir);
-  app.use(express.static(absoluteStaticDir));
 
+  // Hashed assets (JS/CSS bundles) are immutable — cache aggressively
+  app.use(
+    "/assets",
+    express.static(path.join(absoluteStaticDir, "assets"), {
+      maxAge: "1y",
+      immutable: true,
+    }),
+  );
+
+  // All other static files — no cache so updates take effect immediately
+  app.use(
+    express.static(absoluteStaticDir, {
+      maxAge: 0,
+      etag: false,
+      lastModified: false,
+      setHeaders(res) {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      },
+    }),
+  );
+
+  // SPA fallback — always serve fresh index.html
   app.get("/{*splat}", (_req, res) => {
     const indexPath = path.join(absoluteStaticDir, "index.html");
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(indexPath, (err) => {
       if (err) {
         res.status(404).json({ error: "Not found" });
