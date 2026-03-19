@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from "@mui/icons-material/Add";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
@@ -108,14 +108,11 @@ export function AppStoreSheet() {
             }}
             sx={styles.searchField}
           />
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={openCustomAppDialog}
-            sx={styles.addButton}
-          >
-            {t("desktop.apps.addCustom")}
-          </Button>
+          <Tooltip title={t("desktop.apps.addCustom")} arrow>
+            <IconButton onClick={openCustomAppDialog} sx={styles.addButton}>
+              <AddIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
 
         <Box sx={styles.categories}>
@@ -248,11 +245,15 @@ const styles = {
     alignItems: "center",
   },
   addButton: {
-    whiteSpace: "nowrap" as const,
+    width: 48,
     height: 48,
-    borderRadius: "12px",
-    px: 3,
     flexShrink: 0,
+    border: `2px solid ${colors.primary}`,
+    color: colors.primary,
+    "&:hover": {
+      backgroundColor: `${colors.primary}15`,
+      color: colors.primaryBoost,
+    },
   },
   searchField: {
     "& .MuiOutlinedInput-root": {
