@@ -16,7 +16,7 @@
 
 ---
 
-Install apps with one click, manage everything from a beautiful desktop interface — right in your browser. Powered by the Umbrel app store (300+ apps).
+Install apps with one click, manage everything from a beautiful desktop interface — right in your browser. Powered by the Umbrel app store (300+ apps), plus support for custom Docker apps and external service shortcuts.
 
 <p align="center">
   <img src="screenshots/06-desktop.png" width="800" alt="Tomo Desktop">
@@ -73,6 +73,15 @@ Run `make help` for the full list. Key targets:
 | `make typecheck` | Type check all packages |
 | `make docker-build-proxy` | Build the app-proxy Docker image |
 | `make deb` | Build .deb package (amd64) |
+
+## Custom Apps
+
+Beyond the Umbrel app store, Tomo supports two additional ways to add apps:
+
+- **Custom Docker App** — Provide a Docker image + port (or a full `docker-compose.yml`). Tomo manages the container lifecycle, Traefik routing, and desktop integration.
+- **External Service Shortcut** — Point to an already-running service URL. It appears on the desktop and opens in a new tab when clicked.
+
+Click the **+** button in the App Store to get started. Both types appear alongside store apps and are manageable via right-click context menu.
 
 ## Project Structure
 
