@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
+import { spawn } from "node:child_process";
 import { router, privateProcedure } from "./middleware.js";
 import { TOMO_VERSION } from "../config.js";
 import { createLogger } from "../logger.js";
-import { execa } from "execa";
 import type { Hardware } from "../hardware.js";
 import type { Docker } from "../docker.js";
 
@@ -101,11 +101,14 @@ export function createSystemRouter(hardware: Hardware, docker: Docker) {
 
       log.info("Installing update", { debPath });
 
-      // Run dpkg in background after a short delay so the response
-      // can be sent before the service restarts
+      // Fully detach dpkg so it survives the tomod restart triggered by postinst.
+      // execa's detached mode still tracks the child — use raw spawn + unref instead.
       setTimeout(() => {
-        execa("dpkg", ["-i", debPath], { detached: true, stdio: "ignore" })
-          .catch((err) => log.error("Update install failed", { error: String(err) }));
+        const child = spawn("dpkg", ["-i", debPath], {
+          detached: true,
+          stdio: "ignore",
+        });
+        child.unref();
       }, 1000);
 
       return { success: true, version: latest };
