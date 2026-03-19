@@ -65,7 +65,9 @@
       "stop": "停止",
       "restart": "重启",
       "remove": "删除",
-      "open": "打开"
+      "open": "打开",
+      "addCustom": "添加应用",
+      "edit": "编辑"
     },
     "dock": {
       "home": "主页",
@@ -158,6 +160,22 @@
     "status": "状态",
     "connected": "已连接",
     "unavailable": "不可用"
+  },
+  "customApp": {
+    "title": "添加自定义应用",
+    "tabDocker": "Docker 应用",
+    "tabExternal": "外部链接",
+    "name": "名称",
+    "image": "Docker 镜像",
+    "port": "容器端口",
+    "composeYaml": "Compose YAML",
+    "advanced": "高级",
+    "url": "URL",
+    "icon": "图标 URL（可选）",
+    "add": "添加",
+    "adding": "添加中...",
+    "editTitle": "编辑应用",
+    "edit": "编辑"
   },
   "common": {
     "loading": "加载中...",

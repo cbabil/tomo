@@ -11,9 +11,13 @@ export interface App {
   port?: number;
 }
 
+export type AppType = "store" | "custom" | "external";
+
 export interface InstalledApp extends App {
-  status: "running" | "stopped" | "error";
+  status: "running" | "stopped" | "error" | "external";
   webPort?: number;
+  type?: AppType;
+  externalUrl?: string;
 }
 
 export interface SystemStats {

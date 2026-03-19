@@ -10,6 +10,17 @@ const appIdSchema = z
   .max(64)
   .regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/, "Invalid app ID format");
 
+const httpUrlSchema = z
+  .string()
+  .url()
+  .refine(
+    (u) => /^https?:\/\//i.test(u),
+    "Only http and https URLs are allowed",
+  );
+
+const MAX_EXTERNAL_APPS = 100;
+const MAX_COMPOSE_YAML_LENGTH = 32_000;
+
 export function createAppsRouter(apps: Apps, appStore: AppStore) {
   return router({
     list: privateProcedure.query(() => {
@@ -36,7 +47,7 @@ export function createAppsRouter(apps: Apps, appStore: AppStore) {
       }),
 
     installed: privateProcedure.query(() => {
-      return apps.listInstalled().map((app) => {
+      const dockerApps = apps.listInstalled().map((app) => {
         const manifest = appStore.getApp(app.id);
         return {
           ...app,
@@ -47,6 +58,25 @@ export function createAppsRouter(apps: Apps, appStore: AppStore) {
           webPort: app.proxyTarget?.hostPort,
         };
       });
+
+      const externalApps = apps.listExternal().map((e) => ({
+        id: e.id,
+        name: e.name,
+        version: "",
+        status: "external" as const,
+        port: undefined,
+        installedAt: e.addedAt,
+        dataDir: "",
+        type: "external" as const,
+        icon: e.icon ?? "",
+        tagline: "",
+        category: "custom",
+        developer: "",
+        webPort: undefined,
+        externalUrl: e.url,
+      }));
+
+      return [...dockerApps, ...externalApps];
     }),
 
     install: privateProcedure
@@ -92,6 +122,67 @@ export function createAppsRouter(apps: Apps, appStore: AppStore) {
 
     categories: privateProcedure.query(() => {
       return appStore.getCategories();
+    }),
+
+    custom: router({
+      installDocker: privateProcedure
+        .input(
+          z
+            .object({
+              name: z.string().min(1).max(64),
+              image: z.string().optional(),
+              composeYaml: z.string().max(MAX_COMPOSE_YAML_LENGTH).optional(),
+              containerPort: z.number().int().min(1).max(65535),
+              icon: httpUrlSchema.optional(),
+            })
+            .refine(
+              (d) => d.image || d.composeYaml,
+              "Provide image or compose YAML",
+            ),
+        )
+        .mutation(async ({ input }) => {
+          return apps.installCustom(input);
+        }),
+
+      addExternal: privateProcedure
+        .input(
+          z.object({
+            name: z.string().min(1).max(64),
+            url: httpUrlSchema,
+            icon: httpUrlSchema.optional(),
+          }),
+        )
+        .mutation(async ({ input }) => {
+          const current = apps.listExternal();
+          if (current.length >= MAX_EXTERNAL_APPS) {
+            throw new TRPCError({
+              code: "PRECONDITION_FAILED",
+              message: `Maximum of ${MAX_EXTERNAL_APPS} external apps reached`,
+            });
+          }
+          return apps.addExternal(input);
+        }),
+
+      removeExternal: privateProcedure
+        .input(z.object({ id: appIdSchema }))
+        .mutation(async ({ input }) => {
+          await apps.removeExternal(input.id);
+          return { success: true };
+        }),
+
+      updateExternal: privateProcedure
+        .input(
+          z.object({
+            id: appIdSchema,
+            name: z.string().min(1).max(64).optional(),
+            url: httpUrlSchema.optional(),
+            icon: httpUrlSchema.optional(),
+          }),
+        )
+        .mutation(async ({ input }) => {
+          const { id, ...rest } = input;
+          return apps.updateExternal(id, rest);
+        }),
     }),
 
     repos: router({

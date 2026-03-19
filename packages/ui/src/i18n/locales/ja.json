@@ -65,7 +65,9 @@
       "stop": "停止",
       "restart": "再起動",
       "remove": "削除",
-      "open": "開く"
+      "open": "開く",
+      "addCustom": "アプリを追加",
+      "edit": "編集"
     },
     "dock": {
       "home": "ホーム",
@@ -158,6 +160,22 @@
     "status": "ステータス",
     "connected": "接続済み",
     "unavailable": "利用不可"
+  },
+  "customApp": {
+    "title": "カスタムアプリを追加",
+    "tabDocker": "Dockerアプリ",
+    "tabExternal": "外部リンク",
+    "name": "名前",
+    "image": "Dockerイメージ",
+    "port": "コンテナポート",
+    "composeYaml": "Compose YAML",
+    "advanced": "詳細設定",
+    "url": "URL",
+    "icon": "アイコンURL（任意）",
+    "add": "追加",
+    "adding": "追加中...",
+    "editTitle": "アプリを編集",
+    "edit": "編集"
   },
   "common": {
     "loading": "読み込み中...",

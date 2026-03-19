@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { motion } from "framer-motion";
 import { colors } from "../../app/theme";
+import { AppIconFallback } from "./AppIconFallback";
 import type { InstalledApp } from "../../types";
 
 interface AppIconProps {
@@ -12,10 +13,11 @@ interface AppIconProps {
   onContextMenu?: (e: React.MouseEvent<HTMLElement>) => void;
 }
 
-const STATUS_COLORS: Record<InstalledApp["status"], string> = {
+export const STATUS_COLORS: Record<InstalledApp["status"], string> = {
   running: colors.success,
   stopped: "#94a3b8",
   error: colors.error,
+  external: colors.info,
 };
 
 export function AppIcon({ name, icon, status, onClick, onContextMenu }: AppIconProps) {
@@ -35,12 +37,16 @@ export function AppIcon({ name, icon, status, onClick, onContextMenu }: AppIconP
             }),
           }}
         >
-          <Box
-            component="img"
-            src={icon}
-            alt={name}
-            sx={styles.icon}
-          />
+          {icon ? (
+            <Box
+              component="img"
+              src={icon}
+              alt={name}
+              sx={styles.icon}
+            />
+          ) : (
+            <AppIconFallback name={name} size={56} />
+          )}
         </Box>
         <Typography variant="caption" sx={styles.label} noWrap>
           {name}
