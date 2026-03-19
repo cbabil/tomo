@@ -1,16 +1,19 @@
 import { useState, useMemo } from "react";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
+import AddIcon from "@mui/icons-material/Add";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useTranslation } from "react-i18next";
 import { trpc } from "../../lib/trpc";
 import { colors } from "../../app/theme";
+import { useStore } from "../../hooks/useStore";
 import { AppCard } from "./AppCard";
 
 const APPS_PER_PAGE = 8;
@@ -23,6 +26,7 @@ export function AppStoreSheet() {
   const [category, setCategory] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
+  const openCustomAppDialog = useStore((s) => s.openCustomAppDialog);
   const appsQuery = trpc.apps.list.useQuery();
   const categoriesQuery = trpc.apps.categories.useQuery();
   const installedQuery = trpc.apps.installed.useQuery();
@@ -86,23 +90,33 @@ export function AppStoreSheet() {
   return (
     <Box sx={styles.root}>
       <Box sx={styles.content}>
-        <TextField
-          placeholder={t("appStore.search")}
-          value={search}
-          onChange={(e) => handleSearch(e.target.value)}
-          fullWidth
-          size="small"
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "text.secondary" }} />
-                </InputAdornment>
-              ),
-            },
-          }}
-          sx={styles.searchField}
-        />
+        <Box sx={styles.searchRow}>
+          <TextField
+            placeholder={t("appStore.search")}
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            fullWidth
+            size="small"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: "text.secondary" }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={styles.searchField}
+          />
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={openCustomAppDialog}
+            sx={styles.addButton}
+          >
+            {t("desktop.apps.addCustom")}
+          </Button>
+        </Box>
 
         <Box sx={styles.categories}>
           <Chip
@@ -227,6 +241,18 @@ const styles = {
     gap: 3,
     flex: 1,
     minHeight: 0,
+  },
+  searchRow: {
+    display: "flex",
+    gap: 2,
+    alignItems: "center",
+  },
+  addButton: {
+    whiteSpace: "nowrap" as const,
+    height: 48,
+    borderRadius: "12px",
+    px: 3,
+    flexShrink: 0,
   },
   searchField: {
     "& .MuiOutlinedInput-root": {

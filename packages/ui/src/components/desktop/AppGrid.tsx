@@ -6,12 +6,10 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import IconButton from "@mui/material/IconButton";
 import StopIcon from "@mui/icons-material/Stop";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
-import AddIcon from "@mui/icons-material/Add";
 import { useTranslation } from "react-i18next";
 import { trpc } from "../../lib/trpc";
 import { openInstalledApp } from "../../lib/urls";
@@ -22,7 +20,6 @@ import type { InstalledApp } from "../../types";
 export function AppGrid() {
   const { t } = useTranslation();
   const openSheet = useStore((s) => s.openSheet);
-  const openCustomAppDialog = useStore((s) => s.openCustomAppDialog);
   const openEditExternalApp = useStore((s) => s.openEditExternalApp);
   const installedQuery = trpc.apps.installed.useQuery();
   const stopMutation = trpc.apps.stop.useMutation();
@@ -111,14 +108,6 @@ export function AppGrid() {
             onContextMenu={(e) => handleContextMenu(e, app)}
           />
         ))}
-        <Box sx={styles.addButton}>
-          <IconButton onClick={openCustomAppDialog} sx={styles.addIcon}>
-            <AddIcon />
-          </IconButton>
-          <Typography variant="caption" sx={styles.addLabel} noWrap>
-            {t("desktop.apps.addCustom")}
-          </Typography>
-        </Box>
       </Box>
 
       <Menu
@@ -180,31 +169,6 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, 80px)",
     gap: 1,
-  },
-  addButton: {
-    display: "flex",
-    flexDirection: "column" as const,
-    alignItems: "center",
-    gap: 0.5,
-    p: 1,
-  },
-  addIcon: {
-    width: 56,
-    height: 56,
-    border: "2px dashed rgba(255,255,255,0.2)",
-    borderRadius: 3,
-    color: "rgba(255,255,255,0.4)",
-    "&:hover": {
-      borderColor: colors.primary,
-      color: colors.primary,
-      backgroundColor: "transparent",
-    },
-  },
-  addLabel: {
-    color: "rgba(255,255,255,0.5)",
-    fontSize: "0.7rem",
-    textAlign: "center" as const,
-    maxWidth: 72,
   },
   empty: {
     flex: 1,
