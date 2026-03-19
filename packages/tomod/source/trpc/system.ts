@@ -86,7 +86,9 @@ export function createSystemRouter(hardware: Hardware, docker: Docker) {
 
       const arch = process.arch === "arm64" ? "arm64" : "amd64";
       const debUrl = `https://github.com/cbabil/tomo/releases/download/v${latest}/tomo_${latest}_${arch}.deb`;
-      const debPath = "/tmp/tomo_update.deb";
+      // Write to /opt/tomo/data/ (in ReadWritePaths) instead of /tmp (PrivateTmp)
+      // so the systemd-run transient unit can access the file.
+      const debPath = "/opt/tomo/data/tomo_update.deb";
 
       log.info("Downloading update", { version: latest, arch, debUrl });
 
@@ -101,10 +103,18 @@ export function createSystemRouter(hardware: Hardware, docker: Docker) {
 
       log.info("Installing update", { debPath });
 
-      // Fully detach dpkg so it survives the tomod restart triggered by postinst.
-      // execa's detached mode still tracks the child — use raw spawn + unref instead.
+      // Use systemd-run to execute dpkg outside tomod's ProtectSystem=strict sandbox.
+      // A detached child inherits the parent's mount namespace restrictions, so dpkg
+      // cannot write to /opt/tomo/. systemd-run creates a transient unit with full
+      // filesystem access. The --no-block flag returns immediately so we can respond
+      // before the service restarts.
       setTimeout(() => {
-        const child = spawn("dpkg", ["-i", debPath], {
+        const child = spawn("systemd-run", [
+          "--unit=tomo-update",
+          "--no-block",
+          "--",
+          "dpkg", "-i", debPath,
+        ], {
           detached: true,
           stdio: "ignore",
         });
