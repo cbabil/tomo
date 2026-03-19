@@ -17,13 +17,23 @@ import {
   APP_PORT_MIN,
   APP_PORT_MAX,
 } from "./config.js";
-import { App, type AppInstance, type AppStatus, type ProxyTarget } from "./app.js";
+import { App, type AppInstance, type AppStatus, type AppType, type ProxyTarget } from "./app.js";
+import type { ExternalApp } from "./store.js";
 import type { AppStore } from "./app-store.js";
 import type { Docker } from "./docker.js";
 import type { TraefikProxy } from "./traefik-proxy.js";
 import type { Store } from "./store.js";
 
 const log = createLogger("apps");
+
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9._-]/g, "")
+    .replace(/^[^a-z0-9]/, "a");
+}
 
 export class Apps {
   private readonly appStore: AppStore;
@@ -92,7 +102,11 @@ export class Apps {
       "network_mode: host",
       "pid: host",
       "ipc: host",
+      "userns_mode: host",
       "security_opt",
+      "devices:",
+      "sysctls:",
+      "volumes_from:",
       "/var/run/docker.sock",
       "/etc/shadow",
       "/etc/passwd",
@@ -105,6 +119,11 @@ export class Apps {
           `Compose file contains forbidden configuration: ${pattern}`,
         );
       }
+    }
+
+    // Check for build: as a YAML key (indented service property), not in comments
+    if (/^\s+build:/m.test(raw)) {
+      throw new Error("Compose file contains forbidden configuration: build context");
     }
   }
 
@@ -161,6 +180,7 @@ export class Apps {
         dataDir: appDir,
         status: "stopped",
         proxyTarget,
+        type: meta.type ?? "store",
       },
       this.docker,
     );
@@ -284,6 +304,175 @@ export class Apps {
 
   listInstalled(): AppInstance[] {
     return [...this.instances.values()].map((app) => app.toJSON());
+  }
+
+  listExternal(): ExternalApp[] {
+    return this.store.get().apps.external;
+  }
+
+  async installCustom(input: {
+    name: string;
+    image?: string;
+    composeYaml?: string;
+    containerPort: number;
+    icon?: string;
+  }): Promise<AppInstance> {
+    const id = slugify(input.name);
+    if (!id) throw new Error("Invalid app name");
+    if (this.instances.has(id)) {
+      throw new Error(`App ID already in use: ${id}`);
+    }
+
+    const appDir = this.safeAppDir(id);
+    await mkdir(appDir, { recursive: true });
+
+    try {
+      const composePath = path.join(appDir, "docker-compose.yml");
+      let composeContent: string;
+
+      if (input.composeYaml) {
+        composeContent = input.composeYaml;
+      } else if (input.image) {
+        composeContent = yaml.dump({
+          services: {
+            app: {
+              image: input.image,
+              restart: "unless-stopped",
+            },
+          },
+        }, { lineWidth: -1, noRefs: true });
+      } else {
+        throw new Error("Provide image or compose YAML");
+      }
+
+      await writeFile(composePath, composeContent, "utf-8");
+
+      // Patch compose (add network, .env)
+      const { composeContent: patchedContent } =
+        await this.patchComposeFile(appDir);
+      await this.validateComposeFile(composePath);
+
+      const rawTarget: ProxyTarget = { service: "app", port: input.containerPort };
+      const proxyTarget = this.assignHostPort(rawTarget);
+
+      const app = new App(
+        {
+          id,
+          name: input.name,
+          version: "custom",
+          installedAt: new Date().toISOString(),
+          dataDir: appDir,
+          status: "installing",
+          proxyTarget,
+          type: "custom",
+        },
+        this.docker,
+      );
+
+      this.instances.set(id, app);
+      if (proxyTarget.hostPort) {
+        this.pendingPorts.delete(proxyTarget.hostPort);
+      }
+
+      if (patchedContent) {
+        await this.prepareVolumeDirectories(appDir, patchedContent);
+      }
+      await this.writeAppMeta(app);
+      await app.start();
+      await this.updateInstalledList();
+
+      if (proxyTarget) {
+        await this.proxy.addApp(id, proxyTarget);
+      }
+
+      log.info("Custom app installed", { id, image: input.image });
+      return app.toJSON();
+    } catch (err) {
+      log.error("Custom app install failed", { id, error: String(err) });
+      const failedApp = this.instances.get(id);
+      if (failedApp?.proxyTarget?.hostPort) {
+        this.pendingPorts.delete(failedApp.proxyTarget.hostPort);
+      }
+      this.instances.delete(id);
+      await rm(appDir, { recursive: true, force: true });
+      throw new Error(`Failed to install custom app ${id}: ${String(err)}`);
+    }
+  }
+
+  async addExternal(input: { name: string; url: string; icon?: string }): Promise<ExternalApp> {
+    const id = slugify(input.name);
+    if (!id) throw new Error("Invalid app name");
+    // Enforce cross-type uniqueness: external IDs must not collide with Docker apps
+    if (this.instances.has(id)) {
+      throw new Error(`App ID already in use: ${id}`);
+    }
+
+    const config = this.store.get();
+    if (config.apps.external.some((e) => e.id === id)) {
+      throw new Error(`External app already exists: ${id}`);
+    }
+
+    const entry: ExternalApp = {
+      id,
+      name: input.name,
+      url: input.url,
+      icon: input.icon,
+      addedAt: new Date().toISOString(),
+    };
+
+    await this.store.update({
+      apps: {
+        ...config.apps,
+        external: [...config.apps.external, entry],
+      },
+    });
+
+    log.info("External app added", { id, url: input.url });
+    return entry;
+  }
+
+  async removeExternal(id: string): Promise<void> {
+    const config = this.store.get();
+    const filtered = config.apps.external.filter((e) => e.id !== id);
+    if (filtered.length === config.apps.external.length) {
+      throw new Error(`External app not found: ${id}`);
+    }
+
+    await this.store.update({
+      apps: { ...config.apps, external: filtered },
+    });
+    log.info("External app removed", { id });
+  }
+
+  async updateExternal(
+    id: string,
+    input: { name?: string; url?: string; icon?: string },
+  ): Promise<ExternalApp> {
+    const config = this.store.get();
+    const index = config.apps.external.findIndex((e) => e.id === id);
+    if (index === -1) {
+      throw new Error(`External app not found: ${id}`);
+    }
+
+    const updated: ExternalApp = {
+      ...config.apps.external[index],
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.url !== undefined && { url: input.url }),
+      ...(input.icon !== undefined && { icon: input.icon }),
+    };
+
+    const external = [
+      ...config.apps.external.slice(0, index),
+      updated,
+      ...config.apps.external.slice(index + 1),
+    ];
+
+    await this.store.update({
+      apps: { ...config.apps, external },
+    });
+
+    log.info("External app updated", { id });
+    return updated;
   }
 
   async update(appId: string): Promise<void> {
@@ -583,6 +772,7 @@ export class Apps {
       port: app.port,
       installedAt: app.installedAt,
       proxyTarget: app.proxyTarget,
+      type: app.type,
     };
     await writeFile(metaPath, JSON.stringify(meta), "utf-8");
   }
@@ -604,4 +794,5 @@ interface AppMeta {
   port?: number;
   installedAt: string;
   proxyTarget?: ProxyTarget;
+  type?: AppType;
 }

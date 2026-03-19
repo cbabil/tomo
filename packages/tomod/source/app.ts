@@ -3,6 +3,8 @@ import type { Docker } from "./docker.js";
 
 const log = createLogger("app");
 
+export type AppType = "store" | "custom" | "external";
+
 export type AppStatus =
   | "unknown"
   | "installing"
@@ -28,6 +30,7 @@ export interface AppInstance {
   installedAt: string;
   dataDir: string;
   proxyTarget?: ProxyTarget;
+  type: AppType;
 }
 
 export class App {
@@ -38,6 +41,7 @@ export class App {
   readonly installedAt: string;
   readonly dataDir: string;
   readonly proxyTarget: ProxyTarget | undefined;
+  readonly type: AppType;
   private status: AppStatus;
   private readonly docker: Docker;
 
@@ -51,6 +55,7 @@ export class App {
       dataDir: string;
       status?: AppStatus;
       proxyTarget?: ProxyTarget;
+      type?: AppType;
     },
     docker: Docker,
   ) {
@@ -61,6 +66,7 @@ export class App {
     this.installedAt = props.installedAt;
     this.dataDir = props.dataDir;
     this.proxyTarget = props.proxyTarget;
+    this.type = props.type ?? "store";
     this.status = props.status ?? "unknown";
     this.docker = docker;
   }
@@ -172,6 +178,7 @@ export class App {
       installedAt: this.installedAt,
       dataDir: this.dataDir,
       proxyTarget: this.proxyTarget,
+      type: this.type,
     };
   }
 }

@@ -128,8 +128,10 @@ const appsRouter = t.router({
       version: string;
       repo: string;
       developer: string;
-      status: "running" | "stopped" | "error";
+      status: "running" | "stopped" | "error" | "external";
       webPort?: number;
+      type?: "store" | "custom" | "external";
+      externalUrl?: string;
     }> => [],
   ),
   install: t.procedure
@@ -148,6 +150,41 @@ const appsRouter = t.router({
     .input(z.object({ appId: z.string() }))
     .mutation((): void => {}),
   categories: t.procedure.query((): string[] => []),
+  custom: t.router({
+    installDocker: t.procedure
+      .input(
+        z.object({
+          name: z.string(),
+          image: z.string().optional(),
+          composeYaml: z.string().optional(),
+          containerPort: z.number(),
+          icon: z.string().optional(),
+        }),
+      )
+      .mutation((): void => {}),
+    addExternal: t.procedure
+      .input(
+        z.object({
+          name: z.string(),
+          url: z.string(),
+          icon: z.string().optional(),
+        }),
+      )
+      .mutation((): void => {}),
+    removeExternal: t.procedure
+      .input(z.object({ id: z.string() }))
+      .mutation((): { success: boolean } => ({ success: true })),
+    updateExternal: t.procedure
+      .input(
+        z.object({
+          id: z.string(),
+          name: z.string().optional(),
+          url: z.string().optional(),
+          icon: z.string().optional(),
+        }),
+      )
+      .mutation((): void => {}),
+  }),
   repos: t.router({
     list: t.procedure.query(
       (): Array<{

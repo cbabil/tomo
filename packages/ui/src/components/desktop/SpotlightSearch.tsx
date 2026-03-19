@@ -5,8 +5,10 @@ import { Command } from "cmdk";
 import { useTranslation } from "react-i18next";
 import { trpc } from "../../lib/trpc";
 import { useStore } from "../../hooks/useStore";
-import { openAppUrl } from "../../lib/urls";
+import { openInstalledApp } from "../../lib/urls";
 import { colors } from "../../app/theme";
+import { AppIconFallback } from "../ui/AppIconFallback";
+import { STATUS_COLORS } from "../ui/AppIcon";
 import type { InstalledApp, Sheet } from "../../types";
 
 export function SpotlightSearch() {
@@ -14,6 +16,7 @@ export function SpotlightSearch() {
   const open = useStore((s) => s.spotlightOpen);
   const closeSpotlight = useStore((s) => s.closeSpotlight);
   const openSheet = useStore((s) => s.openSheet);
+  const openCustomAppDialog = useStore((s) => s.openCustomAppDialog);
   const installedQuery = trpc.apps.installed.useQuery(undefined, {
     enabled: open,
   });
@@ -37,15 +40,19 @@ export function SpotlightSearch() {
 
   if (!open) return null;
 
-  const handleSelect = (appId: string) => {
-    const app = apps.find((a) => a.id === appId);
-    openAppUrl(app?.webPort);
+  const handleSelect = (app: InstalledApp) => {
+    openInstalledApp(app);
     closeSpotlight();
   };
 
   const handleAction = (action: NonNullable<Sheet>) => {
     closeSpotlight();
     openSheet(action);
+  };
+
+  const handleAddCustomApp = () => {
+    closeSpotlight();
+    openCustomAppDialog();
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -75,15 +82,19 @@ export function SpotlightSearch() {
                   <Command.Item
                     key={app.id}
                     value={`${app.name} ${app.tagline}`}
-                    onSelect={() => handleSelect(app.id)}
+                    onSelect={() => handleSelect(app)}
                     style={cmdkStyles.item}
                   >
-                    <Box
-                      component="img"
-                      src={app.icon}
-                      alt={app.name}
-                      sx={styles.appIcon}
-                    />
+                    {app.icon ? (
+                      <Box
+                        component="img"
+                        src={app.icon}
+                        alt={app.name}
+                        sx={styles.appIcon}
+                      />
+                    ) : (
+                      <AppIconFallback name={app.name} size={32} />
+                    )}
                     <Box sx={styles.itemText}>
                       <Typography sx={styles.itemName}>{app.name}</Typography>
                       <Typography sx={styles.itemTagline}>
@@ -100,6 +111,15 @@ export function SpotlightSearch() {
               heading={t("spotlight.actions")}
               style={cmdkStyles.group}
             >
+              <Command.Item
+                value={t("desktop.apps.addCustom")}
+                onSelect={handleAddCustomApp}
+                style={cmdkStyles.item}
+              >
+                <Typography sx={styles.itemName}>
+                  {t("desktop.apps.addCustom")}
+                </Typography>
+              </Command.Item>
               <Command.Item
                 value="App Store Browse Install"
                 onSelect={() => handleAction("appStore")}
@@ -136,13 +156,7 @@ export function SpotlightSearch() {
 }
 
 function StatusDot({ status }: { status: InstalledApp["status"] }) {
-  const color =
-    status === "running"
-      ? colors.success
-      : status === "error"
-        ? colors.error
-        : colors.textSecondary;
-  return <Box sx={{ ...styles.statusDot, backgroundColor: color }} />;
+  return <Box sx={{ ...styles.statusDot, backgroundColor: STATUS_COLORS[status] }} />;
 }
 
 const styles = {

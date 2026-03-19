@@ -10,6 +10,8 @@ import { SheetLayout } from "../../components/sheets/SheetLayout";
 import { AppStoreSheet } from "../../components/sheets/AppStoreSheet";
 import { SettingsSheet } from "../../components/sheets/SettingsSheet";
 import { SystemSheet } from "../../components/sheets/SystemSheet";
+import { AddCustomAppDialog } from "../../components/dialogs/AddCustomAppDialog";
+import { EditExternalAppDialog } from "../../components/dialogs/EditExternalAppDialog";
 
 export function DesktopPage() {
   const navigate = useNavigate();
@@ -56,6 +58,8 @@ export function DesktopPage() {
           </SheetLayout>
         )}
       </AnimatePresence>
+      <AddCustomAppDialog />
+      <EditExternalAppDialog />
     </>
   );
 }

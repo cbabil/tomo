@@ -65,7 +65,9 @@
       "stop": "정지",
       "restart": "재시작",
       "remove": "제거",
-      "open": "열기"
+      "open": "열기",
+      "addCustom": "앱 추가",
+      "edit": "편집"
     },
     "dock": {
       "home": "홈",
@@ -158,6 +160,22 @@
     "status": "상태",
     "connected": "연결됨",
     "unavailable": "사용 불가"
+  },
+  "customApp": {
+    "title": "사용자 정의 앱 추가",
+    "tabDocker": "Docker 앱",
+    "tabExternal": "외부 링크",
+    "name": "이름",
+    "image": "Docker 이미지",
+    "port": "컨테이너 포트",
+    "composeYaml": "Compose YAML",
+    "advanced": "고급",
+    "url": "URL",
+    "icon": "아이콘 URL (선택사항)",
+    "add": "추가",
+    "adding": "추가 중...",
+    "editTitle": "앱 편집",
+    "edit": "편집"
   },
   "common": {
     "loading": "로딩 중...",

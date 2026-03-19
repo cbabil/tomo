@@ -65,7 +65,9 @@
       "stop": "Ferma",
       "restart": "Riavvia",
       "remove": "Rimuovi",
-      "open": "Apri"
+      "open": "Apri",
+      "addCustom": "Aggiungi app",
+      "edit": "Modifica"
     },
     "dock": {
       "home": "Home",
@@ -158,6 +160,22 @@
     "status": "Stato",
     "connected": "Connesso",
     "unavailable": "Non disponibile"
+  },
+  "customApp": {
+    "title": "Aggiungi app personalizzata",
+    "tabDocker": "App Docker",
+    "tabExternal": "Link esterno",
+    "name": "Nome",
+    "image": "Immagine Docker",
+    "port": "Porta del container",
+    "composeYaml": "Compose YAML",
+    "advanced": "Avanzato",
+    "url": "URL",
+    "icon": "URL icona (opzionale)",
+    "add": "Aggiungi",
+    "adding": "Aggiunta...",
+    "editTitle": "Modifica app",
+    "edit": "Modifica"
   },
   "common": {
     "loading": "Caricamento...",

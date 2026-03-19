@@ -65,7 +65,9 @@
       "stop": "إيقاف",
       "restart": "إعادة التشغيل",
       "remove": "إزالة",
-      "open": "فتح"
+      "open": "فتح",
+      "addCustom": "إضافة تطبيق",
+      "edit": "تعديل"
     },
     "dock": {
       "home": "الرئيسية",
@@ -158,6 +160,22 @@
     "status": "الحالة",
     "connected": "متصل",
     "unavailable": "غير متوفر"
+  },
+  "customApp": {
+    "title": "إضافة تطبيق مخصص",
+    "tabDocker": "تطبيق Docker",
+    "tabExternal": "رابط خارجي",
+    "name": "الاسم",
+    "image": "صورة Docker",
+    "port": "منفذ الحاوية",
+    "composeYaml": "Compose YAML",
+    "advanced": "متقدم",
+    "url": "الرابط",
+    "icon": "رابط الأيقونة (اختياري)",
+    "add": "إضافة",
+    "adding": "جارٍ الإضافة...",
+    "editTitle": "تعديل التطبيق",
+    "edit": "تعديل"
   },
   "common": {
     "loading": "جارٍ التحميل...",

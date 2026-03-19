@@ -1,11 +1,20 @@
 import { create } from "zustand";
 import type { Sheet, ThemeMode } from "../types";
 
+interface EditingExternalApp {
+  id: string;
+  name: string;
+  url: string;
+  icon?: string;
+}
+
 interface UIState {
   activeSheet: Sheet;
   themeMode: ThemeMode;
   wallpaper: string;
   spotlightOpen: boolean;
+  customAppDialogOpen: boolean;
+  editingExternalApp: EditingExternalApp | null;
 }
 
 interface UIActions {
@@ -16,6 +25,10 @@ interface UIActions {
   openSpotlight: () => void;
   closeSpotlight: () => void;
   toggleSpotlight: () => void;
+  openCustomAppDialog: () => void;
+  closeCustomAppDialog: () => void;
+  openEditExternalApp: (app: EditingExternalApp) => void;
+  closeEditExternalApp: () => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -25,6 +38,8 @@ export const useStore = create<UIStore>((set, get) => ({
   themeMode: "dark",
   wallpaper: "default",
   spotlightOpen: false,
+  customAppDialogOpen: false,
+  editingExternalApp: null,
 
   openSheet: (sheet) => set({ activeSheet: sheet }),
   closeSheet: () => set({ activeSheet: null }),
@@ -33,4 +48,8 @@ export const useStore = create<UIStore>((set, get) => ({
   openSpotlight: () => set({ spotlightOpen: true }),
   closeSpotlight: () => set({ spotlightOpen: false }),
   toggleSpotlight: () => set({ spotlightOpen: !get().spotlightOpen }),
+  openCustomAppDialog: () => set({ customAppDialogOpen: true }),
+  closeCustomAppDialog: () => set({ customAppDialogOpen: false }),
+  openEditExternalApp: (app) => set({ editingExternalApp: app }),
+  closeEditExternalApp: () => set({ editingExternalApp: null }),
 }));

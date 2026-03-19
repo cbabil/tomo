@@ -13,9 +13,20 @@ const RepoSchema = z.object({
   branch: z.string().default("master"),
 });
 
+const ExternalAppSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).max(64),
+  url: z.string().url(),
+  icon: z.string().optional(),
+  addedAt: z.string(),
+});
+
+export type ExternalApp = z.infer<typeof ExternalAppSchema>;
+
 const AppsSchema = z.object({
   installed: z.array(z.string()).default([]),
   repos: z.array(RepoSchema).default([]),
+  external: z.array(ExternalAppSchema).default([]),
 });
 
 const SettingsSchema = z.object({
@@ -35,7 +46,7 @@ export type RepoConfig = z.infer<typeof RepoSchema>;
 
 const DEFAULT_CONFIG: Config = {
   version: 1,
-  apps: { installed: [], repos: [] },
+  apps: { installed: [], repos: [], external: [] },
   settings: { language: "en", wallpaper: "default", widgets: [] },
 };
 
