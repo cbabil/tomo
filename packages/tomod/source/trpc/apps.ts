@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { router, privateProcedure } from "./middleware.js";
 import type { Apps } from "../apps.js";
 import type { AppStore } from "../app-store.js";
+import type { TemplateRegistry } from "../templates.js";
 
 const appIdSchema = z
   .string()
@@ -21,7 +22,11 @@ const httpUrlSchema = z
 const MAX_EXTERNAL_APPS = 100;
 const MAX_COMPOSE_YAML_LENGTH = 32_000;
 
-export function createAppsRouter(apps: Apps, appStore: AppStore) {
+export function createAppsRouter(
+  apps: Apps,
+  appStore: AppStore,
+  templateRegistry: TemplateRegistry,
+) {
   return router({
     list: privateProcedure.query(() => {
       return appStore.listApps();
@@ -207,6 +212,40 @@ export function createAppsRouter(apps: Apps, appStore: AppStore) {
         .mutation(async ({ input }) => {
           await appStore.removeRepo(input.url);
           return { success: true };
+        }),
+    }),
+
+    templates: router({
+      list: privateProcedure.query(() => {
+        return templateRegistry.list();
+      }),
+
+      get: privateProcedure
+        .input(z.object({ templateId: z.string().min(1).max(64) }))
+        .query(({ input }) => {
+          const template = templateRegistry.get(input.templateId);
+          if (!template) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: `Template not found: ${input.templateId}`,
+            });
+          }
+          return template;
+        }),
+
+      categories: privateProcedure.query(() => {
+        return templateRegistry.getCategories();
+      }),
+
+      install: privateProcedure
+        .input(
+          z.object({
+            templateId: z.string().min(1).max(64),
+            setupValues: z.record(z.string()).optional(),
+          }),
+        )
+        .mutation(async ({ input }) => {
+          return apps.installTemplate(input);
         }),
     }),
   });

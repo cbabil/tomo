@@ -93,7 +93,18 @@
     "installed": "Instalada",
     "noResults": "No se encontraron aplicaciones",
     "previous": "Anterior",
-    "next": "Siguiente"
+    "next": "Siguiente",
+    "storeTab": "Tienda",
+    "templatesTab": "Plantillas"
+  },
+  "templates": {
+    "search": "Buscar plantillas...",
+    "allCategories": "Todas",
+    "install": "Instalar",
+    "installing": "Instalando...",
+    "noResults": "No se encontraron plantillas",
+    "setupTitle": "Configurar {{name}}",
+    "fieldRequired": "{{field}} es obligatorio"
   },
   "settings": {
     "title": "Configuración",

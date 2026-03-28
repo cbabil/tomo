@@ -130,7 +130,7 @@ const appsRouter = t.router({
       developer: string;
       status: "running" | "stopped" | "error" | "external";
       webPort?: number;
-      type?: "store" | "custom" | "external";
+      type?: "store" | "custom" | "template" | "external";
       externalUrl?: string;
     }> => [],
   ),
@@ -199,6 +199,69 @@ const appsRouter = t.router({
     remove: t.procedure
       .input(z.object({ url: z.string() }))
       .mutation((): { success: boolean } => ({ success: true })),
+  }),
+  templates: t.router({
+    list: t.procedure.query(
+      (): Array<{
+        id: string;
+        name: string;
+        description: string;
+        icon: string;
+        category: string;
+        image: string;
+        containerPort: number;
+        setupFields?: Array<{
+          key: string;
+          label: string;
+          type: "text" | "path" | "number" | "select" | "boolean";
+          default?: string;
+          required?: boolean;
+          placeholder?: string;
+          options?: Array<{ label: string; value: string }>;
+          description?: string;
+        }>;
+      }> => [],
+    ),
+    get: t.procedure
+      .input(z.object({ templateId: z.string() }))
+      .query(
+        (): {
+          id: string;
+          name: string;
+          description: string;
+          icon: string;
+          category: string;
+          image: string;
+          containerPort: number;
+          setupFields?: Array<{
+            key: string;
+            label: string;
+            type: "text" | "path" | "number" | "select" | "boolean";
+            default?: string;
+            required?: boolean;
+            placeholder?: string;
+            options?: Array<{ label: string; value: string }>;
+            description?: string;
+          }>;
+        } => ({
+          id: "",
+          name: "",
+          description: "",
+          icon: "",
+          category: "",
+          image: "",
+          containerPort: 0,
+        }),
+      ),
+    categories: t.procedure.query((): string[] => []),
+    install: t.procedure
+      .input(
+        z.object({
+          templateId: z.string(),
+          setupValues: z.record(z.string(), z.string()).optional(),
+        }),
+      )
+      .mutation((): void => {}),
   }),
 });
 

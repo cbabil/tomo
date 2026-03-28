@@ -93,7 +93,18 @@
     "installed": "Installée",
     "noResults": "Aucune application trouvée",
     "previous": "Précédent",
-    "next": "Suivant"
+    "next": "Suivant",
+    "storeTab": "Boutique",
+    "templatesTab": "Modeles"
+  },
+  "templates": {
+    "search": "Rechercher des modeles...",
+    "allCategories": "Tout",
+    "install": "Installer",
+    "installing": "Installation...",
+    "noResults": "Aucun modele trouve",
+    "setupTitle": "Configurer {{name}}",
+    "fieldRequired": "{{field}} est requis"
   },
   "settings": {
     "title": "Paramètres",

@@ -3,7 +3,7 @@ import type { Docker } from "./docker.js";
 
 const log = createLogger("app");
 
-export type AppType = "store" | "custom" | "external";
+export type AppType = "store" | "custom" | "template" | "external";
 
 export type AppStatus =
   | "unknown"

@@ -11,7 +11,29 @@ export interface App {
   port?: number;
 }
 
-export type AppType = "store" | "custom" | "external";
+export type AppType = "store" | "custom" | "template" | "external";
+
+export interface SetupField {
+  key: string;
+  label: string;
+  type: "text" | "path" | "number" | "select" | "boolean";
+  default?: string;
+  required?: boolean;
+  placeholder?: string;
+  options?: Array<{ label: string; value: string }>;
+  description?: string;
+}
+
+export interface AppTemplate {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  image: string;
+  containerPort: number;
+  setupFields?: SetupField[];
+}
 
 export interface InstalledApp extends App {
   status: "running" | "stopped" | "error" | "external";

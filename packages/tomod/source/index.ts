@@ -5,6 +5,7 @@ import { User } from "./user.js";
 import { Docker } from "./docker.js";
 import { Hardware } from "./hardware.js";
 import { AppStore } from "./app-store.js";
+import { TemplateRegistry } from "./templates.js";
 import { Apps } from "./apps.js";
 import { TraefikProxy } from "./traefik-proxy.js";
 import { Notifications } from "./notifications.js";
@@ -20,6 +21,7 @@ export class Tomod {
   private readonly docker: Docker;
   private readonly hardware: Hardware;
   private readonly appStore: AppStore;
+  private readonly templateRegistry: TemplateRegistry;
   private readonly proxy: TraefikProxy;
   private readonly apps: Apps;
   private readonly notifications: Notifications;
@@ -31,8 +33,9 @@ export class Tomod {
     this.docker = new Docker();
     this.hardware = new Hardware();
     this.appStore = new AppStore(this.store);
+    this.templateRegistry = new TemplateRegistry();
     this.proxy = new TraefikProxy(this.docker);
-    this.apps = new Apps(this.appStore, this.docker, this.store, this.proxy);
+    this.apps = new Apps(this.appStore, this.templateRegistry, this.docker, this.store, this.proxy);
     this.notifications = new Notifications();
   }
 
@@ -42,6 +45,7 @@ export class Tomod {
     await this.store.load();
     await this.user.init();
     await this.proxy.init();
+    await this.templateRegistry.init();
     await this.appStore.sync();
     await this.apps.init();
 
@@ -54,6 +58,7 @@ export class Tomod {
         user: this.user,
         apps: this.apps,
         appStore: this.appStore,
+        templateRegistry: this.templateRegistry,
         hardware: this.hardware,
         docker: this.docker,
       },

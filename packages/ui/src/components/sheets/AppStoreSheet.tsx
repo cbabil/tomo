@@ -6,6 +6,8 @@ import Typography from "@mui/material/Typography";
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
 import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from "@mui/icons-material/Add";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
@@ -14,17 +16,19 @@ import { useTranslation } from "react-i18next";
 import { trpc } from "../../lib/trpc";
 import { colors } from "../../app/theme";
 import { useStore } from "../../hooks/useStore";
+import { usePagination } from "../../hooks/usePagination";
+import { catalogStyles } from "./catalogStyles";
 import { AppCard } from "./AppCard";
+import { TemplateCatalog } from "./TemplateCatalog";
 
 const APPS_PER_PAGE = 8;
-const MAX_PAGE_BUTTONS = 5;
 const INSTALLED_CATEGORY = "__installed__";
 
 export function AppStoreSheet() {
   const { t } = useTranslation();
+  const [storeTab, setStoreTab] = useState(0);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
 
   const openCustomAppDialog = useStore((s) => s.openCustomAppDialog);
   const appsQuery = trpc.apps.list.useQuery();
@@ -52,21 +56,23 @@ export function AppStoreSheet() {
     });
   }, [appsQuery.data, search, category, installedIds]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredApps.length / APPS_PER_PAGE));
-  const safePage = Math.min(page, totalPages);
-  const pagedApps = useMemo(
-    () => filteredApps.slice((safePage - 1) * APPS_PER_PAGE, safePage * APPS_PER_PAGE),
-    [filteredApps, safePage],
-  );
+  const {
+    setPage,
+    safePage,
+    totalPages,
+    pagedItems: pagedApps,
+    pageNumbers,
+    handlePageReset,
+  } = usePagination(filteredApps, APPS_PER_PAGE);
 
   const handleSearch = (value: string) => {
     setSearch(value);
-    setPage(1);
+    handlePageReset();
   };
 
   const handleCategory = (cat: string | null) => {
     setCategory(cat);
-    setPage(1);
+    handlePageReset();
   };
 
   const handleInstall = async (appId: string) => {
@@ -78,18 +84,22 @@ export function AppStoreSheet() {
     }
   };
 
-  const pageNumbers = useMemo(() => {
-    const pages: number[] = [];
-    let start = Math.max(1, safePage - Math.floor(MAX_PAGE_BUTTONS / 2));
-    const end = Math.min(totalPages, start + MAX_PAGE_BUTTONS - 1);
-    start = Math.max(1, end - MAX_PAGE_BUTTONS + 1);
-    for (let i = start; i <= end; i++) pages.push(i);
-    return pages;
-  }, [safePage, totalPages]);
-
   return (
-    <Box sx={styles.root}>
-      <Box sx={styles.content}>
+    <Box sx={catalogStyles.root}>
+      <Tabs
+        value={storeTab}
+        onChange={(_, v) => setStoreTab(v)}
+        sx={styles.storeTabs}
+      >
+        <Tab label={t("appStore.storeTab")} />
+        <Tab label={t("appStore.templatesTab")} />
+      </Tabs>
+
+      {storeTab === 1 ? (
+        <TemplateCatalog />
+      ) : (
+      <>
+      <Box sx={catalogStyles.content}>
         <Box sx={styles.searchRow}>
           <TextField
             placeholder={t("appStore.search")}
@@ -106,7 +116,7 @@ export function AppStoreSheet() {
                 ),
               },
             }}
-            sx={styles.searchField}
+            sx={catalogStyles.searchField}
           />
           <Tooltip title={t("desktop.apps.addCustom")} arrow>
             <IconButton onClick={openCustomAppDialog} sx={styles.addButton}>
@@ -115,18 +125,18 @@ export function AppStoreSheet() {
           </Tooltip>
         </Box>
 
-        <Box sx={styles.categories}>
+        <Box sx={catalogStyles.categories}>
           <Chip
             label={t("appStore.allCategories")}
             onClick={() => handleCategory(null)}
             variant={category === null ? "filled" : "outlined"}
-            sx={category === null ? styles.chipActive : styles.chip}
+            sx={category === null ? catalogStyles.chipActive : catalogStyles.chip}
           />
           <Chip
             label={t("appStore.installed")}
             onClick={() => handleCategory(INSTALLED_CATEGORY)}
             variant={category === INSTALLED_CATEGORY ? "filled" : "outlined"}
-            sx={category === INSTALLED_CATEGORY ? styles.chipActive : styles.chip}
+            sx={category === INSTALLED_CATEGORY ? catalogStyles.chipActive : catalogStyles.chip}
           />
           {(categoriesQuery.data ?? []).map((cat) => (
             <Chip
@@ -134,13 +144,13 @@ export function AppStoreSheet() {
               label={cat}
               onClick={() => handleCategory(cat)}
               variant={category === cat ? "filled" : "outlined"}
-              sx={category === cat ? styles.chipActive : styles.chip}
+              sx={category === cat ? catalogStyles.chipActive : catalogStyles.chip}
             />
           ))}
         </Box>
 
         {pagedApps.length === 0 ? (
-          <Box sx={styles.noResults}>
+          <Box sx={catalogStyles.noResults}>
             <Typography sx={{ color: "text.secondary" }}>
               {t("appStore.noResults")}
             </Typography>
@@ -164,25 +174,25 @@ export function AppStoreSheet() {
       </Box>
 
       {totalPages > 1 && (
-        <Box sx={styles.footer}>
+        <Box sx={catalogStyles.footer}>
           <IconButton
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={safePage === 1}
-            sx={styles.navButton}
+            sx={catalogStyles.navButton}
           >
             <ChevronLeftIcon fontSize="small" />
-            <Typography variant="body2" sx={styles.navText}>
+            <Typography variant="body2" sx={catalogStyles.navText}>
               {t("appStore.previous")}
             </Typography>
           </IconButton>
 
-          <Box sx={styles.pageNumbers}>
+          <Box sx={catalogStyles.pageNumbers}>
             {pageNumbers.map((n) => (
               <Box
                 key={n}
                 component="button"
                 onClick={() => setPage(n)}
-                sx={n === safePage ? styles.pageActive : styles.pageButton}
+                sx={n === safePage ? catalogStyles.pageActive : catalogStyles.pageButton}
               >
                 {n}
               </Box>
@@ -192,52 +202,33 @@ export function AppStoreSheet() {
           <IconButton
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={safePage === totalPages}
-            sx={styles.navButton}
+            sx={catalogStyles.navButton}
           >
-            <Typography variant="body2" sx={styles.navText}>
+            <Typography variant="body2" sx={catalogStyles.navText}>
               {t("appStore.next")}
             </Typography>
             <ChevronRightIcon fontSize="small" />
           </IconButton>
         </Box>
       )}
+      </>
+      )}
     </Box>
   );
 }
 
-const chipBase = {
-  height: 32,
-  borderRadius: "9999px",
-  fontWeight: 500,
-  fontSize: "0.8125rem",
-} as const;
-
-const pageBase = {
-  width: 32,
-  height: 32,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "9999px",
-  border: "none",
-  cursor: "pointer",
-  fontSize: "0.875rem",
-  fontWeight: 500,
-  transition: "all 0.2s ease",
-} as const;
-
 const styles = {
-  root: {
-    display: "flex",
-    flexDirection: "column" as const,
-    height: "100%",
-  },
-  content: {
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: 3,
-    flex: 1,
-    minHeight: 0,
+  storeTabs: {
+    mb: 2,
+    "& .MuiTab-root": {
+      textTransform: "none" as const,
+      color: colors.textSecondary,
+      fontWeight: 500,
+      "&.Mui-selected": { color: colors.primary },
+    },
+    "& .MuiTabs-indicator": {
+      backgroundColor: colors.primary,
+    },
   },
   searchRow: {
     display: "flex",
@@ -255,92 +246,9 @@ const styles = {
       color: colors.primaryBoost,
     },
   },
-  searchField: {
-    "& .MuiOutlinedInput-root": {
-      borderRadius: "12px",
-      height: 48,
-      "&:hover fieldset": { borderColor: `${colors.primary}80` },
-      "&.Mui-focused fieldset": {
-        borderColor: `${colors.primary}80`,
-        borderWidth: 1,
-      },
-    },
-  },
-  categories: {
-    display: "flex",
-    gap: 1.5,
-    flexWrap: "wrap" as const,
-  },
-  chip: {
-    ...chipBase,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    border: "1px solid rgba(255,255,255,0.10)",
-    color: "text.secondary",
-    "&:hover": {
-      backgroundColor: "rgba(255,255,255,0.10)",
-      color: "text.primary",
-    },
-  },
-  chipActive: {
-    ...chipBase,
-    backgroundColor: colors.primary,
-    color: "#fff",
-    "&:hover": { backgroundColor: colors.primaryBoost },
-  },
   appGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
     gap: 2,
-  },
-  noResults: {
-    display: "flex",
-    justifyContent: "center",
-    py: 6,
-  },
-  footer: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    pt: 3,
-    mt: "auto",
-    borderTop: "1px solid rgba(255,255,255,0.08)",
-  },
-  navButton: {
-    display: "flex",
-    alignItems: "center",
-    gap: 0.5,
-    borderRadius: "8px",
-    color: "text.secondary",
-    "&:hover": {
-      backgroundColor: "transparent",
-      color: "text.primary",
-    },
-    "&.Mui-disabled": {
-      opacity: 0.3,
-    },
-  },
-  navText: {
-    fontSize: "0.875rem",
-    fontWeight: 500,
-  },
-  pageNumbers: {
-    display: "flex",
-    alignItems: "center",
-    gap: 1,
-  },
-  pageButton: {
-    ...pageBase,
-    backgroundColor: "transparent",
-    color: "text.secondary",
-    "&:hover": {
-      backgroundColor: "rgba(255,255,255,0.05)",
-      color: "text.primary",
-    },
-  },
-  pageActive: {
-    ...pageBase,
-    backgroundColor: colors.primary,
-    color: "#fff",
-    boxShadow: `0 4px 12px ${colors.primary}33`,
   },
 };

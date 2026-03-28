@@ -93,7 +93,18 @@
     "installed": "Installed",
     "noResults": "No apps found",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "storeTab": "Store",
+    "templatesTab": "Templates"
+  },
+  "templates": {
+    "search": "Search templates...",
+    "allCategories": "All",
+    "install": "Install",
+    "installing": "Installing...",
+    "noResults": "No templates found",
+    "setupTitle": "Setup {{name}}",
+    "fieldRequired": "{{field}} is required"
   },
   "settings": {
     "title": "Settings",

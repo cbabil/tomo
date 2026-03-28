@@ -93,7 +93,18 @@
     "installed": "Installiert",
     "noResults": "Keine Apps gefunden",
     "previous": "Zurück",
-    "next": "Weiter"
+    "next": "Weiter",
+    "storeTab": "Store",
+    "templatesTab": "Vorlagen"
+  },
+  "templates": {
+    "search": "Vorlagen suchen...",
+    "allCategories": "Alle",
+    "install": "Installieren",
+    "installing": "Wird installiert...",
+    "noResults": "Keine Vorlagen gefunden",
+    "setupTitle": "{{name}} einrichten",
+    "fieldRequired": "{{field}} ist erforderlich"
   },
   "settings": {
     "title": "Einstellungen",

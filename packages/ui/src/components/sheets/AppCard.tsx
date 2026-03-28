@@ -1,4 +1,3 @@
-import { useState, useCallback } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
@@ -6,38 +5,9 @@ import CircularProgress from "@mui/material/CircularProgress";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useTranslation } from "react-i18next";
 import { GlassCard } from "../ui/GlassCard";
+import { CardIcon } from "../ui/CardIcon";
 import { colors } from "../../app/theme";
 import type { App } from "../../types";
-
-interface AppCardIconProps {
-  src: string;
-  name: string;
-}
-
-function AppCardIcon({ src, name }: AppCardIconProps) {
-  const [failed, setFailed] = useState(false);
-  const handleError = useCallback(() => setFailed(true), []);
-
-  if (failed || !src) {
-    return (
-      <Box sx={styles.iconFallback}>
-        <Typography sx={styles.iconFallbackText}>
-          {name.charAt(0).toUpperCase()}
-        </Typography>
-      </Box>
-    );
-  }
-
-  return (
-    <Box
-      component="img"
-      src={src}
-      alt={name}
-      onError={handleError}
-      sx={styles.icon}
-    />
-  );
-}
 
 interface AppCardProps {
   app: App;
@@ -57,26 +27,26 @@ export function AppCard({
   const meta = [app.category, app.developer].filter(Boolean).join(" · ");
 
   return (
-    <GlassCard sx={styles.card}>
-      <AppCardIcon src={app.icon} name={app.name} />
-      <Box sx={styles.info}>
-        <Typography variant="body2" sx={styles.name} noWrap>
+    <GlassCard sx={appCardStyles.card}>
+      <CardIcon src={app.icon} name={app.name} />
+      <Box sx={appCardStyles.info}>
+        <Typography variant="body2" sx={appCardStyles.name} noWrap>
           {app.name}
         </Typography>
         {meta && (
-          <Typography variant="caption" sx={styles.caption} noWrap>
+          <Typography variant="caption" sx={appCardStyles.caption} noWrap>
             {meta}
           </Typography>
         )}
-        <Typography variant="caption" sx={styles.caption} noWrap>
+        <Typography variant="caption" sx={appCardStyles.caption} noWrap>
           {app.tagline}
         </Typography>
       </Box>
-      <Box sx={styles.action}>
+      <Box sx={appCardStyles.action}>
         {isInstalled ? (
-          <Box sx={styles.installedState}>
+          <Box sx={appCardStyles.installedState}>
             <CheckCircleIcon sx={{ color: colors.success, fontSize: 20 }} />
-            <Typography variant="caption" sx={styles.installedText}>
+            <Typography variant="caption" sx={appCardStyles.installedText}>
               {t("appStore.installed")}
             </Typography>
           </Box>
@@ -87,7 +57,7 @@ export function AppCard({
             color="primary"
             onClick={onInstall}
             disabled={isInstalling}
-            sx={styles.installButton}
+            sx={appCardStyles.installButton}
           >
             {isInstalling ? (
               <CircularProgress size={14} sx={{ color: "#fff" }} />
@@ -101,7 +71,7 @@ export function AppCard({
   );
 }
 
-const styles = {
+export const appCardStyles = {
   card: {
     display: "flex",
     alignItems: "center",
@@ -112,28 +82,6 @@ const styles = {
     "&:hover": {
       backgroundColor: "rgba(255,255,255,0.12)",
     },
-  },
-  icon: {
-    width: 56,
-    height: 56,
-    borderRadius: "12px",
-    objectFit: "cover" as const,
-    flexShrink: 0,
-  },
-  iconFallback: {
-    width: 56,
-    height: 56,
-    borderRadius: "12px",
-    flexShrink: 0,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: `${colors.primary}33`,
-  },
-  iconFallbackText: {
-    color: colors.primary,
-    fontWeight: 700,
-    fontSize: "1.25rem",
   },
   info: {
     flex: 1,

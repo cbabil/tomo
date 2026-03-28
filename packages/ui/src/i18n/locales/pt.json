@@ -93,7 +93,18 @@
     "installed": "Instalado",
     "noResults": "Nenhum app encontrado",
     "previous": "Anterior",
-    "next": "Próximo"
+    "next": "Próximo",
+    "storeTab": "Loja",
+    "templatesTab": "Modelos"
+  },
+  "templates": {
+    "search": "Pesquisar modelos...",
+    "allCategories": "Todos",
+    "install": "Instalar",
+    "installing": "Instalando...",
+    "noResults": "Nenhum modelo encontrado",
+    "setupTitle": "Configurar {{name}}",
+    "fieldRequired": "{{field}} obrigatorio"
   },
   "settings": {
     "title": "Configurações",
