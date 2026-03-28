@@ -6,6 +6,7 @@ import { WidgetBar } from "./WidgetBar";
 import { AppGrid } from "./AppGrid";
 import { Dock } from "./Dock";
 import { SpotlightSearch } from "./SpotlightSearch";
+import { UpdateBanner } from "./UpdateBanner";
 
 const APP_VERSION = __APP_VERSION__;
 
@@ -20,6 +21,7 @@ export function Desktop() {
       </Box>
       <Dock />
       <SpotlightSearch />
+      <UpdateBanner />
       <Typography sx={styles.version}>v{APP_VERSION}</Typography>
     </Box>
   );

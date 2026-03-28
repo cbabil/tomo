@@ -69,6 +69,11 @@
       "addCustom": "Add custom app",
       "edit": "Edit"
     },
+    "update": {
+      "available": "v{{version}} available",
+      "dismiss": "Dismiss",
+      "updateNow": "Update"
+    },
     "dock": {
       "home": "Home",
       "appStore": "App Store",

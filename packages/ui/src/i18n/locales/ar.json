@@ -69,6 +69,11 @@
       "addCustom": "إضافة تطبيق",
       "edit": "تعديل"
     },
+    "update": {
+      "available": "v{{version}} متاح",
+      "dismiss": "تجاهل",
+      "updateNow": "تحديث"
+    },
     "dock": {
       "home": "الرئيسية",
       "appStore": "متجر التطبيقات",
