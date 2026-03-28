@@ -69,6 +69,11 @@
       "addCustom": "앱 추가",
       "edit": "편집"
     },
+    "update": {
+      "available": "v{{version}} 사용 가능",
+      "dismiss": "닫기",
+      "updateNow": "업데이트"
+    },
     "dock": {
       "home": "홈",
       "appStore": "App Store",

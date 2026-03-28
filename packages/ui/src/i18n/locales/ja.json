@@ -69,6 +69,11 @@
       "addCustom": "アプリを追加",
       "edit": "編集"
     },
+    "update": {
+      "available": "v{{version}} が利用可能",
+      "dismiss": "閉じる",
+      "updateNow": "更新"
+    },
     "dock": {
       "home": "ホーム",
       "appStore": "App Store",

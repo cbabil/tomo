@@ -69,6 +69,11 @@
       "addCustom": "添加应用",
       "edit": "编辑"
     },
+    "update": {
+      "available": "v{{version}} 可用",
+      "dismiss": "关闭",
+      "updateNow": "更新"
+    },
     "dock": {
       "home": "主页",
       "appStore": "应用商店",
