@@ -93,7 +93,18 @@
     "installed": "インストール済み",
     "noResults": "アプリが見つかりません",
     "previous": "前へ",
-    "next": "次へ"
+    "next": "次へ",
+    "storeTab": "ストア",
+    "templatesTab": "テンプレート"
+  },
+  "templates": {
+    "search": "テンプレートを検索...",
+    "allCategories": "すべて",
+    "install": "インストール",
+    "installing": "インストール中...",
+    "noResults": "テンプレートが見つかりません",
+    "setupTitle": "{{name}}のセットアップ",
+    "fieldRequired": "{{field}}は必須です"
   },
   "settings": {
     "title": "設定",

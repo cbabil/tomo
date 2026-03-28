@@ -93,7 +93,18 @@
     "installed": "مثبّت",
     "noResults": "لم يتم العثور على تطبيقات",
     "previous": "السابق",
-    "next": "التالي"
+    "next": "التالي",
+    "storeTab": "المتجر",
+    "templatesTab": "القوالب"
+  },
+  "templates": {
+    "search": "البحث في القوالب...",
+    "allCategories": "الكل",
+    "install": "تثبيت",
+    "installing": "جاري التثبيت...",
+    "noResults": "لم يتم العثور على قوالب",
+    "setupTitle": "إعداد {{name}}",
+    "fieldRequired": "{{field}} مطلوب"
   },
   "settings": {
     "title": "الإعدادات",

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Sheet, ThemeMode } from "../types";
+import type { Sheet, ThemeMode, AppTemplate } from "../types";
 
 interface EditingExternalApp {
   id: string;
@@ -15,6 +15,7 @@ interface UIState {
   spotlightOpen: boolean;
   customAppDialogOpen: boolean;
   editingExternalApp: EditingExternalApp | null;
+  selectedTemplate: AppTemplate | null;
 }
 
 interface UIActions {
@@ -29,6 +30,8 @@ interface UIActions {
   closeCustomAppDialog: () => void;
   openEditExternalApp: (app: EditingExternalApp) => void;
   closeEditExternalApp: () => void;
+  openTemplateInstall: (template: AppTemplate) => void;
+  closeTemplateInstall: () => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -40,6 +43,7 @@ export const useStore = create<UIStore>((set, get) => ({
   spotlightOpen: false,
   customAppDialogOpen: false,
   editingExternalApp: null,
+  selectedTemplate: null,
 
   openSheet: (sheet) => set({ activeSheet: sheet }),
   closeSheet: () => set({ activeSheet: null }),
@@ -52,4 +56,6 @@ export const useStore = create<UIStore>((set, get) => ({
   closeCustomAppDialog: () => set({ customAppDialogOpen: false }),
   openEditExternalApp: (app) => set({ editingExternalApp: app }),
   closeEditExternalApp: () => set({ editingExternalApp: null }),
+  openTemplateInstall: (template) => set({ selectedTemplate: template }),
+  closeTemplateInstall: () => set({ selectedTemplate: null }),
 }));

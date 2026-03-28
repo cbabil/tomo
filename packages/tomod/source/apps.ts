@@ -1,73 +1,61 @@
-import {
-  readFile,
-  writeFile,
-  mkdir,
-  rm,
-  cp,
-  chown,
-  readdir,
-} from "node:fs/promises";
+import { readFile, writeFile, mkdir, rm, cp } from "node:fs/promises";
 import path from "node:path";
-import crypto from "node:crypto";
 import yaml from "js-yaml";
 import { createLogger } from "./logger.js";
-import {
-  TOMO_DATA_DIR,
-  DOCKER_NETWORK_NAME,
-  APP_PORT_MIN,
-  APP_PORT_MAX,
-} from "./config.js";
+import { TOMO_DATA_DIR } from "./config.js";
 import { App, type AppInstance, type AppStatus, type AppType, type ProxyTarget } from "./app.js";
+import { slugify } from "./utils.js";
+import { patchComposeFile, validateComposeFile, extractProxyTarget } from "./compose-utils.js";
+import { prepareVolumeDirectories, fixVolumePermissions } from "./volume-utils.js";
+import { PortAllocator } from "./port-allocator.js";
+import { addExternal, removeExternal, updateExternal, listExternal } from "./external-apps.js";
 import type { ExternalApp } from "./store.js";
 import type { AppStore } from "./app-store.js";
+import type { TemplateRegistry, AppTemplate } from "./templates.js";
 import type { Docker } from "./docker.js";
 import type { TraefikProxy } from "./traefik-proxy.js";
 import type { Store } from "./store.js";
 
 const log = createLogger("apps");
 
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9._-]/g, "")
-    .replace(/^[^a-z0-9]/, "a");
-}
+export { slugify };
 
 export class Apps {
   private readonly appStore: AppStore;
+  private readonly templateRegistry: TemplateRegistry;
   private readonly docker: Docker;
   private readonly store: Store;
   private readonly proxy: TraefikProxy;
   private readonly appsDir: string;
   private readonly instances: Map<string, App> = new Map();
   private readonly pendingPorts: Set<number> = new Set();
+  private readonly portAllocator: PortAllocator;
 
   constructor(
     appStore: AppStore,
+    templateRegistry: TemplateRegistry,
     docker: Docker,
     store: Store,
     proxy: TraefikProxy,
   ) {
     this.appStore = appStore;
+    this.templateRegistry = templateRegistry;
     this.docker = docker;
     this.store = store;
     this.proxy = proxy;
     this.appsDir = path.join(TOMO_DATA_DIR, "apps");
+    this.portAllocator = new PortAllocator(this.instances, this.pendingPorts);
   }
 
   async init(): Promise<void> {
     await mkdir(this.appsDir, { recursive: true });
 
     const config = this.store.get();
-    // Sequential to avoid port allocation race conditions
     for (const appId of config.apps.installed) {
       await this.loadInstalledApp(appId);
     }
     this.pendingPorts.clear();
 
-    // Regenerate proxy configs for all installed apps with proxy targets
     const appsWithProxy = [...this.instances.values()].filter(
       (app) => app.proxyTarget,
     );
@@ -92,41 +80,6 @@ export class Apps {
     return resolved;
   }
 
-  private async validateComposeFile(composePath: string): Promise<void> {
-    const content = await readFile(composePath, "utf-8");
-    const raw = content.toLowerCase();
-
-    const forbidden = [
-      "privileged",
-      "cap_add",
-      "network_mode: host",
-      "pid: host",
-      "ipc: host",
-      "userns_mode: host",
-      "security_opt",
-      "devices:",
-      "sysctls:",
-      "volumes_from:",
-      "/var/run/docker.sock",
-      "/etc/shadow",
-      "/etc/passwd",
-      "/root",
-    ];
-
-    for (const pattern of forbidden) {
-      if (raw.includes(pattern)) {
-        throw new Error(
-          `Compose file contains forbidden configuration: ${pattern}`,
-        );
-      }
-    }
-
-    // Check for build: as a YAML key (indented service property), not in comments
-    if (/^\s+build:/m.test(raw)) {
-      throw new Error("Compose file contains forbidden configuration: build context");
-    }
-  }
-
   private async loadInstalledApp(appId: string): Promise<void> {
     const appDir = this.safeAppDir(appId);
     const metaPath = path.join(appDir, "tomo-meta.json");
@@ -141,25 +94,21 @@ export class Apps {
 
     const meta = JSON.parse(raw) as AppMeta;
 
-    // Migrate: extract proxyTarget from app store source if missing
     const originalTarget = meta.proxyTarget;
     const migratedTarget =
       originalTarget ?? (await this.migrateProxyTarget(appId));
     const proxyTarget = migratedTarget
-      ? this.assignHostPort(migratedTarget)
+      ? this.portAllocator.assign(migratedTarget)
       : undefined;
 
     const needsMigration = !originalTarget && proxyTarget;
-    const needsHostPort = !needsMigration && proxyTarget && originalTarget && !originalTarget.hostPort;
+    const needsHostPort =
+      !needsMigration && proxyTarget && originalTarget && !originalTarget.hostPort;
     if (needsMigration || needsHostPort) {
-      if (needsMigration) {
-        log.info("Migrated proxyTarget for app", { appId, proxyTarget });
-      } else {
-        log.info("Assigned hostPort for app", {
-          appId,
-          hostPort: proxyTarget!.hostPort,
-        });
-      }
+      log.info(needsMigration ? "Migrated proxyTarget" : "Assigned hostPort", {
+        appId,
+        hostPort: proxyTarget!.hostPort,
+      });
       await writeFile(
         metaPath,
         JSON.stringify({ ...meta, proxyTarget }),
@@ -167,8 +116,7 @@ export class Apps {
       );
     }
 
-    // Fix volume directory permissions on every startup
-    await this.fixVolumePermissions(appDir);
+    await fixVolumePermissions(appDir);
 
     const app = new App(
       {
@@ -195,119 +143,33 @@ export class Apps {
     }
 
     const manifest = this.appStore.getApp(appId);
-    if (!manifest) {
-      throw new Error(`App not found in store: ${appId}`);
-    }
+    if (!manifest) throw new Error(`App not found in store: ${appId}`);
 
     const sourceDir = await this.appStore.getRepoDir(appId);
-    if (!sourceDir) {
-      throw new Error(`App source not found: ${appId}`);
-    }
+    if (!sourceDir) throw new Error(`App source not found: ${appId}`);
 
-    // Free disk space by removing unused Docker images (non-blocking)
     this.docker.pruneUnused().catch(() => {});
 
     const appDir = this.safeAppDir(appId);
     await mkdir(appDir, { recursive: true });
 
-    try {
+    return this.withInstallRollback(appId, appDir, async () => {
       await cp(sourceDir, appDir, { recursive: true });
       const { proxyTarget: rawTarget, composeContent } =
-        await this.patchComposeFile(appDir);
+        await patchComposeFile(appDir);
 
-      const proxyTarget = rawTarget
-        ? this.assignHostPort(rawTarget)
-        : undefined;
-
-      const app = new App(
-        {
-          id: appId,
-          name: manifest.name,
-          version: manifest.version,
-          port: manifest.port,
-          installedAt: new Date().toISOString(),
-          dataDir: appDir,
-          status: "installing",
-          proxyTarget,
-        },
-        this.docker,
-      );
-      this.instances.set(appId, app);
-      if (proxyTarget?.hostPort) {
-        this.pendingPorts.delete(proxyTarget.hostPort);
-      }
-
-      const composePath = path.join(appDir, "docker-compose.yml");
-      await this.validateComposeFile(composePath);
-      if (composeContent) {
-        await this.prepareVolumeDirectories(appDir, composeContent);
-      }
-      await this.writeAppMeta(app);
-      await app.start();
-      await this.updateInstalledList();
-
-      if (proxyTarget) {
-        await this.proxy.addApp(appId, proxyTarget);
-      }
-
-      log.info("App installed", { appId, proxyTarget });
-      return app.toJSON();
-    } catch (err) {
-      log.error("App install failed", { appId, error: String(err) });
-      const failedApp = this.instances.get(appId);
-      if (failedApp?.proxyTarget?.hostPort) {
-        this.pendingPorts.delete(failedApp.proxyTarget.hostPort);
-      }
-      this.instances.delete(appId);
-      await rm(appDir, { recursive: true, force: true });
-      throw new Error(`Failed to install ${appId}: ${String(err)}`);
-    }
-  }
-
-  async uninstall(appId: string): Promise<void> {
-    const app = this.getApp(appId);
-
-    try {
-      await app.stop();
-    } catch {
-      log.warn("Failed to stop app during uninstall", { appId });
-    }
-
-    await this.proxy.removeApp(appId);
-
-    const appDir = this.safeAppDir(appId);
-    await rm(appDir, { recursive: true, force: true });
-    this.instances.delete(appId);
-    await this.updateInstalledList();
-    log.info("App uninstalled", { appId });
-  }
-
-  async start(appId: string): Promise<void> {
-    const app = this.getApp(appId);
-    await app.start();
-  }
-
-  async stop(appId: string): Promise<void> {
-    const app = this.getApp(appId);
-    await app.stop();
-  }
-
-  async restart(appId: string): Promise<void> {
-    const app = this.getApp(appId);
-    await app.restart();
-  }
-
-  getStatus(appId: string): AppStatus {
-    const app = this.getApp(appId);
-    return app.getStatus();
-  }
-
-  listInstalled(): AppInstance[] {
-    return [...this.instances.values()].map((app) => app.toJSON());
-  }
-
-  listExternal(): ExternalApp[] {
-    return this.store.get().apps.external;
+      return this.finishInstall({
+        id: appId,
+        name: manifest.name,
+        version: manifest.version,
+        port: manifest.port,
+        appDir,
+        proxyTarget: rawTarget
+          ? this.portAllocator.assign(rawTarget)
+          : undefined,
+        patchedContent: composeContent,
+      });
+    });
   }
 
   async installCustom(input: {
@@ -319,186 +181,151 @@ export class Apps {
   }): Promise<AppInstance> {
     const id = slugify(input.name);
     if (!id) throw new Error("Invalid app name");
-    if (this.instances.has(id)) {
-      throw new Error(`App ID already in use: ${id}`);
-    }
+    if (this.instances.has(id)) throw new Error(`App ID already in use: ${id}`);
 
     const appDir = this.safeAppDir(id);
     await mkdir(appDir, { recursive: true });
 
-    try {
-      const composePath = path.join(appDir, "docker-compose.yml");
+    return this.withInstallRollback(id, appDir, async () => {
       let composeContent: string;
-
       if (input.composeYaml) {
         composeContent = input.composeYaml;
       } else if (input.image) {
-        composeContent = yaml.dump({
-          services: {
-            app: {
-              image: input.image,
-              restart: "unless-stopped",
-            },
-          },
-        }, { lineWidth: -1, noRefs: true });
+        composeContent = yaml.dump(
+          { services: { app: { image: input.image, restart: "unless-stopped" } } },
+          { lineWidth: -1, noRefs: true },
+        );
       } else {
         throw new Error("Provide image or compose YAML");
       }
 
-      await writeFile(composePath, composeContent, "utf-8");
+      await writeFile(path.join(appDir, "docker-compose.yml"), composeContent, "utf-8");
+      const { composeContent: patchedContent } = await patchComposeFile(appDir);
+      await validateComposeFile(path.join(appDir, "docker-compose.yml"));
 
-      // Patch compose (add network, .env)
-      const { composeContent: patchedContent } =
-        await this.patchComposeFile(appDir);
-      await this.validateComposeFile(composePath);
+      return this.finishInstall({
+        id,
+        name: input.name,
+        version: "custom",
+        appDir,
+        type: "custom",
+        proxyTarget: this.portAllocator.assign({ service: "app", port: input.containerPort }),
+        patchedContent,
+      });
+    });
+  }
 
-      const rawTarget: ProxyTarget = { service: "app", port: input.containerPort };
-      const proxyTarget = this.assignHostPort(rawTarget);
+  async installTemplate(input: {
+    templateId: string;
+    setupValues?: Record<string, string>;
+  }): Promise<AppInstance> {
+    const template = this.templateRegistry.get(input.templateId);
+    if (!template) throw new Error(`Template not found: ${input.templateId}`);
 
-      const app = new App(
-        {
-          id,
-          name: input.name,
-          version: "custom",
-          installedAt: new Date().toISOString(),
-          dataDir: appDir,
-          status: "installing",
-          proxyTarget,
-          type: "custom",
-        },
-        this.docker,
-      );
+    const setupValues = this.sanitizeSetupValues(template, input.setupValues);
+    const id = slugify(template.name);
+    if (!id) throw new Error("Invalid template name");
+    if (this.instances.has(id)) throw new Error(`App ID already in use: ${id}`);
 
-      this.instances.set(id, app);
-      if (proxyTarget.hostPort) {
-        this.pendingPorts.delete(proxyTarget.hostPort);
-      }
+    const appDir = this.safeAppDir(id);
+    await mkdir(appDir, { recursive: true });
 
-      if (patchedContent) {
-        await this.prepareVolumeDirectories(appDir, patchedContent);
-      }
-      await this.writeAppMeta(app);
-      await app.start();
-      await this.updateInstalledList();
+    return this.withInstallRollback(id, appDir, async () => {
+      const composeContent = this.buildTemplateCompose(template, setupValues);
+      await writeFile(path.join(appDir, "docker-compose.yml"), composeContent, "utf-8");
+      const { composeContent: patchedContent } = await patchComposeFile(appDir);
 
-      if (proxyTarget) {
-        await this.proxy.addApp(id, proxyTarget);
-      }
+      await this.appendEnvFile(path.join(appDir, ".env"), {
+        ...template.environment,
+        ...setupValues,
+      });
+      await validateComposeFile(path.join(appDir, "docker-compose.yml"));
 
-      log.info("Custom app installed", { id, image: input.image });
-      return app.toJSON();
-    } catch (err) {
-      log.error("Custom app install failed", { id, error: String(err) });
-      const failedApp = this.instances.get(id);
-      if (failedApp?.proxyTarget?.hostPort) {
-        this.pendingPorts.delete(failedApp.proxyTarget.hostPort);
-      }
-      this.instances.delete(id);
-      await rm(appDir, { recursive: true, force: true });
-      throw new Error(`Failed to install custom app ${id}: ${String(err)}`);
+      return this.finishInstall({
+        id,
+        name: template.name,
+        version: "latest",
+        appDir,
+        type: "template",
+        templateId: input.templateId,
+        proxyTarget: this.portAllocator.assign({ service: "app", port: template.containerPort }),
+        patchedContent,
+      });
+    });
+  }
+
+  async uninstall(appId: string): Promise<void> {
+    const app = this.getApp(appId);
+    try {
+      await app.stop();
+    } catch {
+      log.warn("Failed to stop app during uninstall", { appId });
     }
+    await this.proxy.removeApp(appId);
+    await rm(this.safeAppDir(appId), { recursive: true, force: true });
+    this.instances.delete(appId);
+    await this.updateInstalledList();
+    log.info("App uninstalled", { appId });
+  }
+
+  async start(appId: string): Promise<void> {
+    await this.getApp(appId).start();
+  }
+
+  async stop(appId: string): Promise<void> {
+    await this.getApp(appId).stop();
+  }
+
+  async restart(appId: string): Promise<void> {
+    await this.getApp(appId).restart();
+  }
+
+  getStatus(appId: string): AppStatus {
+    return this.getApp(appId).getStatus();
+  }
+
+  listInstalled(): AppInstance[] {
+    return [...this.instances.values()].map((app) => app.toJSON());
+  }
+
+  listExternal(): ExternalApp[] {
+    return listExternal(this.store);
   }
 
   async addExternal(input: { name: string; url: string; icon?: string }): Promise<ExternalApp> {
-    const id = slugify(input.name);
-    if (!id) throw new Error("Invalid app name");
-    // Enforce cross-type uniqueness: external IDs must not collide with Docker apps
-    if (this.instances.has(id)) {
-      throw new Error(`App ID already in use: ${id}`);
-    }
-
-    const config = this.store.get();
-    if (config.apps.external.some((e) => e.id === id)) {
-      throw new Error(`External app already exists: ${id}`);
-    }
-
-    const entry: ExternalApp = {
-      id,
-      name: input.name,
-      url: input.url,
-      icon: input.icon,
-      addedAt: new Date().toISOString(),
-    };
-
-    await this.store.update({
-      apps: {
-        ...config.apps,
-        external: [...config.apps.external, entry],
-      },
-    });
-
-    log.info("External app added", { id, url: input.url });
-    return entry;
+    return addExternal(this.store, this.instances, input);
   }
 
   async removeExternal(id: string): Promise<void> {
-    const config = this.store.get();
-    const filtered = config.apps.external.filter((e) => e.id !== id);
-    if (filtered.length === config.apps.external.length) {
-      throw new Error(`External app not found: ${id}`);
-    }
-
-    await this.store.update({
-      apps: { ...config.apps, external: filtered },
-    });
-    log.info("External app removed", { id });
+    return removeExternal(this.store, id);
   }
 
   async updateExternal(
     id: string,
     input: { name?: string; url?: string; icon?: string },
   ): Promise<ExternalApp> {
-    const config = this.store.get();
-    const index = config.apps.external.findIndex((e) => e.id === id);
-    if (index === -1) {
-      throw new Error(`External app not found: ${id}`);
-    }
-
-    const updated: ExternalApp = {
-      ...config.apps.external[index],
-      ...(input.name !== undefined && { name: input.name }),
-      ...(input.url !== undefined && { url: input.url }),
-      ...(input.icon !== undefined && { icon: input.icon }),
-    };
-
-    const external = [
-      ...config.apps.external.slice(0, index),
-      updated,
-      ...config.apps.external.slice(index + 1),
-    ];
-
-    await this.store.update({
-      apps: { ...config.apps, external },
-    });
-
-    log.info("External app updated", { id });
-    return updated;
+    return updateExternal(this.store, id, input);
   }
 
   async update(appId: string): Promise<void> {
     const app = this.getApp(appId);
     const manifest = this.appStore.getApp(appId);
-    if (!manifest) {
-      throw new Error(`App not found in store: ${appId}`);
-    }
+    if (!manifest) throw new Error(`App not found in store: ${appId}`);
 
     const sourceDir = await this.appStore.getRepoDir(appId);
-    if (!sourceDir) {
-      throw new Error(`App source not found: ${appId}`);
-    }
+    if (!sourceDir) throw new Error(`App source not found: ${appId}`);
 
     await app.stop();
-
     await cp(sourceDir, app.dataDir, { recursive: true });
-    const { proxyTarget } = await this.patchComposeFile(app.dataDir);
 
-    const composePath = path.join(app.dataDir, "docker-compose.yml");
-    await this.validateComposeFile(composePath);
+    const { proxyTarget } = await patchComposeFile(app.dataDir);
+    await validateComposeFile(path.join(app.dataDir, "docker-compose.yml"));
 
     const baseTarget = proxyTarget ?? app.proxyTarget;
     const effectiveProxyTarget = baseTarget
-      ? this.assignHostPort(baseTarget, app.proxyTarget)
+      ? this.portAllocator.assign(baseTarget, app.proxyTarget)
       : undefined;
+
     const updatedApp = new App(
       {
         id: appId,
@@ -517,77 +344,74 @@ export class Apps {
     }
     await this.writeAppMeta(updatedApp);
     await updatedApp.start();
-
-    if (effectiveProxyTarget) {
-      await this.proxy.addApp(appId, effectiveProxyTarget);
-    }
+    if (effectiveProxyTarget) await this.proxy.addApp(appId, effectiveProxyTarget);
 
     log.info("App updated", { appId });
   }
 
   private getApp(appId: string): App {
     const app = this.instances.get(appId);
-    if (!app) {
-      throw new Error(`App not installed: ${appId}`);
-    }
+    if (!app) throw new Error(`App not installed: ${appId}`);
     return app;
   }
 
-  private allocateHostPort(): number {
-    const usedPorts = new Set(
-      [...this.instances.values()]
-        .map((app) => app.proxyTarget?.hostPort)
-        .filter((p): p is number => p !== undefined),
+  private async finishInstall(params: {
+    id: string;
+    name: string;
+    version: string;
+    appDir: string;
+    port?: number;
+    type?: AppType;
+    templateId?: string;
+    proxyTarget?: ProxyTarget;
+    patchedContent?: string;
+  }): Promise<AppInstance> {
+    const { id, name, version, appDir, type, templateId, proxyTarget, patchedContent } = params;
+
+    const app = new App(
+      {
+        id,
+        name,
+        version,
+        port: params.port,
+        installedAt: new Date().toISOString(),
+        dataDir: appDir,
+        status: "installing",
+        proxyTarget,
+        type,
+      },
+      this.docker,
     );
-    let port = APP_PORT_MIN;
-    while (usedPorts.has(port) || this.pendingPorts.has(port)) {
-      port++;
-    }
-    if (port > APP_PORT_MAX) {
-      throw new Error(
-        `App port range exhausted (${APP_PORT_MIN}–${APP_PORT_MAX})`,
-      );
-    }
-    this.pendingPorts.add(port);
-    return port;
+
+    this.instances.set(id, app);
+    if (proxyTarget?.hostPort) this.pendingPorts.delete(proxyTarget.hostPort);
+    if (patchedContent) await prepareVolumeDirectories(appDir, patchedContent);
+    await this.writeAppMeta(app, templateId);
+    await app.start();
+    await this.updateInstalledList();
+    if (proxyTarget) await this.proxy.addApp(id, proxyTarget);
+
+    log.info("App installed", { id, type: type ?? "store" });
+    return app.toJSON();
   }
 
-  /** Return a ProxyTarget with hostPort allocated. Immutable — returns a new object if changed. */
-  private assignHostPort(
-    target: ProxyTarget,
-    existing?: ProxyTarget,
-  ): ProxyTarget {
-    if (target.hostPort) return target;
-    return {
-      ...target,
-      hostPort: existing?.hostPort ?? this.allocateHostPort(),
-    };
-  }
-
-  private extractProxyTarget(content: string): ProxyTarget | undefined {
-    // Scope to app_proxy block to avoid matching other services
-    const blockMatch = content.match(
-      /^ {2}app_proxy:\n((?:\x20{4}[^\n]*\n|\s*\n)*)/m,
-    );
-    if (!blockMatch) return undefined;
-    const block = blockMatch[1];
-
-    // Match both env-style (APP_HOST=val) and YAML-style (APP_HOST: val)
-    const hostMatch = block.match(/APP_HOST[=:]\s*([^\s\n]+)/);
-    const portMatch = block.match(/APP_PORT[=:]\s*(\d+)/);
-    if (!hostMatch || !portMatch) return undefined;
-
-    // APP_HOST is like "{appId}_{serviceName}_1" — extract the service name
-    const hostParts = hostMatch[1].split("_");
-    if (hostParts.length < 3) {
-      log.warn("APP_HOST format not recognised, skipping proxy", {
-        host: hostMatch[1],
-      });
-      return undefined;
+  private async withInstallRollback(
+    id: string,
+    appDir: string,
+    action: () => Promise<AppInstance>,
+  ): Promise<AppInstance> {
+    try {
+      return await action();
+    } catch (err) {
+      log.error("App install failed", { id, error: String(err) });
+      const failedApp = this.instances.get(id);
+      if (failedApp?.proxyTarget?.hostPort) {
+        this.pendingPorts.delete(failedApp.proxyTarget.hostPort);
+      }
+      this.instances.delete(id);
+      await rm(appDir, { recursive: true, force: true });
+      throw new Error(`Failed to install ${id}: ${String(err)}`);
     }
-
-    const service = hostParts.slice(1, -1).join("_");
-    return { service, port: parseInt(portMatch[1], 10) };
   }
 
   private async migrateProxyTarget(
@@ -595,176 +419,104 @@ export class Apps {
   ): Promise<ProxyTarget | undefined> {
     const sourceDir = await this.appStore.getRepoDir(appId);
     if (!sourceDir) return undefined;
-
     try {
       const content = await readFile(
         path.join(sourceDir, "docker-compose.yml"),
         "utf-8",
       );
-      return this.extractProxyTarget(content);
+      return extractProxyTarget(content);
     } catch {
       return undefined;
     }
   }
 
-  private async patchComposeFile(
-    appDir: string,
-  ): Promise<{ proxyTarget?: ProxyTarget; composeContent?: string }> {
-    const composePath = path.join(appDir, "docker-compose.yml");
-
-    let content: string;
-    try {
-      content = await readFile(composePath, "utf-8");
-    } catch {
-      return {};
-    }
-
-    // Extract proxy target BEFORE removing app_proxy
-    const proxyTarget = this.extractProxyTarget(content);
-
-    // Write APP_PASSWORD to a .env file instead of embedding in compose
-    const password = crypto.randomBytes(16).toString("hex");
-    const envPath = path.join(appDir, ".env");
-    await writeFile(
-      envPath,
-      `APP_DATA_DIR=${appDir}\nAPP_PASSWORD=${password}\n`,
-      { mode: 0o600 },
+  private sanitizeSetupValues(
+    template: AppTemplate,
+    raw?: Record<string, string>,
+  ): Record<string, string> {
+    if (!raw || !template.setupFields) return {};
+    const allowed = new Set(template.setupFields.map((f) => f.key));
+    const fieldTypes = new Map(
+      template.setupFields.map((f) => [f.key, f.type]),
     );
-
-    if (!content.includes("APP_DATA_DIR")) {
-      content = content.replace(
-        /environment:/,
-        `environment:\n      - APP_DATA_DIR=\${APP_DATA_DIR}\n      - APP_PASSWORD=\${APP_PASSWORD}`,
-      );
-    }
-
-    // Remove Umbrel's app_proxy service (Tomo doesn't use it)
-    content = content.replace(
-      /^ {2}app_proxy:\n(?:\x20{4}[^\n]*\n|\s*\n)*/m,
-      "",
-    );
-
-    if (!content.includes(DOCKER_NETWORK_NAME)) {
-      // Parse, inject network into each service, and re-serialize
-      const doc = yaml.load(content);
-      if (doc && typeof doc === "object") {
-        const root = doc as Record<string, unknown>;
-        const rawServices = root.services;
-        if (rawServices && typeof rawServices === "object" && !Array.isArray(rawServices)) {
-          const services = rawServices as Record<string, Record<string, unknown>>;
-          for (const svc of Object.values(services)) {
-            const existing = svc.networks;
-            if (Array.isArray(existing)) {
-              if (!existing.includes(DOCKER_NETWORK_NAME)) {
-                svc.networks = [...existing, DOCKER_NETWORK_NAME];
-              }
-            } else if (existing && typeof existing === "object") {
-              // Map form: { net: { aliases: [...] } }
-              const map = existing as Record<string, unknown>;
-              if (!(DOCKER_NETWORK_NAME in map)) {
-                svc.networks = { ...map, [DOCKER_NETWORK_NAME]: {} };
-              }
-            } else {
-              svc.networks = [DOCKER_NETWORK_NAME];
-            }
-          }
+    const result: Record<string, string> = {};
+    for (const [key, value] of Object.entries(raw)) {
+      if (!allowed.has(key)) continue;
+      const clean = value.replace(/[\r\n]/g, "");
+      if (fieldTypes.get(key) === "path") {
+        const resolved = path.resolve(clean);
+        if (resolved !== clean || clean.includes("..")) {
+          throw new Error(
+            `Invalid path for ${key}: must be absolute without '..'`,
+          );
         }
-        const existingNetworks = (root.networks ?? {}) as Record<string, unknown>;
-        root.networks = {
-          ...existingNetworks,
-          [DOCKER_NETWORK_NAME]: { external: true },
-        };
-        content = yaml.dump(root, { lineWidth: -1, noRefs: true });
       }
+      result[key] = clean;
     }
-
-    await writeFile(composePath, content, "utf-8");
-    return { proxyTarget, composeContent: content };
+    return result;
   }
 
-  /**
-   * Create volume-mounted directories with correct ownership.
-   *
-   * Many container images run as a non-root user (e.g. uid 1000).  Docker
-   * auto-creates host directories as root when they don't exist, which causes
-   * EACCES errors inside the container.  This method parses the compose content
-   * for volumes that reference `${APP_DATA_DIR}` and creates the host-side
-   * directories owned by the container user.
-   *
-   * Detects uid/gid from (in priority order):
-   * 1. `user: "uid:gid"` directive in compose
-   * 2. `PUID`/`PGID` environment variables
-   * 3. Defaults to 1000:1000
-   */
-  private async prepareVolumeDirectories(
-    appDir: string,
-    content: string,
+  private async appendEnvFile(
+    envPath: string,
+    vars: Record<string, string>,
   ): Promise<void> {
-    const { uid, gid } = this.extractContainerUser(content);
-
-    // Match volume source paths like ${APP_DATA_DIR}/data or $APP_DATA_DIR/data
-    const matches = content.matchAll(/\$\{?APP_DATA_DIR\}?\/([^\s:]+)/g);
-    const subdirs = new Set(Array.from(matches, (m) => m[1]));
-
-    await Promise.all(
-      Array.from(subdirs).map(async (subdir) => {
-        const fullPath = path.join(appDir, subdir);
-        await mkdir(fullPath, { recursive: true });
-        await this.chownRecursive(fullPath, uid, gid);
-      }),
-    );
-  }
-
-  private extractContainerUser(content: string): { uid: number; gid: number } {
-    // Check user: "uid:gid" directive first
-    const userMatch = /^\s+user:\s*["']?(\d+):(\d+)["']?/m.exec(content);
-    if (userMatch) {
-      return { uid: parseInt(userMatch[1], 10), gid: parseInt(userMatch[2], 10) };
-    }
-
-    // Fall back to PUID/PGID env vars
-    const uid = this.extractEnvInt(content, "PUID") ?? 1000;
-    const gid = this.extractEnvInt(content, "PGID") ?? 1000;
-    return { uid, gid };
-  }
-
-  private extractEnvInt(content: string, name: string): number | undefined {
-    // Match both YAML-style (NAME: value) and env-style (NAME=value)
-    const re = new RegExp(`${name}[=:]\\s*(?:['"]?)(\\d+)(?:['"]?)`, "m");
-    const m = re.exec(content);
-    return m ? parseInt(m[1], 10) : undefined;
-  }
-
-  private async chownRecursive(
-    dirPath: string,
-    uid: number,
-    gid: number,
-  ): Promise<void> {
-    await chown(dirPath, uid, gid);
-    const entries = await readdir(dirPath, { withFileTypes: true });
-    await Promise.all(
-      entries.map(async (entry) => {
-        const fullPath = path.join(dirPath, entry.name);
-        if (entry.isDirectory()) {
-          await this.chownRecursive(fullPath, uid, gid);
-        } else {
-          await chown(fullPath, uid, gid);
-        }
-      }),
-    );
-  }
-
-  private async fixVolumePermissions(appDir: string): Promise<void> {
-    const composePath = path.join(appDir, "docker-compose.yml");
+    const entries = Object.entries(vars);
+    if (entries.length === 0) return;
+    const lines = entries.map(([k, v]) => `${k}=${v}`).join("\n") + "\n";
     try {
-      const content = await readFile(composePath, "utf-8");
-      await this.prepareVolumeDirectories(appDir, content);
+      const existing = await readFile(envPath, "utf-8");
+      await writeFile(envPath, existing + lines, { mode: 0o600 });
     } catch {
-      // Compose file may not exist yet
+      await writeFile(envPath, lines, { mode: 0o600 });
     }
   }
 
-  private async writeAppMeta(app: App): Promise<void> {
+  private substituteVars(
+    content: string,
+    vars: Record<string, string>,
+  ): string {
+    let result = content;
+    for (const [key, value] of Object.entries(vars)) {
+      result = result.replaceAll(`\${${key}}`, value);
+    }
+    return result;
+  }
+
+  private buildTemplateCompose(
+    template: AppTemplate,
+    setupValues?: Record<string, string>,
+  ): string {
+    const vars = setupValues ?? {};
+
+    if (template.composeYaml) {
+      return this.substituteVars(template.composeYaml, vars);
+    }
+
+    const envList = Object.entries(template.environment ?? {}).map(
+      ([k, v]) => `${k}=${v}`,
+    );
+    for (const [k, v] of Object.entries(vars)) {
+      envList.push(`${k}=${v}`);
+    }
+
+    const volumes = (template.volumes ?? []).map((v) =>
+      `${this.substituteVars(v.host, vars)}:${v.container}`,
+    );
+
+    const service: Record<string, unknown> = {
+      image: template.image,
+      restart: "unless-stopped",
+    };
+    if (envList.length > 0) service.environment = envList;
+    if (volumes.length > 0) service.volumes = volumes;
+
+    return yaml.dump(
+      { services: { app: service } },
+      { lineWidth: -1, noRefs: true },
+    );
+  }
+
+  private async writeAppMeta(app: App, templateId?: string): Promise<void> {
     const metaPath = path.join(app.dataDir, "tomo-meta.json");
     const meta: AppMeta = {
       name: app.name,
@@ -773,6 +525,7 @@ export class Apps {
       installedAt: app.installedAt,
       proxyTarget: app.proxyTarget,
       type: app.type,
+      ...(templateId && { templateId }),
     };
     await writeFile(metaPath, JSON.stringify(meta), "utf-8");
   }
@@ -795,4 +548,5 @@ interface AppMeta {
   installedAt: string;
   proxyTarget?: ProxyTarget;
   type?: AppType;
+  templateId?: string;
 }

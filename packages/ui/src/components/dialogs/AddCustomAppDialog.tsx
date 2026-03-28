@@ -133,94 +133,96 @@ export function AddCustomAppDialog() {
           </Alert>
         )}
 
-        <Box sx={{ ...styles.form, display: tab === 0 ? "flex" : "none" }}>
-          <TextField
-            label={t("customApp.name")}
-            value={docker.name}
-            onChange={(e) => updateDocker("name", e.target.value)}
-            fullWidth
-            required
-            size="small"
-          />
-          <TextField
-            label={t("customApp.image")}
-            value={docker.image}
-            onChange={(e) => updateDocker("image", e.target.value)}
-            fullWidth
-            size="small"
-            placeholder="nginx:latest"
-            disabled={Boolean(docker.composeYaml.trim())}
-          />
-          <TextField
-            label={t("customApp.port")}
-            value={docker.port}
-            onChange={(e) => updateDocker("port", e.target.value)}
-            fullWidth
-            required
-            size="small"
-            type="number"
-            slotProps={{ htmlInput: { min: 1, max: 65535 } }}
-          />
-          <TextField
-            label={t("customApp.icon")}
-            value={docker.icon}
-            onChange={(e) => updateDocker("icon", e.target.value)}
-            fullWidth
-            size="small"
-            placeholder="https://example.com/icon.png"
-          />
-          <Accordion
-            sx={styles.accordion}
-            disableGutters
-            elevation={0}
-          >
-            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: colors.textSecondary }} />}>
-              <Typography variant="body2" sx={{ color: colors.textSecondary }}>
-                {t("customApp.advanced")}
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <TextField
-                label={t("customApp.composeYaml")}
-                value={docker.composeYaml}
-                onChange={(e) => updateDocker("composeYaml", e.target.value)}
-                fullWidth
-                multiline
-                rows={6}
-                size="small"
-                placeholder={"services:\n  app:\n    image: nginx:latest"}
-                sx={{ fontFamily: "monospace" }}
-              />
-            </AccordionDetails>
-          </Accordion>
-        </Box>
+        <Box sx={styles.tabContainer}>
+          <Box sx={{ ...styles.form, ...(tab !== 0 && styles.hiddenTab) }} aria-hidden={tab !== 0}>
+            <TextField
+              label={t("customApp.name")}
+              value={docker.name}
+              onChange={(e) => updateDocker("name", e.target.value)}
+              fullWidth
+              required
+              size="small"
+            />
+            <TextField
+              label={t("customApp.image")}
+              value={docker.image}
+              onChange={(e) => updateDocker("image", e.target.value)}
+              fullWidth
+              size="small"
+              placeholder="nginx:latest"
+              disabled={Boolean(docker.composeYaml.trim())}
+            />
+            <TextField
+              label={t("customApp.port")}
+              value={docker.port}
+              onChange={(e) => updateDocker("port", e.target.value)}
+              fullWidth
+              required
+              size="small"
+              type="number"
+              slotProps={{ htmlInput: { min: 1, max: 65535 } }}
+            />
+            <TextField
+              label={t("customApp.icon")}
+              value={docker.icon}
+              onChange={(e) => updateDocker("icon", e.target.value)}
+              fullWidth
+              size="small"
+              placeholder="https://example.com/icon.png"
+            />
+            <Accordion
+              sx={styles.accordion}
+              disableGutters
+              elevation={0}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: colors.textSecondary }} />}>
+                <Typography variant="body2" sx={{ color: colors.textSecondary }}>
+                  {t("customApp.advanced")}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <TextField
+                  label={t("customApp.composeYaml")}
+                  value={docker.composeYaml}
+                  onChange={(e) => updateDocker("composeYaml", e.target.value)}
+                  fullWidth
+                  multiline
+                  rows={6}
+                  size="small"
+                  placeholder={"services:\n  app:\n    image: nginx:latest"}
+                  sx={{ fontFamily: "monospace" }}
+                />
+              </AccordionDetails>
+            </Accordion>
+          </Box>
 
-        <Box sx={{ ...styles.form, display: tab === 1 ? "flex" : "none" }}>
-          <TextField
-            label={t("customApp.name")}
-            value={ext.name}
-            onChange={(e) => updateExt("name", e.target.value)}
-            fullWidth
-            required
-            size="small"
-          />
-          <TextField
-            label={t("customApp.url")}
-            value={ext.url}
-            onChange={(e) => updateExt("url", e.target.value)}
-            fullWidth
-            required
-            size="small"
-            placeholder="http://192.168.1.50:8080"
-          />
-          <TextField
-            label={t("customApp.icon")}
-            value={ext.icon}
-            onChange={(e) => updateExt("icon", e.target.value)}
-            fullWidth
-            size="small"
-            placeholder="https://example.com/icon.png"
-          />
+          <Box sx={{ ...styles.form, ...(tab !== 1 && styles.hiddenTab) }} aria-hidden={tab !== 1}>
+            <TextField
+              label={t("customApp.name")}
+              value={ext.name}
+              onChange={(e) => updateExt("name", e.target.value)}
+              fullWidth
+              required
+              size="small"
+            />
+            <TextField
+              label={t("customApp.url")}
+              value={ext.url}
+              onChange={(e) => updateExt("url", e.target.value)}
+              fullWidth
+              required
+              size="small"
+              placeholder="http://192.168.1.50:8080"
+            />
+            <TextField
+              label={t("customApp.icon")}
+              value={ext.icon}
+              onChange={(e) => updateExt("icon", e.target.value)}
+              fullWidth
+              size="small"
+              placeholder="https://example.com/icon.png"
+            />
+          </Box>
         </Box>
       </DialogContent>
 
@@ -256,6 +258,16 @@ const styles = {
     "& .MuiTabs-indicator": {
       backgroundColor: colors.primary,
     },
+  },
+  tabContainer: {
+    position: "relative" as const,
+  },
+  hiddenTab: {
+    visibility: "hidden" as const,
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    right: 0,
   },
   accordion: {
     backgroundColor: "transparent",

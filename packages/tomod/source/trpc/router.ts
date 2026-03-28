@@ -5,6 +5,7 @@ import { createSystemRouter } from "./system.js";
 import type { User } from "../user.js";
 import type { Apps } from "../apps.js";
 import type { AppStore } from "../app-store.js";
+import type { TemplateRegistry } from "../templates.js";
 import type { Hardware } from "../hardware.js";
 import type { Docker } from "../docker.js";
 
@@ -12,6 +13,7 @@ export interface RouterDependencies {
   user: User;
   apps: Apps;
   appStore: AppStore;
+  templateRegistry: TemplateRegistry;
   hardware: Hardware;
   docker: Docker;
 }
@@ -19,7 +21,7 @@ export interface RouterDependencies {
 export function createAppRouter(deps: RouterDependencies) {
   return router({
     user: createUserRouter(deps.user),
-    apps: createAppsRouter(deps.apps, deps.appStore),
+    apps: createAppsRouter(deps.apps, deps.appStore, deps.templateRegistry),
     system: createSystemRouter(deps.hardware, deps.docker),
   });
 }

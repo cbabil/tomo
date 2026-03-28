@@ -12,6 +12,7 @@ import { SettingsSheet } from "../../components/sheets/SettingsSheet";
 import { SystemSheet } from "../../components/sheets/SystemSheet";
 import { AddCustomAppDialog } from "../../components/dialogs/AddCustomAppDialog";
 import { EditExternalAppDialog } from "../../components/dialogs/EditExternalAppDialog";
+import { TemplateInstallDialog } from "../../components/dialogs/TemplateInstallDialog";
 
 export function DesktopPage() {
   const navigate = useNavigate();
@@ -60,6 +61,7 @@ export function DesktopPage() {
       </AnimatePresence>
       <AddCustomAppDialog />
       <EditExternalAppDialog />
+      <TemplateInstallDialog />
     </>
   );
 }
