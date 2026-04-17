@@ -178,6 +178,7 @@ export class Apps {
     composeYaml?: string;
     containerPort: number;
     icon?: string;
+    allowPrivileged?: boolean;
   }): Promise<AppInstance> {
     const id = slugify(input.name);
     if (!id) throw new Error("Invalid app name");
@@ -201,7 +202,9 @@ export class Apps {
 
       await writeFile(path.join(appDir, "docker-compose.yml"), composeContent, "utf-8");
       const { composeContent: patchedContent } = await patchComposeFile(appDir);
-      await validateComposeFile(path.join(appDir, "docker-compose.yml"));
+      await validateComposeFile(path.join(appDir, "docker-compose.yml"), {
+        allowPrivileged: input.allowPrivileged,
+      });
 
       return this.finishInstall({
         id,

@@ -186,6 +186,8 @@
     "port": "Container Port",
     "composeYaml": "Compose YAML",
     "advanced": "Advanced",
+    "allowPrivileged": "Allow privileged config (unsafe)",
+    "allowPrivilegedHelp": "Disables security checks and lets this app use host networking, cap_add, privileged mode, and device access. A malicious image can compromise the host. Only enable for apps you fully trust.",
     "url": "URL",
     "icon": "Icon URL (optional)",
     "add": "Add",
