@@ -1,11 +1,7 @@
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Switch from "@mui/material/Switch";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import { colors } from "../../app/theme";
 import type { SetupField } from "../../types";
+import { SwitchWithHelp } from "./SwitchWithHelp";
 
 interface SetupFieldInputProps {
   field: SetupField;
@@ -16,24 +12,11 @@ interface SetupFieldInputProps {
 export function SetupFieldInput({ field, value, onChange }: SetupFieldInputProps) {
   if (field.type === "boolean") {
     return (
-      <FormControlLabel
-        control={
-          <Switch
-            checked={value === "true"}
-            onChange={(e) => onChange(e.target.checked ? "true" : "false")}
-            sx={switchSx}
-          />
-        }
-        label={
-          <Box>
-            <Typography variant="body2">{field.label}</Typography>
-            {field.description && (
-              <Typography variant="caption" sx={{ color: colors.textSecondary }}>
-                {field.description}
-              </Typography>
-            )}
-          </Box>
-        }
+      <SwitchWithHelp
+        checked={value === "true"}
+        onChange={(checked) => onChange(checked ? "true" : "false")}
+        label={field.label}
+        description={field.description}
       />
     );
   }
@@ -73,12 +56,3 @@ export function SetupFieldInput({ field, value, onChange }: SetupFieldInputProps
     />
   );
 }
-
-const switchSx = {
-  "& .MuiSwitch-switchBase.Mui-checked": {
-    color: colors.primary,
-  },
-  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-    backgroundColor: colors.primary,
-  },
-} as const;

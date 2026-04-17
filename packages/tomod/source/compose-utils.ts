@@ -27,7 +27,13 @@ const FORBIDDEN_PATTERNS = [
 
 export async function validateComposeFile(
   composePath: string,
+  options: { allowPrivileged?: boolean } = {},
 ): Promise<void> {
+  if (options.allowPrivileged) {
+    log.warn("Compose validation bypassed (allowPrivileged)", { composePath });
+    return;
+  }
+
   const content = await readFile(composePath, "utf-8");
   const raw = content.toLowerCase();
 

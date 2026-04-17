@@ -159,6 +159,7 @@ const appsRouter = t.router({
           composeYaml: z.string().optional(),
           containerPort: z.number(),
           icon: z.string().optional(),
+          allowPrivileged: z.boolean().optional(),
         }),
       )
       .mutation((): void => {}),

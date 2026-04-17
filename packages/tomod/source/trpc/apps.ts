@@ -139,6 +139,7 @@ export function createAppsRouter(
               composeYaml: z.string().max(MAX_COMPOSE_YAML_LENGTH).optional(),
               containerPort: z.number().int().min(1).max(65535),
               icon: httpUrlSchema.optional(),
+              allowPrivileged: z.boolean().optional(),
             })
             .refine(
               (d) => d.image || d.composeYaml,

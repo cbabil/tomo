@@ -21,6 +21,7 @@ import { trpc } from "../../lib/trpc";
 import { useStore } from "../../hooks/useStore";
 import { colors } from "../../app/theme";
 import { dialogStyles } from "./styles";
+import { SwitchWithHelp } from "./SwitchWithHelp";
 
 export function AddCustomAppDialog() {
   const { t } = useTranslation();
@@ -35,6 +36,7 @@ export function AddCustomAppDialog() {
   const defaultExt = { name: "", url: "", icon: "" };
   const [docker, setDocker] = useState(defaultDocker);
   const [ext, setExt] = useState(defaultExt);
+  const [allowPrivileged, setAllowPrivileged] = useState(false);
 
   const installDocker = trpc.apps.custom.installDocker.useMutation();
   const addExternal = trpc.apps.custom.addExternal.useMutation();
@@ -47,6 +49,7 @@ export function AddCustomAppDialog() {
   const resetForm = () => {
     setDocker(defaultDocker);
     setExt(defaultExt);
+    setAllowPrivileged(false);
     setError("");
     setTab(0);
   };
@@ -76,6 +79,7 @@ export function AddCustomAppDialog() {
         composeYaml: docker.composeYaml.trim() || undefined,
         containerPort: port,
         icon: docker.icon.trim() || undefined,
+        allowPrivileged,
       });
       await utils.apps.installed.invalidate();
       handleClose();
@@ -133,7 +137,7 @@ export function AddCustomAppDialog() {
           </Alert>
         )}
 
-        <Box sx={styles.tabContainer}>
+        <Box>
           <Box sx={{ ...styles.form, ...(tab !== 0 && styles.hiddenTab) }} aria-hidden={tab !== 0}>
             <TextField
               label={t("customApp.name")}
@@ -180,7 +184,7 @@ export function AddCustomAppDialog() {
                   {t("customApp.advanced")}
                 </Typography>
               </AccordionSummary>
-              <AccordionDetails>
+              <AccordionDetails sx={styles.accordionDetails}>
                 <TextField
                   label={t("customApp.composeYaml")}
                   value={docker.composeYaml}
@@ -191,6 +195,12 @@ export function AddCustomAppDialog() {
                   size="small"
                   placeholder={"services:\n  app:\n    image: nginx:latest"}
                   sx={{ fontFamily: "monospace" }}
+                />
+                <SwitchWithHelp
+                  checked={allowPrivileged}
+                  onChange={setAllowPrivileged}
+                  label={t("customApp.allowPrivileged")}
+                  description={t("customApp.allowPrivilegedHelp")}
                 />
               </AccordionDetails>
             </Accordion>
@@ -259,20 +269,18 @@ const styles = {
       backgroundColor: colors.primary,
     },
   },
-  tabContainer: {
-    position: "relative" as const,
-  },
   hiddenTab: {
-    visibility: "hidden" as const,
-    position: "absolute" as const,
-    top: 0,
-    left: 0,
-    right: 0,
+    display: "none" as const,
   },
   accordion: {
     backgroundColor: "transparent",
     border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: "8px !important",
     "&::before": { display: "none" },
+  },
+  accordionDetails: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 2,
   },
 };
