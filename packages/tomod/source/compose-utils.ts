@@ -52,6 +52,20 @@ export async function validateComposeFile(
   }
 }
 
+export function hasHostNetwork(content: string): boolean {
+  try {
+    const doc = yaml.load(content);
+    if (!doc || typeof doc !== "object") return false;
+    const services = (doc as Record<string, unknown>).services;
+    if (!services || typeof services !== "object") return false;
+    return Object.values(
+      services as Record<string, Record<string, unknown>>,
+    ).some((svc) => svc?.network_mode === "host");
+  } catch {
+    return false;
+  }
+}
+
 export function extractProxyTarget(
   content: string,
 ): ProxyTarget | undefined {

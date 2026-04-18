@@ -5,7 +5,7 @@ import { createLogger } from "./logger.js";
 import { TOMO_DATA_DIR } from "./config.js";
 import { App, type AppInstance, type AppStatus, type AppType, type ProxyTarget } from "./app.js";
 import { slugify } from "./utils.js";
-import { patchComposeFile, validateComposeFile, extractProxyTarget } from "./compose-utils.js";
+import { patchComposeFile, validateComposeFile, extractProxyTarget, hasHostNetwork } from "./compose-utils.js";
 import { prepareVolumeDirectories, fixVolumePermissions } from "./volume-utils.js";
 import { PortAllocator } from "./port-allocator.js";
 import { addExternal, removeExternal, updateExternal, listExternal } from "./external-apps.js";
@@ -206,13 +206,21 @@ export class Apps {
         allowPrivileged: input.allowPrivileged,
       });
 
+      const hostNetwork = patchedContent
+        ? hasHostNetwork(patchedContent)
+        : false;
+
       return this.finishInstall({
         id,
         name: input.name,
         version: "custom",
         appDir,
         type: "custom",
-        proxyTarget: this.portAllocator.assign({ service: "app", port: input.containerPort }),
+        proxyTarget: this.portAllocator.assign({
+          service: "app",
+          port: input.containerPort,
+          hostNetwork,
+        }),
         patchedContent,
       });
     });

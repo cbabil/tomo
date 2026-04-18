@@ -42,19 +42,21 @@ export function AppStoreSheet() {
   );
 
   const filteredApps = useMemo(() => {
-    const apps = appsQuery.data ?? [];
-    return apps.filter((app) => {
+    const source =
+      category === INSTALLED_CATEGORY
+        ? (installedQuery.data ?? [])
+        : (appsQuery.data ?? []);
+    const q = search.toLowerCase();
+    return source.filter((app) => {
       const matchesSearch =
-        !search ||
-        app.name.toLowerCase().includes(search.toLowerCase()) ||
-        app.tagline.toLowerCase().includes(search.toLowerCase());
-      if (category === INSTALLED_CATEGORY) {
-        return matchesSearch && installedIds.has(app.id);
-      }
+        !q ||
+        app.name.toLowerCase().includes(q) ||
+        app.tagline.toLowerCase().includes(q);
+      if (category === INSTALLED_CATEGORY) return matchesSearch;
       const matchesCategory = !category || app.category === category;
       return matchesSearch && matchesCategory;
     });
-  }, [appsQuery.data, search, category, installedIds]);
+  }, [appsQuery.data, installedQuery.data, search, category]);
 
   const {
     setPage,
