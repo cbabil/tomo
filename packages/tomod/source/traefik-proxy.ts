@@ -19,6 +19,8 @@ const TRAEFIK_IMAGE = `traefik:${TRAEFIK_VERSION}`;
 const PROXY_DIR = path.join(TOMO_DATA_DIR, "traefik");
 const STATIC_CONF_PATH = path.join(PROXY_DIR, "traefik.yml");
 const DYNAMIC_DIR = path.join(PROXY_DIR, "dynamic");
+const HOST_GATEWAY = "host.docker.internal";
+const TOMOD_URL = `http://${HOST_GATEWAY}:${PORT}`;
 
 function generateStaticConfig(): string {
   const appEntryPoints = Array.from(
@@ -54,22 +56,24 @@ function generateTomodConfig(): string {
     tomod:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:${PORT}"
+          - url: "${TOMOD_URL}"
 
   middlewares:
     forward-auth:
       forwardAuth:
-        address: "http://host.docker.internal:${PORT}/auth/verify"
+        address: "${TOMOD_URL}/auth/verify"
         authResponseHeaders: []
 `;
 }
 
 function generateAppConfig(appId: string, target: ProxyTarget): string {
-  const containerName = `tomo-${appId}-${target.service}-1`;
   if (!target.hostPort) {
     throw new Error(`Missing hostPort for app ${appId}`);
   }
   const { hostPort } = target;
+  const upstreamHost = target.hostNetwork
+    ? HOST_GATEWAY
+    : `tomo-${appId}-${target.service}-1`;
   return `http:
   routers:
     app-${appId}:
@@ -84,12 +88,12 @@ function generateAppConfig(appId: string, target: ProxyTarget): string {
     app-${appId}:
       loadBalancer:
         servers:
-          - url: "http://${containerName}:${target.port}"
+          - url: "http://${upstreamHost}:${target.port}"
 
   middlewares:
     forward-auth:
       forwardAuth:
-        address: "http://host.docker.internal:${PORT}/auth/verify"
+        address: "${TOMOD_URL}/auth/verify"
         authResponseHeaders: []
 `;
 }
@@ -193,7 +197,7 @@ export class TraefikProxy {
           `${DYNAMIC_DIR}:/etc/traefik/dynamic:ro`,
         ],
         RestartPolicy: { Name: "unless-stopped" },
-        ExtraHosts: ["host.docker.internal:host-gateway"],
+        ExtraHosts: [`${HOST_GATEWAY}:host-gateway`],
       },
       NetworkingConfig: {
         EndpointsConfig: {

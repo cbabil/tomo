@@ -19,6 +19,7 @@ export interface ProxyTarget {
   service: string;
   port: number;
   hostPort?: number;
+  hostNetwork?: boolean;
 }
 
 export interface AppInstance {
