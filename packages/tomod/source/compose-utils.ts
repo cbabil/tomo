@@ -126,6 +126,8 @@ export async function patchComposeFile(
           Record<string, unknown>
         >;
         for (const svc of Object.values(services)) {
+          // docker-compose rejects services that combine network_mode with networks
+          if (svc.network_mode) continue;
           const existing = svc.networks;
           if (Array.isArray(existing)) {
             if (!existing.includes(DOCKER_NETWORK_NAME)) {
