@@ -1,14 +1,19 @@
 import { useState, type FormEvent } from "react";
 import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
+import LogoutIcon from "@mui/icons-material/Logout";
 import { useTranslation } from "react-i18next";
 import { trpc } from "../../../lib/trpc";
+import { useAuth } from "../../../hooks/useAuth";
 
 export function AccountSection() {
   const { t } = useTranslation();
+  const { logout } = useAuth();
+  const [loggingOut, setLoggingOut] = useState(false);
   const changePasswordMutation = trpc.user.changePassword.useMutation();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -37,6 +42,15 @@ export function AccountSection() {
       setConfirmPassword("");
     } catch (err) {
       setError((err as Error).message);
+    }
+  };
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+    } catch {
+      setLoggingOut(false);
     }
   };
 
@@ -92,6 +106,23 @@ export function AccountSection() {
           )}
         </Button>
       </Box>
+
+      <Divider sx={styles.divider} />
+
+      <Button
+        variant="outlined"
+        color="error"
+        startIcon={<LogoutIcon />}
+        onClick={handleLogout}
+        disabled={loggingOut}
+        sx={styles.logoutButton}
+      >
+        {loggingOut ? (
+          <CircularProgress size={18} sx={{ color: "error.main" }} />
+        ) : (
+          t("settings.account.logout")
+        )}
+      </Button>
     </Box>
   );
 }
@@ -103,6 +134,13 @@ const styles = {
     gap: 2,
   },
   saveButton: {
+    alignSelf: "flex-start",
+  },
+  divider: {
+    my: 3,
+    borderColor: "divider",
+  },
+  logoutButton: {
     alignSelf: "flex-start",
   },
 };

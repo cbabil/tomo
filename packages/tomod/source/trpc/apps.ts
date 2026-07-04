@@ -125,6 +125,18 @@ export function createAppsRouter(
         return { success: true };
       }),
 
+    logs: privateProcedure
+      .input(
+        z.object({
+          appId: appIdSchema,
+          tail: z.number().int().min(1).max(1000).default(200),
+        }),
+      )
+      .query(async ({ input }) => {
+        const logs = await apps.getLogs(input.appId, input.tail);
+        return { logs };
+      }),
+
     categories: privateProcedure.query(() => {
       return appStore.getCategories();
     }),

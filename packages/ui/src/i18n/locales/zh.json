@@ -67,7 +67,13 @@
       "remove": "删除",
       "open": "打开",
       "addCustom": "添加应用",
-      "edit": "编辑"
+      "edit": "编辑",
+      "logs": "查看日志"
+    },
+    "logs": {
+      "title": "{{name}} — 日志",
+      "refresh": "刷新",
+      "empty": "暂无日志"
     },
     "update": {
       "available": "v{{version}} 可用",
@@ -121,7 +127,8 @@
       "newPassword": "新密码",
       "confirmPassword": "确认新密码",
       "save": "保存",
-      "passwordChanged": "密码已成功修改"
+      "passwordChanged": "密码已成功修改",
+      "logout": "退出登录"
     },
     "appearance": {
       "title": "外观",

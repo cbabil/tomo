@@ -295,6 +295,10 @@ export class Apps {
     return this.getApp(appId).getStatus();
   }
 
+  async getLogs(appId: string, tail: number = 200): Promise<string> {
+    return this.getApp(appId).getLogs(tail);
+  }
+
   listInstalled(): AppInstance[] {
     return [...this.instances.values()].map((app) => app.toJSON());
   }

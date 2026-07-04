@@ -67,7 +67,13 @@
       "remove": "إزالة",
       "open": "فتح",
       "addCustom": "إضافة تطبيق",
-      "edit": "تعديل"
+      "edit": "تعديل",
+      "logs": "عرض السجلات"
+    },
+    "logs": {
+      "title": "{{name}} — السجلات",
+      "refresh": "تحديث",
+      "empty": "لا توجد سجلات متاحة"
     },
     "update": {
       "available": "v{{version}} متاح",
@@ -121,7 +127,8 @@
       "newPassword": "كلمة المرور الجديدة",
       "confirmPassword": "تأكيد كلمة المرور الجديدة",
       "save": "حفظ",
-      "passwordChanged": "تم تغيير كلمة المرور بنجاح"
+      "passwordChanged": "تم تغيير كلمة المرور بنجاح",
+      "logout": "تسجيل الخروج"
     },
     "appearance": {
       "title": "المظهر",

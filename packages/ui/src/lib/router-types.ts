@@ -149,6 +149,9 @@ const appsRouter = t.router({
   restart: t.procedure
     .input(z.object({ appId: z.string() }))
     .mutation((): void => {}),
+  logs: t.procedure
+    .input(z.object({ appId: z.string(), tail: z.number().default(200) }))
+    .query((): { logs: string } => ({ logs: "" })),
   categories: t.procedure.query((): string[] => []),
   custom: t.router({
     installDocker: t.procedure
