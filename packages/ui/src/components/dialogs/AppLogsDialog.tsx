@@ -73,7 +73,10 @@ export function AppLogsDialog() {
 const styles = {
   paper: {
     ...dialogStyles.paper,
-    width: "min(820px, calc(100vw - 64px))",
+    width: "min(1280px, calc(100vw - 48px))",
+    maxWidth: "min(1280px, calc(100vw - 48px))",
+    height: "calc(100vh - 48px)",
+    maxHeight: "calc(100vh - 48px)",
   },
   titleText: {
     fontSize: "1rem",
@@ -87,8 +90,13 @@ const styles = {
   },
   content: {
     pt: 1,
+    pb: 2,
+    display: "flex",
+    flexDirection: "column" as const,
+    minHeight: 0,
   },
   logs: {
+    flex: 1,
     m: 0,
     p: 2,
     borderRadius: 2,
@@ -96,14 +104,15 @@ const styles = {
     color: "rgba(255,255,255,0.85)",
     fontFamily:
       "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-    fontSize: "0.75rem",
+    fontSize: "0.8rem",
     lineHeight: 1.5,
     whiteSpace: "pre-wrap" as const,
     wordBreak: "break-all" as const,
-    maxHeight: "60vh",
+    minHeight: 0,
     overflowY: "auto" as const,
   },
   centered: {
+    flex: 1,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
