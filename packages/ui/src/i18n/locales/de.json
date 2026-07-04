@@ -76,9 +76,7 @@
       "empty": "Keine Logs verfügbar"
     },
     "update": {
-      "available": "v{{version}} verfügbar",
-      "dismiss": "Schließen",
-      "updateNow": "Aktualisieren"
+      "available": "v{{version}} verfügbar"
     },
     "dock": {
       "home": "Startseite",

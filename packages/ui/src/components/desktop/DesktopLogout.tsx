@@ -31,10 +31,6 @@ export function DesktopLogout() {
 
 const styles = {
   root: {
-    position: "fixed" as const,
-    top: 12,
-    right: 16,
-    zIndex: 11,
     textTransform: "none" as const,
     fontWeight: 600,
     color: "rgba(255,255,255,0.7)",

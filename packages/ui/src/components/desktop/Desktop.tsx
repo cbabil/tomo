@@ -15,7 +15,10 @@ export function Desktop() {
   return (
     <Box sx={styles.root}>
       <Wallpaper />
-      <DesktopLogout />
+      <Box sx={styles.topRight}>
+        <UpdateBanner />
+        <DesktopLogout />
+      </Box>
       <Box sx={styles.content}>
         <Greeting />
         <WidgetBar />
@@ -23,7 +26,6 @@ export function Desktop() {
       </Box>
       <Dock />
       <SpotlightSearch />
-      <UpdateBanner />
       <Typography sx={styles.version}>v{APP_VERSION}</Typography>
     </Box>
   );
@@ -37,6 +39,15 @@ const styles = {
     overflow: "hidden",
     display: "flex",
     flexDirection: "column" as const,
+  },
+  topRight: {
+    position: "fixed" as const,
+    top: 12,
+    right: 16,
+    zIndex: 11,
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
   },
   content: {
     position: "relative" as const,

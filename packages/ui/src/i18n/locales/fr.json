@@ -76,9 +76,7 @@
       "empty": "Aucun journal disponible"
     },
     "update": {
-      "available": "v{{version}} disponible",
-      "dismiss": "Ignorer",
-      "updateNow": "Mettre à jour"
+      "available": "v{{version}} disponible"
     },
     "dock": {
       "home": "Accueil",
