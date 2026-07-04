@@ -60,7 +60,10 @@ export function createAppsRouter(
           tagline: manifest?.tagline ?? "",
           category: manifest?.category ?? "",
           developer: manifest?.developer ?? "",
-          webPort: app.proxyTarget?.hostPort,
+          // Proxied apps expose a Traefik host port; host-networked apps
+          // (no app_proxy block) bind directly to the host on the port
+          // declared in their manifest.
+          webPort: app.proxyTarget?.hostPort ?? manifest?.port,
         };
       });
 
