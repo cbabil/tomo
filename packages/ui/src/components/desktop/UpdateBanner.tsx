@@ -11,7 +11,7 @@ const POLL_INTERVAL = 60_000;
 
 export function UpdateBanner() {
   const { t } = useTranslation();
-  const openSheet = useStore((s) => s.openSheet);
+  const openSettings = useStore((s) => s.openSettings);
 
   const versionQuery = trpc.system.version.useQuery(undefined, {
     refetchInterval: POLL_INTERVAL,
@@ -34,7 +34,7 @@ export function UpdateBanner() {
         >
           <Tooltip title={label} placement="bottom">
             <IconButton
-              onClick={() => openSheet("settings")}
+              onClick={() => openSettings("update")}
               aria-label={label}
               sx={styles.button}
             >

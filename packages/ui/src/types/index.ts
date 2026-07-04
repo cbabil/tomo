@@ -61,4 +61,14 @@ export interface UserInfo {
 
 export type Sheet = "appStore" | "settings" | "system" | null;
 
+export const SETTINGS_TABS = [
+  "account",
+  "appearance",
+  "language",
+  "appStore",
+  "update",
+] as const;
+
+export type SettingsTab = (typeof SETTINGS_TABS)[number];
+
 export type ThemeMode = "dark" | "light";
