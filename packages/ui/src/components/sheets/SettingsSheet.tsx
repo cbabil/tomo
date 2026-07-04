@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Box from "@mui/material/Box";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
@@ -8,14 +7,13 @@ import TranslateIcon from "@mui/icons-material/Translate";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import SystemUpdateAltIcon from "@mui/icons-material/SystemUpdateAlt";
 import { useTranslation } from "react-i18next";
+import { useStore } from "../../hooks/useStore";
+import { SETTINGS_TABS, type SettingsTab } from "../../types";
 import { AccountSection } from "./settings/AccountSection";
 import { AppearanceSection } from "./settings/AppearanceSection";
 import { LanguageSection } from "./settings/LanguageSection";
 import { AppStoreSection } from "./settings/AppStoreSection";
 import { UpdateSection } from "./settings/UpdateSection";
-
-const TABS = ["account", "appearance", "language", "appStore", "update"] as const;
-type SettingsTab = (typeof TABS)[number];
 
 const TAB_ICONS: Record<SettingsTab, React.ReactElement> = {
   account: <PersonIcon sx={{ fontSize: 20 }} />,
@@ -35,7 +33,8 @@ const TAB_CONTENT: Record<SettingsTab, React.FC> = {
 
 export function SettingsSheet() {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<SettingsTab>("account");
+  const tab = useStore((s) => s.settingsTab);
+  const setTab = useStore((s) => s.setSettingsTab);
 
   const Content = TAB_CONTENT[tab];
 
@@ -43,11 +42,11 @@ export function SettingsSheet() {
     <Box sx={styles.root}>
       <Tabs
         value={tab}
-        onChange={(_, v) => setTab(v)}
+        onChange={(_, v: SettingsTab) => setTab(v)}
         variant="fullWidth"
         sx={styles.tabs}
       >
-        {TABS.map((key) => (
+        {SETTINGS_TABS.map((key) => (
           <Tab
             key={key}
             value={key}

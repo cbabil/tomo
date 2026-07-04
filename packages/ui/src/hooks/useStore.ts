@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Sheet, ThemeMode, AppTemplate } from "../types";
+import type { Sheet, SettingsTab, ThemeMode, AppTemplate } from "../types";
 
 interface EditingExternalApp {
   id: string;
@@ -15,6 +15,7 @@ interface LogsApp {
 
 interface UIState {
   activeSheet: Sheet;
+  settingsTab: SettingsTab;
   themeMode: ThemeMode;
   wallpaper: string;
   spotlightOpen: boolean;
@@ -27,6 +28,8 @@ interface UIState {
 interface UIActions {
   openSheet: (sheet: Sheet) => void;
   closeSheet: () => void;
+  openSettings: (tab?: SettingsTab) => void;
+  setSettingsTab: (tab: SettingsTab) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setWallpaper: (url: string) => void;
   openSpotlight: () => void;
@@ -46,6 +49,7 @@ type UIStore = UIState & UIActions;
 
 export const useStore = create<UIStore>((set, get) => ({
   activeSheet: null,
+  settingsTab: "account",
   themeMode: "dark",
   wallpaper: "default",
   spotlightOpen: false,
@@ -56,6 +60,9 @@ export const useStore = create<UIStore>((set, get) => ({
 
   openSheet: (sheet) => set({ activeSheet: sheet }),
   closeSheet: () => set({ activeSheet: null }),
+  openSettings: (tab = "account") =>
+    set({ activeSheet: "settings", settingsTab: tab }),
+  setSettingsTab: (tab) => set({ settingsTab: tab }),
   setThemeMode: (mode) => set({ themeMode: mode }),
   setWallpaper: (url) => set({ wallpaper: url }),
   openSpotlight: () => set({ spotlightOpen: true }),
