@@ -15,8 +15,8 @@ interface AppIconProps {
 
 export const STATUS_COLORS: Record<InstalledApp["status"], string> = {
   running: colors.success,
-  stopped: "#94a3b8",
-  error: colors.error,
+  stopped: colors.error,
+  error: colors.warning,
   external: colors.info,
 };
 
@@ -32,8 +32,8 @@ export function AppIcon({ name, icon, status, onClick, onContextMenu }: AppIconP
           sx={{
             ...styles.iconWrapper,
             ...(status && {
-              boxShadow: `0 0 0 2px ${STATUS_COLORS[status]}, 0 0 8px ${STATUS_COLORS[status]}40`,
               borderRadius: 3,
+              boxShadow: `0 0 0 3px ${STATUS_COLORS[status]}, 0 0 12px 3px ${STATUS_COLORS[status]}99`,
             }),
           }}
         >

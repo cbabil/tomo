@@ -10,6 +10,7 @@ import StopIcon from "@mui/icons-material/Stop";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import { useTranslation } from "react-i18next";
 import { trpc } from "../../lib/trpc";
 import { openInstalledApp } from "../../lib/urls";
@@ -21,6 +22,7 @@ export function AppGrid() {
   const { t } = useTranslation();
   const openSheet = useStore((s) => s.openSheet);
   const openEditExternalApp = useStore((s) => s.openEditExternalApp);
+  const openLogs = useStore((s) => s.openLogs);
   const installedQuery = trpc.apps.installed.useQuery();
   const stopMutation = trpc.apps.stop.useMutation();
   const restartMutation = trpc.apps.restart.useMutation();
@@ -42,10 +44,17 @@ export function AppGrid() {
     setContextMenu({ anchor: event.currentTarget, app });
   };
 
-  const handleAction = async (action: "stop" | "restart" | "remove" | "edit") => {
+  const handleAction = async (
+    action: "stop" | "restart" | "remove" | "edit" | "logs",
+  ) => {
     if (!contextMenu) return;
     const { app } = contextMenu;
     setContextMenu(null);
+
+    if (action === "logs") {
+      openLogs({ id: app.id, name: app.name });
+      return;
+    }
 
     if (action === "edit" && app.type === "external") {
       openEditExternalApp({
@@ -148,6 +157,12 @@ export function AppGrid() {
                 <RestartAltIcon fontSize="small" sx={{ color: "text.secondary" }} />
               </ListItemIcon>
               <ListItemText>{t("desktop.apps.restart")}</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => handleAction("logs")}>
+              <ListItemIcon>
+                <DescriptionOutlinedIcon fontSize="small" sx={{ color: "text.secondary" }} />
+              </ListItemIcon>
+              <ListItemText>{t("desktop.apps.logs")}</ListItemText>
             </MenuItem>
             <MenuItem onClick={() => handleAction("remove")}>
               <ListItemIcon>

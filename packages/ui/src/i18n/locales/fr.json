@@ -67,7 +67,13 @@
       "remove": "Supprimer",
       "open": "Ouvrir",
       "addCustom": "Ajouter une app",
-      "edit": "Modifier"
+      "edit": "Modifier",
+      "logs": "Voir les journaux"
+    },
+    "logs": {
+      "title": "{{name}} — Journaux",
+      "refresh": "Actualiser",
+      "empty": "Aucun journal disponible"
     },
     "update": {
       "available": "v{{version}} disponible",
@@ -121,7 +127,8 @@
       "newPassword": "Nouveau mot de passe",
       "confirmPassword": "Confirmer le nouveau mot de passe",
       "save": "Enregistrer",
-      "passwordChanged": "Mot de passe modifié avec succès"
+      "passwordChanged": "Mot de passe modifié avec succès",
+      "logout": "Se déconnecter"
     },
     "appearance": {
       "title": "Apparence",

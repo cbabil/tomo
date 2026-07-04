@@ -67,7 +67,13 @@
       "remove": "Rimuovi",
       "open": "Apri",
       "addCustom": "Aggiungi app",
-      "edit": "Modifica"
+      "edit": "Modifica",
+      "logs": "Visualizza log"
+    },
+    "logs": {
+      "title": "{{name}} — Log",
+      "refresh": "Aggiorna",
+      "empty": "Nessun log disponibile"
     },
     "update": {
       "available": "v{{version}} disponibile",
@@ -121,7 +127,8 @@
       "newPassword": "Nuova password",
       "confirmPassword": "Conferma nuova password",
       "save": "Salva",
-      "passwordChanged": "Password cambiata con successo"
+      "passwordChanged": "Password cambiata con successo",
+      "logout": "Esci"
     },
     "appearance": {
       "title": "Aspetto",

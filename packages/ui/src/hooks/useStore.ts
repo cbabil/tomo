@@ -8,6 +8,11 @@ interface EditingExternalApp {
   icon?: string;
 }
 
+interface LogsApp {
+  id: string;
+  name: string;
+}
+
 interface UIState {
   activeSheet: Sheet;
   themeMode: ThemeMode;
@@ -16,6 +21,7 @@ interface UIState {
   customAppDialogOpen: boolean;
   editingExternalApp: EditingExternalApp | null;
   selectedTemplate: AppTemplate | null;
+  logsApp: LogsApp | null;
 }
 
 interface UIActions {
@@ -32,6 +38,8 @@ interface UIActions {
   closeEditExternalApp: () => void;
   openTemplateInstall: (template: AppTemplate) => void;
   closeTemplateInstall: () => void;
+  openLogs: (app: LogsApp) => void;
+  closeLogs: () => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -44,6 +52,7 @@ export const useStore = create<UIStore>((set, get) => ({
   customAppDialogOpen: false,
   editingExternalApp: null,
   selectedTemplate: null,
+  logsApp: null,
 
   openSheet: (sheet) => set({ activeSheet: sheet }),
   closeSheet: () => set({ activeSheet: null }),
@@ -58,4 +67,6 @@ export const useStore = create<UIStore>((set, get) => ({
   closeEditExternalApp: () => set({ editingExternalApp: null }),
   openTemplateInstall: (template) => set({ selectedTemplate: template }),
   closeTemplateInstall: () => set({ selectedTemplate: null }),
+  openLogs: (app) => set({ logsApp: app }),
+  closeLogs: () => set({ logsApp: null }),
 }));

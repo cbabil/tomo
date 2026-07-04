@@ -13,6 +13,7 @@ import { SystemSheet } from "../../components/sheets/SystemSheet";
 import { AddCustomAppDialog } from "../../components/dialogs/AddCustomAppDialog";
 import { EditExternalAppDialog } from "../../components/dialogs/EditExternalAppDialog";
 import { TemplateInstallDialog } from "../../components/dialogs/TemplateInstallDialog";
+import { AppLogsDialog } from "../../components/dialogs/AppLogsDialog";
 
 export function DesktopPage() {
   const navigate = useNavigate();
@@ -62,6 +63,7 @@ export function DesktopPage() {
       <AddCustomAppDialog />
       <EditExternalAppDialog />
       <TemplateInstallDialog />
+      <AppLogsDialog />
     </>
   );
 }
