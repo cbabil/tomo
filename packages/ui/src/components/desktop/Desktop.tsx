@@ -7,6 +7,7 @@ import { AppGrid } from "./AppGrid";
 import { Dock } from "./Dock";
 import { SpotlightSearch } from "./SpotlightSearch";
 import { UpdateBanner } from "./UpdateBanner";
+import { DesktopLogout } from "./DesktopLogout";
 
 const APP_VERSION = __APP_VERSION__;
 
@@ -14,6 +15,7 @@ export function Desktop() {
   return (
     <Box sx={styles.root}>
       <Wallpaper />
+      <DesktopLogout />
       <Box sx={styles.content}>
         <Greeting />
         <WidgetBar />

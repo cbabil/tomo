@@ -163,8 +163,7 @@
       "restartWarning": "O Tomo será reiniciado automaticamente após a atualização.",
       "checkFailed": "Não foi possível verificar atualizações",
       "status": "Status"
-    },
-    "logout": "Sair"
+    }
   },
   "system": {
     "title": "Sistema",

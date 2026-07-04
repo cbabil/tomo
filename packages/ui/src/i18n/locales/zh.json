@@ -163,8 +163,7 @@
       "restartWarning": "更新后 Tomo 将自动重启。",
       "checkFailed": "无法检查更新",
       "status": "状态"
-    },
-    "logout": "退出登录"
+    }
   },
   "system": {
     "title": "系统",

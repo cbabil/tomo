@@ -163,8 +163,7 @@
       "restartWarning": "Tomo wird nach dem Update automatisch neu gestartet.",
       "checkFailed": "Updates konnten nicht geprüft werden",
       "status": "Status"
-    },
-    "logout": "Abmelden"
+    }
   },
   "system": {
     "title": "System",

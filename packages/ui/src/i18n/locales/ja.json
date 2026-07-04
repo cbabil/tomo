@@ -163,8 +163,7 @@
       "restartWarning": "アップデート後、Tomoは自動的に再起動します。",
       "checkFailed": "アップデートを確認できません",
       "status": "ステータス"
-    },
-    "logout": "ログアウト"
+    }
   },
   "system": {
     "title": "システム",

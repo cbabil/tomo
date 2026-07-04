@@ -163,8 +163,7 @@
       "restartWarning": "Tomo si riavvierà automaticamente dopo l'aggiornamento.",
       "checkFailed": "Impossibile verificare gli aggiornamenti",
       "status": "Stato"
-    },
-    "logout": "Esci"
+    }
   },
   "system": {
     "title": "Sistema",
