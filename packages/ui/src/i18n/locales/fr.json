@@ -163,8 +163,7 @@
       "restartWarning": "Tomo redémarrera automatiquement après la mise à jour.",
       "checkFailed": "Impossible de vérifier les mises à jour",
       "status": "Statut"
-    },
-    "logout": "Se déconnecter"
+    }
   },
   "system": {
     "title": "Système",

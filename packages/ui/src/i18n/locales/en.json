@@ -163,8 +163,7 @@
       "restartWarning": "Tomo will restart automatically after the update.",
       "checkFailed": "Could not check for updates",
       "status": "Status"
-    },
-    "logout": "Log out"
+    }
   },
   "system": {
     "title": "System",

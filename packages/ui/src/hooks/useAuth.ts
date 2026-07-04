@@ -41,5 +41,6 @@ export function useAuth() {
     logout,
     loginError: loginMutation.error?.message ?? null,
     isLoggingIn: loginMutation.isPending,
+    isLoggingOut: logoutMutation.isPending,
   };
 }

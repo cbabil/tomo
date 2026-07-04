@@ -41,47 +41,57 @@ export function UpdateBanner() {
   }
 
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 40 }}
-          transition={{ type: "spring", damping: 20, stiffness: 300 }}
-          style={motionStyle}
-        >
-          <GlassCard sx={styles.banner}>
-            <SystemUpdateAltIcon sx={styles.icon} />
-            <Typography sx={styles.text}>
-              {t("desktop.update.available", { version: data?.latest })}
-            </Typography>
-            <Button
-              size="small"
-              sx={styles.updateBtn}
-              onClick={() => openSheet("settings")}
-            >
-              {t("desktop.update.updateNow")}
-            </Button>
-            <IconButton
-              size="small"
-              onClick={dismiss}
-              aria-label={t("desktop.update.dismiss")}
-              sx={styles.closeBtn}
-            >
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </GlassCard>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div style={containerStyle}>
+      <AnimatePresence>
+        {visible && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ type: "spring", damping: 20, stiffness: 300 }}
+            style={motionStyle}
+          >
+            <GlassCard sx={styles.banner}>
+              <SystemUpdateAltIcon sx={styles.icon} />
+              <Typography sx={styles.text}>
+                {t("desktop.update.available", { version: data?.latest })}
+              </Typography>
+              <Button
+                size="small"
+                sx={styles.updateBtn}
+                onClick={() => openSheet("settings")}
+              >
+                {t("desktop.update.updateNow")}
+              </Button>
+              <IconButton
+                size="small"
+                onClick={dismiss}
+                aria-label={t("desktop.update.dismiss")}
+                sx={styles.closeBtn}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </GlassCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
-const motionStyle: React.CSSProperties = {
+const containerStyle: React.CSSProperties = {
   position: "fixed",
   top: 16,
-  right: 16,
+  left: 0,
+  right: 0,
+  display: "flex",
+  justifyContent: "center",
   zIndex: 12,
+  pointerEvents: "none",
+};
+
+const motionStyle: React.CSSProperties = {
+  pointerEvents: "auto",
 };
 
 const styles = {
