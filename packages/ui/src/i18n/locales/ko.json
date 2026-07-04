@@ -76,9 +76,7 @@
       "empty": "사용 가능한 로그가 없습니다"
     },
     "update": {
-      "available": "v{{version}} 사용 가능",
-      "dismiss": "닫기",
-      "updateNow": "업데이트"
+      "available": "v{{version}} 사용 가능"
     },
     "dock": {
       "home": "홈",

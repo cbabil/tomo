@@ -76,9 +76,7 @@
       "empty": "暂无日志"
     },
     "update": {
-      "available": "v{{version}} 可用",
-      "dismiss": "关闭",
-      "updateNow": "更新"
+      "available": "v{{version}} 可用"
     },
     "dock": {
       "home": "主页",

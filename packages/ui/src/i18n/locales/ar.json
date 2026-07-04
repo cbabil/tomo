@@ -76,9 +76,7 @@
       "empty": "لا توجد سجلات متاحة"
     },
     "update": {
-      "available": "v{{version}} متاح",
-      "dismiss": "تجاهل",
-      "updateNow": "تحديث"
+      "available": "v{{version}} متاح"
     },
     "dock": {
       "home": "الرئيسية",

@@ -76,9 +76,7 @@
       "empty": "No hay registros disponibles"
     },
     "update": {
-      "available": "v{{version}} disponible",
-      "dismiss": "Descartar",
-      "updateNow": "Actualizar"
+      "available": "v{{version}} disponible"
     },
     "dock": {
       "home": "Inicio",

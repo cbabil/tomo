@@ -76,9 +76,7 @@
       "empty": "No logs available"
     },
     "update": {
-      "available": "v{{version}} available",
-      "dismiss": "Dismiss",
-      "updateNow": "Update"
+      "available": "v{{version}} available"
     },
     "dock": {
       "home": "Home",

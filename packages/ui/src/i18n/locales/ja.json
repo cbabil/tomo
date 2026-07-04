@@ -76,9 +76,7 @@
       "empty": "ログはありません"
     },
     "update": {
-      "available": "v{{version}} が利用可能",
-      "dismiss": "閉じる",
-      "updateNow": "更新"
+      "available": "v{{version}} が利用可能"
     },
     "dock": {
       "home": "ホーム",
