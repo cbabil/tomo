@@ -28,4 +28,34 @@ export const dialogStyles = {
     px: 3,
     pb: 2,
   },
+  // Shared "near-fullscreen" dialog shell (logs / terminal viewers).
+  fullscreenSize: {
+    width: "min(1280px, calc(100vw - 48px))",
+    maxWidth: "min(1280px, calc(100vw - 48px))",
+    height: "calc(100vh - 48px)",
+    maxHeight: "calc(100vh - 48px)",
+  },
+  titleActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: 0.5,
+  },
+  fullscreenContent: {
+    pt: 1,
+    pb: 2,
+    display: "flex",
+    flexDirection: "column" as const,
+    minHeight: 0,
+  },
+  centered: {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 160,
+  },
+  emptyText: {
+    color: colors.textSecondary,
+    fontSize: "0.875rem",
+  },
 };

@@ -6,6 +6,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import AppsIcon from "@mui/icons-material/Apps";
 import SettingsIcon from "@mui/icons-material/Settings";
 import MonitorIcon from "@mui/icons-material/Monitor";
+import TerminalIcon from "@mui/icons-material/Terminal";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { colors } from "../../app/theme";
@@ -17,13 +18,14 @@ interface DockItem {
   id: string;
   labelKey: string;
   icon: React.ReactNode;
-  action: Sheet | "home" | "search";
+  action: Sheet | "home" | "search" | "terminal";
 }
 
 const dockItems: DockItem[] = [
   { id: "home", labelKey: "desktop.dock.home", icon: <HomeIcon />, action: "home" },
   { id: "search", labelKey: "desktop.dock.search", icon: <SearchIcon />, action: "search" },
   { id: "appStore", labelKey: "desktop.dock.appStore", icon: <AppsIcon />, action: "appStore" },
+  { id: "terminal", labelKey: "desktop.dock.terminal", icon: <TerminalIcon />, action: "terminal" },
   { id: "settings", labelKey: "desktop.dock.settings", icon: <SettingsIcon />, action: "settings" },
   { id: "system", labelKey: "desktop.dock.system", icon: <MonitorIcon />, action: "system" },
 ];
@@ -34,12 +36,15 @@ export function Dock() {
   const openSheet = useStore((s) => s.openSheet);
   const closeSheet = useStore((s) => s.closeSheet);
   const openSpotlight = useStore((s) => s.openSpotlight);
+  const openTerminal = useStore((s) => s.openTerminal);
 
   const handleClick = (item: DockItem) => {
     if (item.action === "home") {
       closeSheet();
     } else if (item.action === "search") {
       openSpotlight();
+    } else if (item.action === "terminal") {
+      openTerminal();
     } else if (activeSheet === item.action) {
       closeSheet();
     } else {

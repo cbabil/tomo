@@ -7,62 +7,66 @@ import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
 import CloseIcon from "@mui/icons-material/Close";
-import RefreshIcon from "@mui/icons-material/Refresh";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { useTranslation } from "react-i18next";
 import { trpc } from "../../lib/trpc";
 import { useStore } from "../../hooks/useStore";
+import { appUrl } from "../../lib/urls";
 import { dialogStyles } from "./styles";
 
-export function AppLogsDialog() {
+const TERMINAL_APP_ID = "terminal";
+
+export function TerminalModal() {
   const { t } = useTranslation();
-  const logsApp = useStore((s) => s.logsApp);
-  const close = useStore((s) => s.closeLogs);
+  const open = useStore((s) => s.terminalOpen);
+  const close = useStore((s) => s.closeTerminal);
 
-  const logsQuery = trpc.apps.logs.useQuery(
-    { appId: logsApp?.id ?? "" },
-    { enabled: Boolean(logsApp), refetchOnWindowFocus: false },
-  );
+  const installedQuery = trpc.apps.installed.useQuery(undefined, {
+    enabled: open,
+    refetchOnWindowFocus: false,
+  });
 
-  const logs = logsQuery.data?.logs?.trim() ?? "";
+  const terminal = installedQuery.data?.find((a) => a.id === TERMINAL_APP_ID);
+  const url = appUrl(terminal?.webPort);
 
   return (
-    <Dialog
-      open={Boolean(logsApp)}
-      onClose={close}
-      slotProps={{ paper: { sx: styles.paper } }}
-    >
+    <Dialog open={open} onClose={close} slotProps={{ paper: { sx: styles.paper } }}>
       <DialogTitle sx={dialogStyles.title}>
-        <Typography component="span" sx={styles.titleText} noWrap>
-          {t("desktop.logs.title", { name: logsApp?.name ?? "" })}
+        <Typography component="span" sx={styles.titleText}>
+          {t("terminal.title")}
         </Typography>
         <Box sx={dialogStyles.titleActions}>
-          <Tooltip title={t("desktop.logs.refresh")} placement="top">
-            <IconButton
-              onClick={() => logsQuery.refetch()}
-              disabled={logsQuery.isFetching}
-              sx={dialogStyles.closeBtn}
-            >
-              <RefreshIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {url && (
+            <Tooltip title={t("terminal.openInNewTab")} placement="top">
+              <IconButton
+                onClick={() => window.open(url, "_blank")}
+                sx={dialogStyles.closeBtn}
+              >
+                <OpenInNewIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           <IconButton onClick={close} sx={dialogStyles.closeBtn}>
             <CloseIcon fontSize="small" />
           </IconButton>
         </Box>
       </DialogTitle>
       <DialogContent sx={dialogStyles.fullscreenContent}>
-        {logsQuery.isLoading ? (
+        {installedQuery.isLoading ? (
           <Box sx={dialogStyles.centered}>
             <CircularProgress size={24} sx={{ color: "primary.main" }} />
           </Box>
-        ) : logs ? (
-          <Box component="pre" sx={styles.logs}>
-            {logs}
-          </Box>
+        ) : url ? (
+          <Box
+            component="iframe"
+            src={url}
+            title={t("terminal.title")}
+            sx={styles.frame}
+          />
         ) : (
           <Box sx={dialogStyles.centered}>
             <Typography sx={dialogStyles.emptyText}>
-              {t("desktop.logs.empty")}
+              {t("terminal.notInstalled")}
             </Typography>
           </Box>
         )}
@@ -79,22 +83,13 @@ const styles = {
   titleText: {
     fontSize: "1rem",
     fontWeight: 600,
-    maxWidth: "min(600px, calc(100vw - 200px))",
   },
-  logs: {
+  frame: {
     flex: 1,
-    m: 0,
-    p: 2,
+    width: "100%",
+    minHeight: 0,
+    border: "none",
     borderRadius: 2,
     backgroundColor: "#000",
-    color: "rgba(255,255,255,0.85)",
-    fontFamily:
-      "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-    fontSize: "0.8rem",
-    lineHeight: 1.5,
-    whiteSpace: "pre-wrap" as const,
-    wordBreak: "break-all" as const,
-    minHeight: 0,
-    overflowY: "auto" as const,
   },
 };
