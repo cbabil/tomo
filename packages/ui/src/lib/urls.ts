@@ -5,6 +5,13 @@ export function appUrl(webPort: number | undefined): string | null {
   return `${window.location.protocol}//${window.location.hostname}:${webPort}/`;
 }
 
+/** ttyd WebSocket endpoint for an app served on the given web port. */
+export function terminalSocketUrl(webPort: number | undefined): string | null {
+  if (webPort == null) return null;
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${wsProtocol}//${window.location.hostname}:${webPort}/ws`;
+}
+
 export function openAppUrl(webPort: number | undefined): void {
   const url = appUrl(webPort);
   if (url) window.open(url, "_blank");

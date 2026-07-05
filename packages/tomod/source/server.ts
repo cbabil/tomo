@@ -63,9 +63,7 @@ export function createServer(
           fontSrc: ["'self'", "https://fonts.gstatic.com"],
           imgSrc: ["'self'", "data:", "https:"],
           connectSrc: ["'self'", "ws:", "wss:"],
-          // Apps run on other ports (different origins), so the desktop must
-          // be allowed to embed them (e.g. the Terminal in its dock modal).
-          frameSrc: ["'self'", "http:", "https:"],
+          frameSrc: ["'self'"],
           objectSrc: ["'none'"],
           upgradeInsecureRequests: null,
         },

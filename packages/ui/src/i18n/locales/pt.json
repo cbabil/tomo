@@ -167,7 +167,9 @@
   "terminal": {
     "title": "Terminal",
     "openInNewTab": "Abrir em nova aba",
-    "notInstalled": "O aplicativo Terminal não está instalado."
+    "notInstalled": "O aplicativo Terminal não está instalado.",
+    "disconnected": "Terminal desconectado.",
+    "reconnect": "Reconectar"
   },
   "system": {
     "title": "Sistema",

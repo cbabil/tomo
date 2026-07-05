@@ -167,7 +167,9 @@
   "terminal": {
     "title": "ターミナル",
     "openInNewTab": "新しいタブで開く",
-    "notInstalled": "ターミナルアプリがインストールされていません。"
+    "notInstalled": "ターミナルアプリがインストールされていません。",
+    "disconnected": "ターミナルが切断されました。",
+    "reconnect": "再接続"
   },
   "system": {
     "title": "システム",

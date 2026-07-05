@@ -167,7 +167,9 @@
   "terminal": {
     "title": "终端",
     "openInNewTab": "在新标签页中打开",
-    "notInstalled": "未安装终端应用。"
+    "notInstalled": "未安装终端应用。",
+    "disconnected": "终端已断开连接。",
+    "reconnect": "重新连接"
   },
   "system": {
     "title": "系统",

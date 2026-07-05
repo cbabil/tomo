@@ -1,7 +1,7 @@
 {
   "name": "tomo",
   "private": true,
-  "version": "0.0.60",
+  "version": "0.0.61",
   "description": "Self-hosted app platform with an Umbrel-inspired desktop experience",
   "workspaces": [
     "packages/*",

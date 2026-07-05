@@ -167,7 +167,9 @@
   "terminal": {
     "title": "터미널",
     "openInNewTab": "새 탭에서 열기",
-    "notInstalled": "터미널 앱이 설치되어 있지 않습니다."
+    "notInstalled": "터미널 앱이 설치되어 있지 않습니다.",
+    "disconnected": "터미널 연결이 끊어졌습니다.",
+    "reconnect": "다시 연결"
   },
   "system": {
     "title": "시스템",

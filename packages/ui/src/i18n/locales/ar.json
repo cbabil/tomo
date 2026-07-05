@@ -167,7 +167,9 @@
   "terminal": {
     "title": "الطرفية",
     "openInNewTab": "فتح في علامة تبويب جديدة",
-    "notInstalled": "تطبيق الطرفية غير مثبّت."
+    "notInstalled": "تطبيق الطرفية غير مثبّت.",
+    "disconnected": "تم قطع اتصال الطرفية.",
+    "reconnect": "إعادة الاتصال"
   },
   "system": {
     "title": "النظام",

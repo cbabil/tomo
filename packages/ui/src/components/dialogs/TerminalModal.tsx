@@ -8,9 +8,17 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { useTranslation } from "react-i18next";
 import { trpc } from "../../lib/trpc";
 import { useStore } from "../../hooks/useStore";
+import { lazy, Suspense } from "react";
 import { appUrl } from "../../lib/urls";
 import { TERMINAL_APP_ID } from "../../lib/apps";
+import { TERMINAL_BG } from "./terminalTheme";
 import { dialogStyles } from "./styles";
+
+// Lazy so xterm.js (~280 KB) only loads when the terminal is actually opened,
+// not on every desktop load.
+const TerminalView = lazy(() =>
+  import("./TerminalView").then((m) => ({ default: m.TerminalView })),
+);
 
 // macOS window "traffic light" colors. Red is wired to close; the yellow and
 // green dots are decorative, matching the native window chrome.
@@ -28,7 +36,8 @@ export function TerminalModal() {
   });
 
   const terminal = installedQuery.data?.find((a) => a.id === TERMINAL_APP_ID);
-  const url = appUrl(terminal?.webPort);
+  const port = terminal?.webPort;
+  const url = appUrl(port);
 
   return (
     <Dialog
@@ -72,13 +81,16 @@ export function TerminalModal() {
           <Box sx={dialogStyles.centered}>
             <CircularProgress size={24} sx={{ color: "primary.main" }} />
           </Box>
-        ) : url ? (
-          <Box
-            component="iframe"
-            src={url}
-            title={t("terminal.title")}
-            sx={styles.frame}
-          />
+        ) : port != null ? (
+          <Suspense
+            fallback={
+              <Box sx={dialogStyles.centered}>
+                <CircularProgress size={24} sx={{ color: "primary.main" }} />
+              </Box>
+            }
+          >
+            <TerminalView port={port} />
+          </Suspense>
         ) : (
           <Box sx={dialogStyles.centered}>
             <Typography sx={dialogStyles.emptyText}>
@@ -90,8 +102,6 @@ export function TerminalModal() {
     </Dialog>
   );
 }
-
-const TERMINAL_BG = "#1e1e1e";
 
 const styles = {
   paper: {
@@ -160,14 +170,6 @@ const styles = {
     flex: 1,
     minHeight: 0,
     display: "flex",
-    backgroundColor: TERMINAL_BG,
-    p: 0.5,
-  },
-  frame: {
-    flex: 1,
-    width: "100%",
-    minHeight: 0,
-    border: "none",
     backgroundColor: TERMINAL_BG,
   },
 };
