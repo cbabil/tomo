@@ -132,6 +132,7 @@ const appsRouter = t.router({
       webPort?: number;
       type?: "store" | "custom" | "template" | "external";
       externalUrl?: string;
+      hidden?: boolean;
     }> => [],
   ),
   install: t.procedure

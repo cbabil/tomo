@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, privateProcedure } from "./middleware.js";
+import { SYSTEM_APP_IDS } from "../apps.js";
 import type { Apps } from "../apps.js";
 import type { AppStore } from "../app-store.js";
 import type { TemplateRegistry } from "../templates.js";
@@ -64,6 +65,8 @@ export function createAppsRouter(
           // (no app_proxy block) bind directly to the host on the port
           // declared in their manifest.
           webPort: app.proxyTarget?.hostPort ?? manifest?.port,
+          // System apps (the built-in Terminal) are hidden from app lists.
+          hidden: SYSTEM_APP_IDS.has(app.id),
         };
       });
 

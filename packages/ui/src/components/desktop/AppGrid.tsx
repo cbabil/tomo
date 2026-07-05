@@ -14,7 +14,6 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import { useTranslation } from "react-i18next";
 import { trpc } from "../../lib/trpc";
 import { openInstalledApp } from "../../lib/urls";
-import { TERMINAL_APP_ID } from "../../lib/apps";
 import { useStore } from "../../hooks/useStore";
 import { AppIcon } from "../ui/AppIcon";
 import type { InstalledApp } from "../../types";
@@ -35,10 +34,8 @@ export function AppGrid() {
     app: InstalledApp;
   } | null>(null);
 
-  // The Terminal is opened from the dock modal, not the desktop grid.
-  const apps = (installedQuery.data ?? []).filter(
-    (app) => app.id !== TERMINAL_APP_ID,
-  );
+  // System apps (e.g. the Terminal, opened from the dock) are hidden from the grid.
+  const apps = (installedQuery.data ?? []).filter((app) => !app.hidden);
 
   const handleContextMenu = (
     event: React.MouseEvent<HTMLElement>,

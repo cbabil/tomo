@@ -22,7 +22,8 @@ export function SpotlightSearch() {
   });
   const backdropRef = useRef<HTMLDivElement>(null);
 
-  const apps = installedQuery.data ?? [];
+  // System apps (e.g. the dock-only Terminal) are not launchable from search.
+  const apps = (installedQuery.data ?? []).filter((app) => !app.hidden);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {

@@ -19,7 +19,11 @@ import type { Store } from "./store.js";
 const log = createLogger("apps");
 
 // Template pre-installed on a fresh setup (see seedDefaults).
-const DEFAULT_TEMPLATE_ID = "terminal";
+export const DEFAULT_TEMPLATE_ID = "terminal";
+
+// System apps are managed by Tomo itself (e.g. the Terminal powering the dock
+// modal) and hidden from the desktop grid, App Store, and search.
+export const SYSTEM_APP_IDS = new Set<string>([DEFAULT_TEMPLATE_ID]);
 
 export { slugify };
 
