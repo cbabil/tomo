@@ -4,7 +4,6 @@ import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
 
 interface SheetLayoutProps {
   title: string;
@@ -13,8 +12,6 @@ interface SheetLayoutProps {
 }
 
 export function SheetLayout({ title, onClose, children }: SheetLayoutProps) {
-  const { t } = useTranslation();
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -33,7 +30,7 @@ export function SheetLayout({ title, onClose, children }: SheetLayoutProps) {
       >
         <Box sx={styles.header}>
           <Typography variant="h5" sx={styles.title}>
-            {t(title)}
+            {title}
           </Typography>
           <IconButton onClick={onClose} sx={styles.closeButton}>
             <CloseIcon />
