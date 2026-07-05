@@ -33,6 +33,9 @@ logs/
 # Data (runtime)
 data/
 /opt/tomo/
+# ...but the built-in templates are source, not runtime data
+!packages/tomod/source/data/
+!packages/tomod/source/data/templates.json
 
 # Coverage
 coverage/

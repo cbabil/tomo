@@ -30,6 +30,9 @@ export const AppTemplateSchema = z.object({
   image: z.string(),
   containerPort: z.number().int().min(1).max(65535),
   composeYaml: z.string().optional(),
+  // Trusted built-in templates may opt out of the compose security blocklist
+  // (e.g. to mount the Docker socket). Never set on user-provided apps.
+  allowPrivileged: z.boolean().optional(),
   setupFields: z.array(SetupFieldSchema).optional(),
   volumes: z
     .array(z.object({ host: z.string(), container: z.string() }))

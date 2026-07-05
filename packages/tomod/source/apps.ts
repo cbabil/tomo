@@ -18,6 +18,9 @@ import type { Store } from "./store.js";
 
 const log = createLogger("apps");
 
+// Template pre-installed on a fresh setup (see seedDefaults).
+const DEFAULT_TEMPLATE_ID = "terminal";
+
 export { slugify };
 
 export class Apps {
@@ -250,7 +253,9 @@ export class Apps {
         ...template.environment,
         ...setupValues,
       });
-      await validateComposeFile(path.join(appDir, "docker-compose.yml"));
+      await validateComposeFile(path.join(appDir, "docker-compose.yml"), {
+        allowPrivileged: template.allowPrivileged,
+      });
 
       return this.finishInstall({
         id,
@@ -263,6 +268,45 @@ export class Apps {
         patchedContent,
       });
     });
+  }
+
+  /**
+   * Install the default apps that ship pre-installed on a fresh setup.
+   * Runs once: the `defaultsSeeded` flag guards against re-installing an app
+   * the user later removes. Failures are non-fatal and retried on next start.
+   */
+  async seedDefaults(): Promise<void> {
+    const { settings } = this.store.get();
+    if (settings.defaultsSeeded) return;
+
+    const template = this.templateRegistry.get(DEFAULT_TEMPLATE_ID);
+    if (!template) {
+      log.warn("Default template not found; skipping seed", {
+        templateId: DEFAULT_TEMPLATE_ID,
+      });
+      return;
+    }
+
+    if (this.instances.has(slugify(template.name))) {
+      await this.markDefaultsSeeded();
+      return;
+    }
+
+    try {
+      await this.installTemplate({ templateId: DEFAULT_TEMPLATE_ID });
+      await this.markDefaultsSeeded();
+      log.info("Seeded default app", { templateId: DEFAULT_TEMPLATE_ID });
+    } catch (err) {
+      log.warn("Failed to seed default app; will retry on next start", {
+        templateId: DEFAULT_TEMPLATE_ID,
+        error: String(err),
+      });
+    }
+  }
+
+  private async markDefaultsSeeded(): Promise<void> {
+    const { settings } = this.store.get();
+    await this.store.update({ settings: { ...settings, defaultsSeeded: true } });
   }
 
   async uninstall(appId: string): Promise<void> {
