@@ -33,7 +33,7 @@ export function AppIcon({ name, icon, status, onClick, onContextMenu }: AppIconP
             ...styles.iconWrapper,
             ...(status && {
               borderRadius: 3,
-              boxShadow: `0 0 0 3px ${STATUS_COLORS[status]}, 0 0 12px 3px ${STATUS_COLORS[status]}99`,
+              boxShadow: `0 0 0 4px ${STATUS_COLORS[status]}, 0 0 22px 6px ${STATUS_COLORS[status]}cc`,
             }),
           }}
         >
