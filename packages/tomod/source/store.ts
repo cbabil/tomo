@@ -33,6 +33,7 @@ const SettingsSchema = z.object({
   language: z.string().default("en"),
   wallpaper: z.string().default("default"),
   widgets: z.array(z.string()).default([]),
+  defaultsSeeded: z.boolean().default(false),
 });
 
 const ConfigSchema = z.object({
@@ -44,11 +45,8 @@ const ConfigSchema = z.object({
 export type Config = z.infer<typeof ConfigSchema>;
 export type RepoConfig = z.infer<typeof RepoSchema>;
 
-const DEFAULT_CONFIG: Config = {
-  version: 1,
-  apps: { installed: [], repos: [], external: [] },
-  settings: { language: "en", wallpaper: "default", widgets: [] },
-};
+// Derived from the schema's own defaults so new fields need only be declared once.
+const defaultConfig = (): Config => ConfigSchema.parse({ version: 1 });
 
 export class Store {
   private readonly filePath: string;
@@ -57,7 +55,7 @@ export class Store {
   constructor(dataDir?: string) {
     const dir = dataDir ?? TOMO_DATA_DIR;
     this.filePath = path.join(dir, "tomo.yaml");
-    this.config = { ...DEFAULT_CONFIG };
+    this.config = defaultConfig();
   }
 
   async load(): Promise<void> {

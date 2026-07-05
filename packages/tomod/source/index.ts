@@ -67,6 +67,10 @@ export class Tomod {
 
     const httpServer = await server.start();
 
+    // Seed default apps in the background: a first-run install triggers a
+    // docker image pull, which must not block the daemon from binding.
+    void this.apps.seedDefaults();
+
     this.syncAppStore();
     this.syncTimer = setInterval(() => this.syncAppStore(), SYNC_INTERVAL_MS);
 

@@ -1,0 +1,412 @@
+[
+  {
+    "id": "jellyfin",
+    "name": "Jellyfin",
+    "description": "Free software media system for streaming your personal media library.",
+    "icon": "https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/icon-transparent.svg",
+    "category": "Media",
+    "image": "jellyfin/jellyfin:latest",
+    "containerPort": 8096,
+    "setupFields": [
+      {
+        "key": "MEDIA_PATH",
+        "label": "Media folder path",
+        "type": "path",
+        "placeholder": "/mnt/media",
+        "required": true,
+        "description": "Path to your movies, TV shows, and music"
+      }
+    ],
+    "volumes": [
+      {
+        "host": "${APP_DATA_DIR}/config",
+        "container": "/config"
+      },
+      {
+        "host": "${MEDIA_PATH}",
+        "container": "/media"
+      }
+    ],
+    "environment": {
+      "PUID": "1000",
+      "PGID": "1000"
+    }
+  },
+  {
+    "id": "plex",
+    "name": "Plex",
+    "description": "Stream your personal media collection on any device, anywhere.",
+    "icon": "https://raw.githubusercontent.com/linuxserver/docker-templates/master/linuxserver.io/img/plex-icon.png",
+    "category": "Media",
+    "image": "linuxserver/plex:latest",
+    "containerPort": 32400,
+    "setupFields": [
+      {
+        "key": "MEDIA_PATH",
+        "label": "Media folder path",
+        "type": "path",
+        "placeholder": "/mnt/media",
+        "required": true
+      },
+      {
+        "key": "PLEX_CLAIM",
+        "label": "Plex claim token",
+        "type": "text",
+        "placeholder": "claim-xxxx",
+        "description": "Get your token at plex.tv/claim"
+      }
+    ],
+    "volumes": [
+      {
+        "host": "${APP_DATA_DIR}/config",
+        "container": "/config"
+      },
+      {
+        "host": "${MEDIA_PATH}",
+        "container": "/media"
+      }
+    ],
+    "environment": {
+      "PUID": "1000",
+      "PGID": "1000"
+    }
+  },
+  {
+    "id": "navidrome",
+    "name": "Navidrome",
+    "description": "Modern music server and streamer compatible with Subsonic/Airsonic.",
+    "icon": "https://raw.githubusercontent.com/navidrome/navidrome/master/resources/logo-192x192.png",
+    "category": "Media",
+    "image": "deluan/navidrome:latest",
+    "containerPort": 4533,
+    "setupFields": [
+      {
+        "key": "MUSIC_PATH",
+        "label": "Music folder path",
+        "type": "path",
+        "placeholder": "/mnt/music",
+        "required": true
+      }
+    ],
+    "volumes": [
+      {
+        "host": "${APP_DATA_DIR}/data",
+        "container": "/data"
+      },
+      {
+        "host": "${MUSIC_PATH}",
+        "container": "/music:ro"
+      }
+    ]
+  },
+  {
+    "id": "nextcloud",
+    "name": "Nextcloud",
+    "description": "Self-hosted productivity platform with file sync, calendar, contacts, and more.",
+    "icon": "https://raw.githubusercontent.com/nextcloud/promo/master/nextcloud-icon.svg",
+    "category": "Productivity",
+    "image": "nextcloud:latest",
+    "containerPort": 80,
+    "volumes": [
+      {
+        "host": "${APP_DATA_DIR}/data",
+        "container": "/var/www/html"
+      }
+    ],
+    "environment": {
+      "NEXTCLOUD_TRUSTED_DOMAINS": "localhost"
+    }
+  },
+  {
+    "id": "gitea",
+    "name": "Gitea",
+    "description": "Lightweight, self-hosted Git service for code hosting and collaboration.",
+    "icon": "https://raw.githubusercontent.com/go-gitea/gitea/main/public/assets/img/logo.svg",
+    "category": "Productivity",
+    "image": "gitea/gitea:latest",
+    "containerPort": 3000,
+    "volumes": [
+      {
+        "host": "${APP_DATA_DIR}/data",
+        "container": "/data"
+      }
+    ],
+    "environment": {
+      "USER_UID": "1000",
+      "USER_GID": "1000"
+    }
+  },
+  {
+    "id": "vikunja",
+    "name": "Vikunja",
+    "description": "Open-source to-do app for organizing your life and collaborating with teams.",
+    "icon": "https://vikunja.io/images/vikunja-logo.svg",
+    "category": "Productivity",
+    "image": "vikunja/vikunja:latest",
+    "containerPort": 3456,
+    "volumes": [
+      {
+        "host": "${APP_DATA_DIR}/files",
+        "container": "/app/vikunja/files"
+      },
+      {
+        "host": "${APP_DATA_DIR}/db",
+        "container": "/db"
+      }
+    ]
+  },
+  {
+    "id": "homeassistant",
+    "name": "Home Assistant",
+    "description": "Open-source home automation platform for controlling all your smart devices.",
+    "icon": "https://raw.githubusercontent.com/home-assistant/assets/master/logo/logo-pretty.svg",
+    "category": "Home",
+    "image": "homeassistant/home-assistant:latest",
+    "containerPort": 8123,
+    "setupFields": [
+      {
+        "key": "TZ",
+        "label": "Timezone",
+        "type": "select",
+        "default": "UTC",
+        "options": [
+          {
+            "label": "UTC",
+            "value": "UTC"
+          },
+          {
+            "label": "US Eastern",
+            "value": "America/New_York"
+          },
+          {
+            "label": "US Central",
+            "value": "America/Chicago"
+          },
+          {
+            "label": "US Pacific",
+            "value": "America/Los_Angeles"
+          },
+          {
+            "label": "Europe/London",
+            "value": "Europe/London"
+          },
+          {
+            "label": "Europe/Paris",
+            "value": "Europe/Paris"
+          },
+          {
+            "label": "Europe/Berlin",
+            "value": "Europe/Berlin"
+          },
+          {
+            "label": "Asia/Tokyo",
+            "value": "Asia/Tokyo"
+          },
+          {
+            "label": "Asia/Shanghai",
+            "value": "Asia/Shanghai"
+          },
+          {
+            "label": "Australia/Sydney",
+            "value": "Australia/Sydney"
+          }
+        ]
+      }
+    ],
+    "volumes": [
+      {
+        "host": "${APP_DATA_DIR}/config",
+        "container": "/config"
+      }
+    ]
+  },
+  {
+    "id": "pihole",
+    "name": "Pi-hole",
+    "description": "Network-wide ad blocker and DNS sinkhole protecting all your devices.",
+    "icon": "https://pi-hole.github.io/graphics/Vortex/Vortex_Vertical_wordmark_darkmode.svg",
+    "category": "Home",
+    "image": "pihole/pihole:latest",
+    "containerPort": 80,
+    "setupFields": [
+      {
+        "key": "WEBPASSWORD",
+        "label": "Admin password",
+        "type": "text",
+        "required": true,
+        "description": "Password for the Pi-hole admin panel"
+      },
+      {
+        "key": "TZ",
+        "label": "Timezone",
+        "type": "text",
+        "default": "UTC",
+        "placeholder": "America/New_York"
+      }
+    ],
+    "volumes": [
+      {
+        "host": "${APP_DATA_DIR}/etc-pihole",
+        "container": "/etc/pihole"
+      },
+      {
+        "host": "${APP_DATA_DIR}/etc-dnsmasq.d",
+        "container": "/etc/dnsmasq.d"
+      }
+    ]
+  },
+  {
+    "id": "vaultwarden",
+    "name": "Vaultwarden",
+    "description": "Lightweight Bitwarden-compatible password manager server.",
+    "icon": "https://raw.githubusercontent.com/dani-garcia/vaultwarden/main/resources/vaultwarden-icon.svg",
+    "category": "Security",
+    "image": "vaultwarden/server:latest",
+    "containerPort": 80,
+    "setupFields": [
+      {
+        "key": "SIGNUPS_ALLOWED",
+        "label": "Allow new signups",
+        "type": "boolean",
+        "default": "true",
+        "description": "Disable after creating your account"
+      }
+    ],
+    "volumes": [
+      {
+        "host": "${APP_DATA_DIR}/data",
+        "container": "/data"
+      }
+    ]
+  },
+  {
+    "id": "portainer",
+    "name": "Portainer",
+    "description": "Visual Docker management UI for managing containers, images, and volumes.",
+    "icon": "https://raw.githubusercontent.com/portainer/portainer/develop/app/assets/ico/favicon.svg",
+    "category": "Dev Tools",
+    "image": "portainer/portainer-ce:latest",
+    "containerPort": 9000,
+    "volumes": [
+      {
+        "host": "${APP_DATA_DIR}/data",
+        "container": "/data"
+      }
+    ]
+  },
+  {
+    "id": "uptime-kuma",
+    "name": "Uptime Kuma",
+    "description": "Self-hosted monitoring tool for tracking the uptime of your websites and services.",
+    "icon": "https://raw.githubusercontent.com/louislam/uptime-kuma/master/public/icon.svg",
+    "category": "Dev Tools",
+    "image": "louislam/uptime-kuma:latest",
+    "containerPort": 3001,
+    "volumes": [
+      {
+        "host": "${APP_DATA_DIR}/data",
+        "container": "/app/data"
+      }
+    ]
+  },
+  {
+    "id": "code-server",
+    "name": "Code Server",
+    "description": "Run VS Code in the browser for remote development from any device.",
+    "icon": "https://raw.githubusercontent.com/coder/code-server/main/src/browser/media/favicon.svg",
+    "category": "Dev Tools",
+    "image": "linuxserver/code-server:latest",
+    "containerPort": 8443,
+    "setupFields": [
+      {
+        "key": "SUDO_PASSWORD",
+        "label": "Sudo password",
+        "type": "text",
+        "description": "Password for sudo access in the terminal"
+      }
+    ],
+    "volumes": [
+      {
+        "host": "${APP_DATA_DIR}/config",
+        "container": "/config"
+      }
+    ],
+    "environment": {
+      "PUID": "1000",
+      "PGID": "1000"
+    }
+  },
+  {
+    "id": "filebrowser",
+    "name": "File Browser",
+    "description": "Web-based file manager for browsing, uploading, and managing files.",
+    "icon": "https://raw.githubusercontent.com/filebrowser/logo/master/icon.svg",
+    "category": "Utilities",
+    "image": "filebrowser/filebrowser:latest",
+    "containerPort": 80,
+    "setupFields": [
+      {
+        "key": "FILES_PATH",
+        "label": "Files folder path",
+        "type": "path",
+        "placeholder": "/mnt/data",
+        "required": true,
+        "description": "Root folder to browse and manage"
+      }
+    ],
+    "volumes": [
+      {
+        "host": "${FILES_PATH}",
+        "container": "/srv"
+      },
+      {
+        "host": "${APP_DATA_DIR}/database.db",
+        "container": "/database.db"
+      }
+    ]
+  },
+  {
+    "id": "syncthing",
+    "name": "Syncthing",
+    "description": "Continuous file synchronization between devices without a cloud.",
+    "icon": "https://raw.githubusercontent.com/syncthing/syncthing/main/assets/logo-text.svg",
+    "category": "Utilities",
+    "image": "syncthing/syncthing:latest",
+    "containerPort": 8384,
+    "setupFields": [
+      {
+        "key": "SYNC_PATH",
+        "label": "Sync folder path",
+        "type": "path",
+        "placeholder": "/mnt/sync",
+        "required": true,
+        "description": "Default folder for syncing files"
+      }
+    ],
+    "volumes": [
+      {
+        "host": "${APP_DATA_DIR}/config",
+        "container": "/var/syncthing/config"
+      },
+      {
+        "host": "${SYNC_PATH}",
+        "container": "/var/syncthing/data"
+      }
+    ],
+    "environment": {
+      "PUID": "1000",
+      "PGID": "1000"
+    }
+  },
+  {
+    "id": "terminal",
+    "name": "Terminal",
+    "description": "A web-based terminal with Docker CLI access for managing your server's containers and images.",
+    "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiByeD0iNSIgZmlsbD0iIzBmMTcyYSIvPjxyZWN0IHg9IjIuNSIgeT0iMi41IiB3aWR0aD0iMTkiIGhlaWdodD0iMTkiIHJ4PSI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5MTQ2RkYiIHN0cm9rZS13aWR0aD0iMS40Ii8+PHBhdGggZD0iTTYuNSA4LjVsMyAzLTMgM00xMiAxNC41aDUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzkxNDZGRiIgc3Ryb2tlLXdpZHRoPSIxLjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==",
+    "category": "Dev Tools",
+    "image": "docker:cli",
+    "containerPort": 7681,
+    "allowPrivileged": true,
+    "composeYaml": "services:\n  app:\n    image: docker:cli\n    restart: unless-stopped\n    entrypoint: [\"/bin/sh\", \"-c\"]\n    command: [\"apk add --no-cache ttyd 2>/dev/null || apk add --no-cache -X https://dl-cdn.alpinelinux.org/alpine/edge/community ttyd; exec ttyd -W -p 7681 /bin/sh\"]\n    volumes:\n      - /var/run/docker.sock:/var/run/docker.sock\n"
+  }
+]

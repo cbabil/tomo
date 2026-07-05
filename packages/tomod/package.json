@@ -1,12 +1,12 @@
 {
   "name": "tomod",
-  "version": "0.0.56",
+  "version": "0.0.57",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "dev": "bun --watch source/index.ts",
-    "build": "tsc",
+    "build": "tsc && cp -r source/data dist/data",
     "start": "bun dist/index.js",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
