@@ -44,7 +44,7 @@ export function AppStoreSheet() {
   const filteredApps = useMemo(() => {
     const source =
       category === INSTALLED_CATEGORY
-        ? (installedQuery.data ?? [])
+        ? (installedQuery.data ?? []).filter((app) => !app.hidden)
         : (appsQuery.data ?? []);
     const q = search.toLowerCase();
     return source.filter((app) => {

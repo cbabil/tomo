@@ -40,6 +40,8 @@ export interface InstalledApp extends App {
   webPort?: number;
   type?: AppType;
   externalUrl?: string;
+  /** System apps (e.g. the built-in Terminal) hidden from app lists. */
+  hidden?: boolean;
 }
 
 export interface SystemStats {
