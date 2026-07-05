@@ -167,7 +167,9 @@
   "terminal": {
     "title": "Terminale",
     "openInNewTab": "Apri in una nuova scheda",
-    "notInstalled": "L'app Terminale non è installata."
+    "notInstalled": "L'app Terminale non è installata.",
+    "disconnected": "Terminale disconnesso.",
+    "reconnect": "Riconnetti"
   },
   "system": {
     "title": "Sistema",
