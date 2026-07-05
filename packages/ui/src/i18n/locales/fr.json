@@ -83,7 +83,8 @@
       "appStore": "App Store",
       "settings": "Paramètres",
       "system": "Système",
-      "search": "Rechercher"
+      "search": "Rechercher",
+      "terminal": "Terminal"
     }
   },
   "spotlight": {
@@ -162,6 +163,11 @@
       "checkFailed": "Impossible de vérifier les mises à jour",
       "status": "Statut"
     }
+  },
+  "terminal": {
+    "title": "Terminal",
+    "openInNewTab": "Ouvrir dans un nouvel onglet",
+    "notInstalled": "L'application Terminal n'est pas installée."
   },
   "system": {
     "title": "Système",

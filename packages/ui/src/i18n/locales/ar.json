@@ -83,7 +83,8 @@
       "appStore": "متجر التطبيقات",
       "settings": "الإعدادات",
       "system": "النظام",
-      "search": "بحث"
+      "search": "بحث",
+      "terminal": "الطرفية"
     }
   },
   "spotlight": {
@@ -162,6 +163,11 @@
       "checkFailed": "تعذر التحقق من التحديثات",
       "status": "الحالة"
     }
+  },
+  "terminal": {
+    "title": "الطرفية",
+    "openInNewTab": "فتح في علامة تبويب جديدة",
+    "notInstalled": "تطبيق الطرفية غير مثبّت."
   },
   "system": {
     "title": "النظام",

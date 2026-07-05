@@ -15,6 +15,7 @@ import { AddCustomAppDialog } from "../../components/dialogs/AddCustomAppDialog"
 import { EditExternalAppDialog } from "../../components/dialogs/EditExternalAppDialog";
 import { TemplateInstallDialog } from "../../components/dialogs/TemplateInstallDialog";
 import { AppLogsDialog } from "../../components/dialogs/AppLogsDialog";
+import { TerminalModal } from "../../components/dialogs/TerminalModal";
 
 export function DesktopPage() {
   const navigate = useNavigate();
@@ -71,6 +72,7 @@ export function DesktopPage() {
       <EditExternalAppDialog />
       <TemplateInstallDialog />
       <AppLogsDialog />
+      <TerminalModal />
     </>
   );
 }

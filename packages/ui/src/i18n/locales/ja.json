@@ -83,7 +83,8 @@
       "appStore": "App Store",
       "settings": "設定",
       "system": "システム",
-      "search": "検索"
+      "search": "検索",
+      "terminal": "ターミナル"
     }
   },
   "spotlight": {
@@ -162,6 +163,11 @@
       "checkFailed": "アップデートを確認できません",
       "status": "ステータス"
     }
+  },
+  "terminal": {
+    "title": "ターミナル",
+    "openInNewTab": "新しいタブで開く",
+    "notInstalled": "ターミナルアプリがインストールされていません。"
   },
   "system": {
     "title": "システム",

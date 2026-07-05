@@ -83,7 +83,8 @@
       "appStore": "应用商店",
       "settings": "设置",
       "system": "系统",
-      "search": "搜索"
+      "search": "搜索",
+      "terminal": "终端"
     }
   },
   "spotlight": {
@@ -162,6 +163,11 @@
       "checkFailed": "无法检查更新",
       "status": "状态"
     }
+  },
+  "terminal": {
+    "title": "终端",
+    "openInNewTab": "在新标签页中打开",
+    "notInstalled": "未安装终端应用。"
   },
   "system": {
     "title": "系统",

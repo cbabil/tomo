@@ -23,6 +23,7 @@ interface UIState {
   editingExternalApp: EditingExternalApp | null;
   selectedTemplate: AppTemplate | null;
   logsApp: LogsApp | null;
+  terminalOpen: boolean;
 }
 
 interface UIActions {
@@ -43,6 +44,8 @@ interface UIActions {
   closeTemplateInstall: () => void;
   openLogs: (app: LogsApp) => void;
   closeLogs: () => void;
+  openTerminal: () => void;
+  closeTerminal: () => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -57,6 +60,7 @@ export const useStore = create<UIStore>((set, get) => ({
   editingExternalApp: null,
   selectedTemplate: null,
   logsApp: null,
+  terminalOpen: false,
 
   openSheet: (sheet) => set({ activeSheet: sheet }),
   closeSheet: () => set({ activeSheet: null }),
@@ -76,4 +80,6 @@ export const useStore = create<UIStore>((set, get) => ({
   closeTemplateInstall: () => set({ selectedTemplate: null }),
   openLogs: (app) => set({ logsApp: app }),
   closeLogs: () => set({ logsApp: null }),
+  openTerminal: () => set({ terminalOpen: true }),
+  closeTerminal: () => set({ terminalOpen: false }),
 }));

@@ -1,9 +1,13 @@
 import type { InstalledApp } from "../types";
 
+export function appUrl(webPort: number | undefined): string | null {
+  if (webPort == null) return null;
+  return `${window.location.protocol}//${window.location.hostname}:${webPort}/`;
+}
+
 export function openAppUrl(webPort: number | undefined): void {
-  if (webPort == null) return;
-  const url = `${window.location.protocol}//${window.location.hostname}:${webPort}/`;
-  window.open(url, "_blank");
+  const url = appUrl(webPort);
+  if (url) window.open(url, "_blank");
 }
 
 export function openInstalledApp(app: InstalledApp): void {
