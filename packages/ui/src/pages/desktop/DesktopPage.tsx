@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../hooks/useAuth";
 import { useStore } from "../../hooks/useStore";
 import { Desktop } from "../../components/desktop/Desktop";
@@ -17,8 +18,10 @@ import { AppLogsDialog } from "../../components/dialogs/AppLogsDialog";
 
 export function DesktopPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading, hasUser, hasUserLoading } = useAuth();
   const activeSheet = useStore((s) => s.activeSheet);
+  const settingsTab = useStore((s) => s.settingsTab);
   const closeSheet = useStore((s) => s.closeSheet);
 
   useEffect(() => {
@@ -45,17 +48,21 @@ export function DesktopPage() {
       <Desktop />
       <AnimatePresence>
         {activeSheet === "appStore" && (
-          <SheetLayout key="appStore" title="appStore.title" onClose={closeSheet}>
+          <SheetLayout key="appStore" title={t("appStore.title")} onClose={closeSheet}>
             <AppStoreSheet />
           </SheetLayout>
         )}
         {activeSheet === "settings" && (
-          <SheetLayout key="settings" title="settings.title" onClose={closeSheet}>
+          <SheetLayout
+            key="settings"
+            title={`${t("settings.title")} / ${t(`settings.${settingsTab}.title`)}`}
+            onClose={closeSheet}
+          >
             <SettingsSheet />
           </SheetLayout>
         )}
         {activeSheet === "system" && (
-          <SheetLayout key="system" title="system.title" onClose={closeSheet}>
+          <SheetLayout key="system" title={t("system.title")} onClose={closeSheet}>
             <SystemSheet />
           </SheetLayout>
         )}
