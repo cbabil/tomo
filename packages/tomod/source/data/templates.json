@@ -407,6 +407,6 @@
     "image": "docker:cli",
     "containerPort": 7681,
     "allowPrivileged": true,
-    "composeYaml": "services:\n  app:\n    image: docker:cli\n    restart: unless-stopped\n    entrypoint: [\"/bin/sh\", \"-c\"]\n    command: [\"apk add --no-cache ttyd 2>/dev/null || apk add --no-cache -X https://dl-cdn.alpinelinux.org/alpine/edge/community ttyd; exec ttyd -W -p 7681 /bin/sh\"]\n    volumes:\n      - /var/run/docker.sock:/var/run/docker.sock\n"
+    "composeYaml": "services:\n  app:\n    image: docker:cli\n    restart: unless-stopped\n    entrypoint: [\"/bin/sh\", \"-c\"]\n    command:\n      - |\n        apk add --no-cache ttyd 2>/dev/null || apk add --no-cache -X https://dl-cdn.alpinelinux.org/alpine/edge/community ttyd\n        exec ttyd -t 'theme={\"background\":\"#1e1e1e\",\"foreground\":\"#e4e4e4\",\"cursor\":\"#9146ff\",\"cursorAccent\":\"#1e1e1e\",\"selectionBackground\":\"#3a3d41\",\"black\":\"#1e1e1e\",\"brightBlack\":\"#6b7280\"}' -t fontFamily='SF Mono, Menlo, Monaco, Consolas, monospace' -t fontSize=13 -t cursorBlink=true -t macOptionIsMeta=true -W -p 7681 /bin/sh\n    volumes:\n      - /var/run/docker.sock:/var/run/docker.sock\n"
   }
 ]
