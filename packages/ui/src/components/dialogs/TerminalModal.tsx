@@ -12,9 +12,8 @@ import { useTranslation } from "react-i18next";
 import { trpc } from "../../lib/trpc";
 import { useStore } from "../../hooks/useStore";
 import { appUrl } from "../../lib/urls";
+import { TERMINAL_APP_ID } from "../../lib/apps";
 import { dialogStyles } from "./styles";
-
-const TERMINAL_APP_ID = "terminal";
 
 export function TerminalModal() {
   const { t } = useTranslation();
