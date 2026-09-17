@@ -1,4 +1,5 @@
 import { createLogger } from "./logger.js";
+import { waitForApp } from "./upstream-ready.js";
 import type { Docker } from "./docker.js";
 
 const log = createLogger("app");
@@ -87,12 +88,18 @@ export class App {
     try {
       const composePath = `${this.dataDir}/docker-compose.yml`;
       await this.docker.composeUp(composePath, `tomo-${this.id}`);
+      await this.waitUntilReachable();
       this.status = "running";
       log.info("App started", { id: this.id });
     } catch (err) {
       this.status = previous;
       throw err;
     }
+  }
+
+  /** Stay in the transitional status until the proxy can reach the app. */
+  private async waitUntilReachable(): Promise<void> {
+    if (this.proxyTarget) await waitForApp(this.id, this.proxyTarget);
   }
 
   async stop(): Promise<void> {
@@ -115,6 +122,7 @@ export class App {
       await this.docker.composeDown(`tomo-${this.id}`);
       const composePath = `${this.dataDir}/docker-compose.yml`;
       await this.docker.composeUp(composePath, `tomo-${this.id}`);
+      await this.waitUntilReachable();
       this.status = "running";
       log.info("App restarted", { id: this.id });
     } catch (err) {

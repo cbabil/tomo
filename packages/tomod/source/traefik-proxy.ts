@@ -13,7 +13,7 @@ import type { ProxyTarget } from "./app.js";
 
 const log = createLogger("proxy");
 
-const CONTAINER_NAME = "tomo-proxy";
+export const PROXY_CONTAINER_NAME = "tomo-proxy";
 const TRAEFIK_VERSION = "v3.3";
 const TRAEFIK_IMAGE = `traefik:${TRAEFIK_VERSION}`;
 const PROXY_DIR = path.join(TOMO_DATA_DIR, "traefik");
@@ -66,14 +66,18 @@ function generateTomodConfig(): string {
 `;
 }
 
+/** Hostname Traefik dials for an app: its compose container, or the host gateway. */
+export function upstreamHost(appId: string, target: ProxyTarget): string {
+  return target.hostNetwork
+    ? HOST_GATEWAY
+    : `tomo-${appId}-${target.service}-1`;
+}
+
 function generateAppConfig(appId: string, target: ProxyTarget): string {
   if (!target.hostPort) {
     throw new Error(`Missing hostPort for app ${appId}`);
   }
   const { hostPort } = target;
-  const upstreamHost = target.hostNetwork
-    ? HOST_GATEWAY
-    : `tomo-${appId}-${target.service}-1`;
   return `http:
   routers:
     app-${appId}:
@@ -88,7 +92,7 @@ function generateAppConfig(appId: string, target: ProxyTarget): string {
     app-${appId}:
       loadBalancer:
         servers:
-          - url: "http://${upstreamHost}:${target.port}"
+          - url: "http://${upstreamHost(appId, target)}:${target.port}"
 
   middlewares:
     forward-auth:
@@ -136,7 +140,7 @@ export class TraefikProxy {
 
   private async ensureContainer(): Promise<void> {
     try {
-      const container = this.docker.getRawClient().getContainer(CONTAINER_NAME);
+      const container = this.docker.getRawClient().getContainer(PROXY_CONTAINER_NAME);
       const info = await container.inspect();
 
       // Recreate if container doesn't expose the app port range
@@ -187,7 +191,7 @@ export class TraefikProxy {
     }
 
     const container = await client.createContainer({
-      name: CONTAINER_NAME,
+      name: PROXY_CONTAINER_NAME,
       Image: TRAEFIK_IMAGE,
       ExposedPorts: exposedPorts,
       HostConfig: {
