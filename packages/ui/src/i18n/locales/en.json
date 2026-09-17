@@ -205,7 +205,8 @@
     "add": "Add",
     "adding": "Adding...",
     "editTitle": "Edit App",
-    "edit": "Edit"
+    "edit": "Edit",
+    "portHelp": "The port the app listens on inside its container (not a host port). Tomo puts the app behind its own login proxy, so the address you open will use a different port."
   },
   "common": {
     "loading": "Loading...",

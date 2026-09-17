@@ -52,18 +52,96 @@ export async function validateComposeFile(
   }
 }
 
-export function hasHostNetwork(content: string): boolean {
+export type ComposeService = Record<string, unknown>;
+export type ComposeServices = Record<string, ComposeService>;
+
+type ComposeRoot = Record<string, unknown>;
+
+function loadRoot(content: string): ComposeRoot | undefined {
+  let doc: unknown;
   try {
-    const doc = yaml.load(content);
-    if (!doc || typeof doc !== "object") return false;
-    const services = (doc as Record<string, unknown>).services;
-    if (!services || typeof services !== "object") return false;
-    return Object.values(
-      services as Record<string, Record<string, unknown>>,
-    ).some((svc) => svc?.network_mode === "host");
-  } catch {
-    return false;
+    doc = yaml.load(content);
+  } catch (err) {
+    throw new Error(`Invalid compose YAML: ${String(err)}`);
   }
+  return doc && typeof doc === "object" ? (doc as ComposeRoot) : undefined;
+}
+
+/**
+ * Extract the `services` map from a parsed compose document, or undefined
+ * when there is none. A service with no body (`web:`) parses as null and is
+ * normalised to an empty object so callers never see null.
+ */
+function servicesOf(root: ComposeRoot | undefined): ComposeServices | undefined {
+  const services = root?.services;
+  if (!services || typeof services !== "object" || Array.isArray(services)) {
+    return undefined;
+  }
+  return Object.fromEntries(
+    Object.entries(services as Record<string, unknown>).map(([name, svc]) => [
+      name,
+      svc && typeof svc === "object" ? (svc as ComposeService) : {},
+    ]),
+  );
+}
+
+/**
+ * Parse compose YAML and return its `services` map, or undefined when the
+ * document has none.
+ *
+ * @throws Error("Invalid compose YAML: ...") when the YAML does not parse.
+ */
+export function loadServices(content: string): ComposeServices | undefined {
+  return servicesOf(loadRoot(content));
+}
+
+/** True when the service already sits on the Tomo network or cannot join one. */
+function isOnTomoNetwork(svc: ComposeService): boolean {
+  // docker-compose rejects services that combine network_mode with networks
+  if (svc.network_mode) return true;
+  const nets = svc.networks;
+  if (Array.isArray(nets)) return nets.includes(DOCKER_NETWORK_NAME);
+  if (nets && typeof nets === "object") return DOCKER_NETWORK_NAME in nets;
+  return false;
+}
+
+function withTomoNetwork(svc: ComposeService): ComposeService {
+  const existing = svc.networks;
+  if (Array.isArray(existing)) {
+    return { ...svc, networks: [...existing, DOCKER_NETWORK_NAME] };
+  }
+  if (existing && typeof existing === "object") {
+    return { ...svc, networks: { ...existing, [DOCKER_NETWORK_NAME]: {} } };
+  }
+  return { ...svc, networks: [DOCKER_NETWORK_NAME] };
+}
+
+/**
+ * Attach every service to the Tomo network and declare it as external.
+ * Returns the content unchanged when there is nothing to attach.
+ *
+ * @throws Error("Invalid compose YAML: ...") when the YAML does not parse.
+ */
+export function attachTomoNetwork(content: string): string {
+  const root = loadRoot(content);
+  const services = servicesOf(root);
+  if (!root || !services) return content;
+  if (Object.values(services).every(isOnTomoNetwork)) return content;
+
+  const patched: ComposeRoot = {
+    ...root,
+    services: Object.fromEntries(
+      Object.entries(services).map(([name, svc]) => [
+        name,
+        isOnTomoNetwork(svc) ? svc : withTomoNetwork(svc),
+      ]),
+    ),
+    networks: {
+      ...((root.networks ?? {}) as Record<string, unknown>),
+      [DOCKER_NETWORK_NAME]: { external: true },
+    },
+  };
+  return yaml.dump(patched, { lineWidth: -1, noRefs: true });
 }
 
 export function extractProxyTarget(
@@ -125,49 +203,7 @@ export async function patchComposeFile(
     "",
   );
 
-  if (!content.includes(DOCKER_NETWORK_NAME)) {
-    const doc = yaml.load(content);
-    if (doc && typeof doc === "object") {
-      const root = doc as Record<string, unknown>;
-      const rawServices = root.services;
-      if (
-        rawServices &&
-        typeof rawServices === "object" &&
-        !Array.isArray(rawServices)
-      ) {
-        const services = rawServices as Record<
-          string,
-          Record<string, unknown>
-        >;
-        for (const svc of Object.values(services)) {
-          // docker-compose rejects services that combine network_mode with networks
-          if (svc.network_mode) continue;
-          const existing = svc.networks;
-          if (Array.isArray(existing)) {
-            if (!existing.includes(DOCKER_NETWORK_NAME)) {
-              svc.networks = [...existing, DOCKER_NETWORK_NAME];
-            }
-          } else if (existing && typeof existing === "object") {
-            const map = existing as Record<string, unknown>;
-            if (!(DOCKER_NETWORK_NAME in map)) {
-              svc.networks = { ...map, [DOCKER_NETWORK_NAME]: {} };
-            }
-          } else {
-            svc.networks = [DOCKER_NETWORK_NAME];
-          }
-        }
-      }
-      const existingNetworks = (root.networks ?? {}) as Record<
-        string,
-        unknown
-      >;
-      root.networks = {
-        ...existingNetworks,
-        [DOCKER_NETWORK_NAME]: { external: true },
-      };
-      content = yaml.dump(root, { lineWidth: -1, noRefs: true });
-    }
-  }
+  content = attachTomoNetwork(content);
 
   await writeFile(composePath, content, "utf-8");
   return { proxyTarget, composeContent: content };

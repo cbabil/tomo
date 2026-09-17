@@ -5,7 +5,8 @@ import { createLogger } from "./logger.js";
 import { TOMO_DATA_DIR } from "./config.js";
 import { App, type AppInstance, type AppStatus, type AppType, type ProxyTarget } from "./app.js";
 import { slugify } from "./utils.js";
-import { patchComposeFile, validateComposeFile, extractProxyTarget, hasHostNetwork } from "./compose-utils.js";
+import { patchComposeFile, validateComposeFile, extractProxyTarget } from "./compose-utils.js";
+import { resolveProxyTarget, DEFAULT_SERVICE } from "./custom-compose.js";
 import { prepareVolumeDirectories, fixVolumePermissions } from "./volume-utils.js";
 import { PortAllocator } from "./port-allocator.js";
 import { addExternal, removeExternal, updateExternal, listExternal } from "./external-apps.js";
@@ -200,12 +201,13 @@ export class Apps {
         composeContent = input.composeYaml;
       } else if (input.image) {
         composeContent = yaml.dump(
-          { services: { app: { image: input.image, restart: "unless-stopped" } } },
+          { services: { [DEFAULT_SERVICE]: { image: input.image, restart: "unless-stopped" } } },
           { lineWidth: -1, noRefs: true },
         );
       } else {
         throw new Error("Provide image or compose YAML");
       }
+      const target = resolveProxyTarget(composeContent, input.containerPort);
 
       await writeFile(path.join(appDir, "docker-compose.yml"), composeContent, "utf-8");
       const { composeContent: patchedContent } = await patchComposeFile(appDir);
@@ -213,21 +215,13 @@ export class Apps {
         allowPrivileged: input.allowPrivileged,
       });
 
-      const hostNetwork = patchedContent
-        ? hasHostNetwork(patchedContent)
-        : false;
-
       return this.finishInstall({
         id,
         name: input.name,
         version: "custom",
         appDir,
         type: "custom",
-        proxyTarget: this.portAllocator.assign({
-          service: "app",
-          port: input.containerPort,
-          hostNetwork,
-        }),
+        proxyTarget: this.portAllocator.assign(target),
         patchedContent,
       });
     });
@@ -250,6 +244,7 @@ export class Apps {
 
     return this.withInstallRollback(id, appDir, async () => {
       const composeContent = this.buildTemplateCompose(template, setupValues);
+      const target = resolveProxyTarget(composeContent, template.containerPort);
       await writeFile(path.join(appDir, "docker-compose.yml"), composeContent, "utf-8");
       const { composeContent: patchedContent } = await patchComposeFile(appDir);
 
@@ -268,7 +263,7 @@ export class Apps {
         appDir,
         type: "template",
         templateId: input.templateId,
-        proxyTarget: this.portAllocator.assign({ service: "app", port: template.containerPort }),
+        proxyTarget: this.portAllocator.assign(target),
         patchedContent,
       });
     });
@@ -574,7 +569,7 @@ export class Apps {
     if (volumes.length > 0) service.volumes = volumes;
 
     return yaml.dump(
-      { services: { app: service } },
+      { services: { [DEFAULT_SERVICE]: service } },
       { lineWidth: -1, noRefs: true },
     );
   }
