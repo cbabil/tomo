@@ -13,6 +13,7 @@ import { SettingsSheet } from "../../components/sheets/SettingsSheet";
 import { SystemSheet } from "../../components/sheets/SystemSheet";
 import { AddCustomAppDialog } from "../../components/dialogs/AddCustomAppDialog";
 import { EditExternalAppDialog } from "../../components/dialogs/EditExternalAppDialog";
+import { EditCustomAppDialog } from "../../components/dialogs/EditCustomAppDialog";
 import { TemplateInstallDialog } from "../../components/dialogs/TemplateInstallDialog";
 import { AppLogsDialog } from "../../components/dialogs/AppLogsDialog";
 import { TerminalModal } from "../../components/dialogs/TerminalModal";
@@ -70,6 +71,7 @@ export function DesktopPage() {
       </AnimatePresence>
       <AddCustomAppDialog />
       <EditExternalAppDialog />
+      <EditCustomAppDialog />
       <TemplateInstallDialog />
       <AppLogsDialog />
       <TerminalModal />

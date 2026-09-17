@@ -1,8 +1,15 @@
 import type { InstalledApp } from "../types";
 
-export function appUrl(webPort: number | undefined): string | null {
+/**
+ * URL of an app served on `webPort`. `webPath` is where its web UI lives when
+ * that is not "/" (validated server-side to be a plain path such as "/ui").
+ */
+export function appUrl(
+  webPort: number | undefined,
+  webPath: string = "/",
+): string | null {
   if (webPort == null) return null;
-  return `${window.location.protocol}//${window.location.hostname}:${webPort}/`;
+  return `${window.location.protocol}//${window.location.hostname}:${webPort}${webPath}`;
 }
 
 /** ttyd WebSocket endpoint for an app served on the given web port. */
@@ -12,8 +19,8 @@ export function terminalSocketUrl(webPort: number | undefined): string | null {
   return `${wsProtocol}//${window.location.hostname}:${webPort}/ws`;
 }
 
-export function openAppUrl(webPort: number | undefined): void {
-  const url = appUrl(webPort);
+export function openAppUrl(webPort: number | undefined, webPath?: string): void {
+  const url = appUrl(webPort, webPath);
   if (url) window.open(url, "_blank");
 }
 
@@ -24,6 +31,6 @@ export function openInstalledApp(app: InstalledApp): void {
       window.open(app.externalUrl, "_blank");
     }
   } else {
-    openAppUrl(app.webPort);
+    openAppUrl(app.webPort, app.webPath);
   }
 }

@@ -32,7 +32,7 @@ export function AddCustomAppDialog() {
   const [tab, setTab] = useState(0);
   const [error, setError] = useState("");
 
-  const defaultDocker = { name: "", image: "", port: "", icon: "", composeYaml: "" };
+  const defaultDocker = { name: "", image: "", port: "", path: "", icon: "", composeYaml: "" };
   const defaultExt = { name: "", url: "", icon: "" };
   const [docker, setDocker] = useState(defaultDocker);
   const [ext, setExt] = useState(defaultExt);
@@ -78,6 +78,7 @@ export function AddCustomAppDialog() {
         image: docker.image.trim() || undefined,
         composeYaml: docker.composeYaml.trim() || undefined,
         containerPort: port,
+        path: docker.path.trim() || undefined,
         icon: docker.icon.trim() || undefined,
         allowPrivileged,
       });
@@ -166,6 +167,15 @@ export function AddCustomAppDialog() {
               type="number"
               helperText={t("customApp.portHelp")}
               slotProps={{ htmlInput: { min: 1, max: 65535 } }}
+            />
+            <TextField
+              label={t("customApp.openPath")}
+              value={docker.path}
+              onChange={(e) => updateDocker("path", e.target.value)}
+              fullWidth
+              size="small"
+              placeholder="/ui"
+              helperText={t("customApp.openPathHelp")}
             />
             <TextField
               label={t("customApp.icon")}

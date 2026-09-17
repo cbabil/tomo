@@ -8,6 +8,13 @@ interface EditingExternalApp {
   icon?: string;
 }
 
+interface EditingCustomApp {
+  id: string;
+  name: string;
+  path?: string;
+  icon?: string;
+}
+
 interface LogsApp {
   id: string;
   name: string;
@@ -21,6 +28,7 @@ interface UIState {
   spotlightOpen: boolean;
   customAppDialogOpen: boolean;
   editingExternalApp: EditingExternalApp | null;
+  editingCustomApp: EditingCustomApp | null;
   selectedTemplate: AppTemplate | null;
   logsApp: LogsApp | null;
   terminalOpen: boolean;
@@ -40,6 +48,8 @@ interface UIActions {
   closeCustomAppDialog: () => void;
   openEditExternalApp: (app: EditingExternalApp) => void;
   closeEditExternalApp: () => void;
+  openEditCustomApp: (app: EditingCustomApp) => void;
+  closeEditCustomApp: () => void;
   openTemplateInstall: (template: AppTemplate) => void;
   closeTemplateInstall: () => void;
   openLogs: (app: LogsApp) => void;
@@ -58,6 +68,7 @@ export const useStore = create<UIStore>((set, get) => ({
   spotlightOpen: false,
   customAppDialogOpen: false,
   editingExternalApp: null,
+  editingCustomApp: null,
   selectedTemplate: null,
   logsApp: null,
   terminalOpen: false,
@@ -76,6 +87,8 @@ export const useStore = create<UIStore>((set, get) => ({
   closeCustomAppDialog: () => set({ customAppDialogOpen: false }),
   openEditExternalApp: (app) => set({ editingExternalApp: app }),
   closeEditExternalApp: () => set({ editingExternalApp: null }),
+  openEditCustomApp: (app) => set({ editingCustomApp: app }),
+  closeEditCustomApp: () => set({ editingCustomApp: null }),
   openTemplateInstall: (template) => set({ selectedTemplate: template }),
   closeTemplateInstall: () => set({ selectedTemplate: null }),
   openLogs: (app) => set({ logsApp: app }),

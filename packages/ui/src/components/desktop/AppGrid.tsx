@@ -22,6 +22,7 @@ export function AppGrid() {
   const { t } = useTranslation();
   const openSheet = useStore((s) => s.openSheet);
   const openEditExternalApp = useStore((s) => s.openEditExternalApp);
+  const openEditCustomApp = useStore((s) => s.openEditCustomApp);
   const openLogs = useStore((s) => s.openLogs);
   const installedQuery = trpc.apps.installed.useQuery();
   const stopMutation = trpc.apps.stop.useMutation();
@@ -67,6 +68,16 @@ export function AppGrid() {
       return;
     }
 
+    if (action === "edit") {
+      openEditCustomApp({
+        id: app.id,
+        name: app.name,
+        path: app.webPath,
+        icon: app.icon || undefined,
+      });
+      return;
+    }
+
     try {
       if (action === "stop") {
         await stopMutation.mutateAsync({ appId: app.id });
@@ -88,6 +99,9 @@ export function AppGrid() {
   };
 
   const isExternal = contextMenu?.app.type === "external";
+  // Store apps take their open path and icon from their manifest.
+  const isEditable =
+    contextMenu?.app.type === "custom" || contextMenu?.app.type === "template";
 
   if (apps.length === 0) {
     return (
@@ -147,6 +161,14 @@ export function AppGrid() {
           </>
         ) : (
           <>
+            {isEditable && (
+              <MenuItem onClick={() => handleAction("edit")}>
+                <ListItemIcon>
+                  <EditIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                </ListItemIcon>
+                <ListItemText>{t("desktop.apps.edit")}</ListItemText>
+              </MenuItem>
+            )}
             <MenuItem onClick={() => handleAction("stop")}>
               <ListItemIcon>
                 <StopIcon fontSize="small" sx={{ color: "text.secondary" }} />

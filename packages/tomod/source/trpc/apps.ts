@@ -5,6 +5,7 @@ import { SYSTEM_APP_IDS } from "../apps.js";
 import type { Apps } from "../apps.js";
 import type { AppStore } from "../app-store.js";
 import type { TemplateRegistry } from "../templates.js";
+import { manifestOpenPath, MAX_OPEN_PATH_LENGTH } from "../open-path.js";
 
 const appIdSchema = z
   .string()
@@ -19,6 +20,9 @@ const httpUrlSchema = z
     (u) => /^https?:\/\//i.test(u),
     "Only http and https URLs are allowed",
   );
+
+// Shape only; the rules live in normalizeOpenPath, applied by Apps.
+const openPathSchema = z.string().max(MAX_OPEN_PATH_LENGTH);
 
 const MAX_EXTERNAL_APPS = 100;
 const MAX_COMPOSE_YAML_LENGTH = 32_000;
@@ -57,7 +61,7 @@ export function createAppsRouter(
         const manifest = appStore.getApp(app.id);
         return {
           ...app,
-          icon: manifest?.icon ?? "",
+          icon: app.icon ?? manifest?.icon ?? "",
           tagline: manifest?.tagline ?? "",
           category: manifest?.category ?? "",
           developer: manifest?.developer ?? "",
@@ -65,6 +69,8 @@ export function createAppsRouter(
           // (no app_proxy block) bind directly to the host on the port
           // declared in their manifest.
           webPort: app.proxyTarget?.hostPort ?? manifest?.port,
+          // Where the tile opens when the web UI is not at "/".
+          webPath: app.path ?? manifestOpenPath(manifest?.path),
           // System apps (the built-in Terminal) are hidden from app lists.
           hidden: SYSTEM_APP_IDS.has(app.id),
         };
@@ -156,6 +162,7 @@ export function createAppsRouter(
               image: z.string().optional(),
               composeYaml: z.string().max(MAX_COMPOSE_YAML_LENGTH).optional(),
               containerPort: z.number().int().min(1).max(65535),
+              path: openPathSchema.optional(),
               icon: httpUrlSchema.optional(),
               allowPrivileged: z.boolean().optional(),
             })
@@ -166,6 +173,19 @@ export function createAppsRouter(
         )
         .mutation(async ({ input }) => {
           return apps.installCustom(input);
+        }),
+
+      updateApp: privateProcedure
+        .input(
+          z.object({
+            id: appIdSchema,
+            path: openPathSchema.optional(),
+            icon: httpUrlSchema.optional(),
+          }),
+        )
+        .mutation(async ({ input }) => {
+          const { id, ...presentation } = input;
+          return apps.updatePresentation(id, presentation);
         }),
 
       addExternal: privateProcedure

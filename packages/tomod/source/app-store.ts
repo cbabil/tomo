@@ -30,6 +30,8 @@ const AppManifestSchema = z.object({
   developer: z.coerce.string().default(""),
   website: z.string().default(""),
   port: z.number().optional(),
+  // Where the app's web UI lives when it is not served at "/".
+  path: z.string().default(""),
   icon: z.string().default(""),
   gallery: z.array(z.string()).default([]),
   dependencies: z.array(z.string()).default([]),

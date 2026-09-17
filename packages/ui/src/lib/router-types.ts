@@ -130,6 +130,7 @@ const appsRouter = t.router({
       developer: string;
       status: "running" | "stopped" | "error" | "external";
       webPort?: number;
+      webPath?: string;
       type?: "store" | "custom" | "template" | "external";
       externalUrl?: string;
       hidden?: boolean;
@@ -162,6 +163,7 @@ const appsRouter = t.router({
           image: z.string().optional(),
           composeYaml: z.string().optional(),
           containerPort: z.number(),
+          path: z.string().optional(),
           icon: z.string().optional(),
           allowPrivileged: z.boolean().optional(),
         }),
@@ -179,6 +181,15 @@ const appsRouter = t.router({
     removeExternal: t.procedure
       .input(z.object({ id: z.string() }))
       .mutation((): { success: boolean } => ({ success: true })),
+    updateApp: t.procedure
+      .input(
+        z.object({
+          id: z.string(),
+          path: z.string().optional(),
+          icon: z.string().optional(),
+        }),
+      )
+      .mutation((): void => {}),
     updateExternal: t.procedure
       .input(
         z.object({

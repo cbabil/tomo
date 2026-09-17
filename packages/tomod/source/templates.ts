@@ -29,6 +29,8 @@ export const AppTemplateSchema = z.object({
   category: z.string(),
   image: z.string(),
   containerPort: z.number().int().min(1).max(65535),
+  // Where the app's web UI lives when it is not served at "/".
+  path: z.string().optional(),
   composeYaml: z.string().optional(),
   // Trusted built-in templates may opt out of the compose security blocklist
   // (e.g. to mount the Docker socket). Never set on user-provided apps.
