@@ -1,11 +1,10 @@
 import { readFile, writeFile, mkdir, rm, cp } from "node:fs/promises";
 import path from "node:path";
-import yaml from "js-yaml";
 import { createLogger } from "./logger.js";
 import { TOMO_DATA_DIR } from "./config.js";
 import { App, type AppInstance, type AppStatus, type AppType, type ProxyTarget } from "./app.js";
 import { slugify } from "./utils.js";
-import { patchComposeFile, validateComposeFile, extractProxyTarget } from "./compose-utils.js";
+import { patchComposeFile, validateComposeFile, extractProxyTarget, dumpCompose } from "./compose-utils.js";
 import { resolveProxyTarget, DEFAULT_SERVICE } from "./custom-compose.js";
 import { prepareVolumeDirectories, fixVolumePermissions } from "./volume-utils.js";
 import { PortAllocator } from "./port-allocator.js";
@@ -200,14 +199,13 @@ export class Apps {
       if (input.composeYaml) {
         composeContent = input.composeYaml;
       } else if (input.image) {
-        composeContent = yaml.dump(
-          { services: { [DEFAULT_SERVICE]: { image: input.image, restart: "unless-stopped" } } },
-          { lineWidth: -1, noRefs: true },
-        );
+        composeContent = dumpCompose({
+          services: { [DEFAULT_SERVICE]: { image: input.image, restart: "unless-stopped" } },
+        });
       } else {
         throw new Error("Provide image or compose YAML");
       }
-      const target = resolveProxyTarget(composeContent, input.containerPort);
+      const target = resolveProxyTarget(composeContent, input.containerPort, id);
 
       await writeFile(path.join(appDir, "docker-compose.yml"), composeContent, "utf-8");
       const { composeContent: patchedContent } = await patchComposeFile(appDir);
@@ -244,7 +242,7 @@ export class Apps {
 
     return this.withInstallRollback(id, appDir, async () => {
       const composeContent = this.buildTemplateCompose(template, setupValues);
-      const target = resolveProxyTarget(composeContent, template.containerPort);
+      const target = resolveProxyTarget(composeContent, template.containerPort, id);
       await writeFile(path.join(appDir, "docker-compose.yml"), composeContent, "utf-8");
       const { composeContent: patchedContent } = await patchComposeFile(appDir);
 
@@ -568,10 +566,7 @@ export class Apps {
     if (envList.length > 0) service.environment = envList;
     if (volumes.length > 0) service.volumes = volumes;
 
-    return yaml.dump(
-      { services: { [DEFAULT_SERVICE]: service } },
-      { lineWidth: -1, noRefs: true },
-    );
+    return dumpCompose({ services: { [DEFAULT_SERVICE]: service } });
   }
 
   private async writeAppMeta(app: App, templateId?: string): Promise<void> {

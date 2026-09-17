@@ -195,6 +195,7 @@ export function AddCustomAppDialog() {
                   rows={6}
                   size="small"
                   placeholder={"services:\n  app:\n    image: nginx:latest"}
+                  helperText={t("customApp.composeYamlHelp")}
                   sx={{ fontFamily: "monospace" }}
                 />
                 <SwitchWithHelp
