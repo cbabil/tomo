@@ -1,13 +1,15 @@
 <p align="center">
-  <h1 align="center">Tomo</h1>
+  <img src="packages/ui/public/logo.svg" alt="Tomo logo" width="96" height="96">
 </p>
+
+<h1 align="center">Tomo</h1>
 
 <p align="center">
   <strong>Self-hosted app platform with a desktop-in-browser experience</strong>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.67-9146FF" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.0.68-9146FF" alt="Version">
   <img src="https://img.shields.io/badge/typescript-5.7+-3178C6?logo=typescript&logoColor=white" alt="TypeScript">
   <img src="https://img.shields.io/badge/react-19-61DAFB?logo=react&logoColor=white" alt="React 19">
   <img src="https://img.shields.io/badge/docker-required-2496ED?logo=docker&logoColor=white" alt="Docker">
@@ -27,9 +29,9 @@ Install apps with one click, manage everything from a beautiful desktop interfac
 Download the `.deb` package for your architecture from the [latest release](https://github.com/cbabil/tomo/releases/latest), then install it:
 
 ```bash
-sudo apt install ./tomo_0.0.67_amd64.deb   # x86_64
+sudo apt install ./tomo_0.0.68_amd64.deb   # x86_64
 # or
-sudo apt install ./tomo_0.0.67_arm64.deb   # ARM64 (Raspberry Pi, etc.)
+sudo apt install ./tomo_0.0.68_arm64.deb   # ARM64 (Raspberry Pi, etc.)
 ```
 
 Then open `http://your-server-ip` in your browser (default port 80).

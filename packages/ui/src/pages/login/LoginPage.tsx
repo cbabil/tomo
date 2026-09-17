@@ -9,6 +9,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../hooks/useAuth";
 import { fullPageGradient } from "../../styles/shared";
+import { TomoLogo } from "../../components/ui/TomoLogo";
 
 export function LoginPage() {
   const { t } = useTranslation();
@@ -54,9 +55,7 @@ export function LoginPage() {
   return (
     <Box sx={fullPageGradient}>
       <Box sx={styles.card}>
-        <Typography variant="h4" sx={styles.logo}>
-          tomo
-        </Typography>
+        <TomoLogo size={44} sx={styles.logo} />
         <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
           {t("login.title")}
         </Typography>
@@ -108,10 +107,7 @@ const styles = {
     width: 380,
   },
   logo: {
-    fontWeight: 700,
-    letterSpacing: "-0.02em",
-    color: "text.primary",
-    mb: 0.5,
+    mb: 1,
   },
   form: {
     width: "100%",

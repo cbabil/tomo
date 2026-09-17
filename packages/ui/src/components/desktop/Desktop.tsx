@@ -8,6 +8,7 @@ import { Dock } from "./Dock";
 import { SpotlightSearch } from "./SpotlightSearch";
 import { UpdateBanner } from "./UpdateBanner";
 import { DesktopLogout } from "./DesktopLogout";
+import { DesktopBrand } from "./DesktopBrand";
 
 const APP_VERSION = __APP_VERSION__;
 
@@ -26,6 +27,7 @@ export function Desktop() {
       </Box>
       <Dock />
       <SpotlightSearch />
+      <DesktopBrand />
       <Typography sx={styles.version}>v{APP_VERSION}</Typography>
     </Box>
   );
