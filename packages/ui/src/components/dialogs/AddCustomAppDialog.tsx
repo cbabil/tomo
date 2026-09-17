@@ -164,6 +164,7 @@ export function AddCustomAppDialog() {
               required
               size="small"
               type="number"
+              helperText={t("customApp.portHelp")}
               slotProps={{ htmlInput: { min: 1, max: 65535 } }}
             />
             <TextField
