@@ -33,6 +33,11 @@ export interface AppInstance {
   dataDir: string;
   proxyTarget?: ProxyTarget;
   type: AppType;
+  /** Where the tile opens, e.g. "/ui". Undefined means "/". */
+  path?: string;
+  icon?: string;
+  /** Set for apps installed from a template. */
+  templateId?: string;
 }
 
 export class App {
@@ -44,6 +49,9 @@ export class App {
   readonly dataDir: string;
   readonly proxyTarget: ProxyTarget | undefined;
   readonly type: AppType;
+  readonly path: string | undefined;
+  readonly icon: string | undefined;
+  readonly templateId: string | undefined;
   private status: AppStatus;
   private readonly docker: Docker;
 
@@ -58,6 +66,9 @@ export class App {
       status?: AppStatus;
       proxyTarget?: ProxyTarget;
       type?: AppType;
+      path?: string;
+      icon?: string;
+      templateId?: string;
     },
     docker: Docker,
   ) {
@@ -69,8 +80,16 @@ export class App {
     this.dataDir = props.dataDir;
     this.proxyTarget = props.proxyTarget;
     this.type = props.type ?? "store";
+    this.path = props.path;
+    this.icon = props.icon;
+    this.templateId = props.templateId;
     this.status = props.status ?? "unknown";
     this.docker = docker;
+  }
+
+  /** A copy of this app with some fields replaced; everything else, status included, is kept. */
+  withChanges(changes: Partial<Omit<AppInstance, "id" | "dataDir">>): App {
+    return new App({ ...this.toJSON(), ...changes }, this.docker);
   }
 
   getStatus(): AppStatus {
@@ -188,6 +207,9 @@ export class App {
       dataDir: this.dataDir,
       proxyTarget: this.proxyTarget,
       type: this.type,
+      path: this.path,
+      icon: this.icon,
+      templateId: this.templateId,
     };
   }
 }

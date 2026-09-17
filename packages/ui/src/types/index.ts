@@ -38,6 +38,8 @@ export interface AppTemplate {
 export interface InstalledApp extends App {
   status: "running" | "stopped" | "error" | "external";
   webPort?: number;
+  /** Where the tile opens when the web UI is not at "/", e.g. "/ui". */
+  webPath?: string;
   type?: AppType;
   externalUrl?: string;
   /** System apps (e.g. the built-in Terminal) hidden from app lists. */

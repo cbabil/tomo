@@ -6,6 +6,7 @@ import { App, type AppInstance, type AppStatus, type AppType, type ProxyTarget }
 import { slugify } from "./utils.js";
 import { patchComposeFile, validateComposeFile, extractProxyTarget, dumpCompose } from "./compose-utils.js";
 import { resolveProxyTarget, DEFAULT_SERVICE } from "./custom-compose.js";
+import { normalizeOpenPath } from "./open-path.js";
 import { prepareVolumeDirectories, fixVolumePermissions } from "./volume-utils.js";
 import { PortAllocator } from "./port-allocator.js";
 import { addExternal, removeExternal, updateExternal, listExternal } from "./external-apps.js";
@@ -136,6 +137,9 @@ export class Apps {
         status: "stopped",
         proxyTarget,
         type: meta.type ?? "store",
+        path: meta.path,
+        icon: meta.icon,
+        templateId: meta.templateId,
       },
       this.docker,
     );
@@ -184,10 +188,12 @@ export class Apps {
     image?: string;
     composeYaml?: string;
     containerPort: number;
+    path?: string;
     icon?: string;
     allowPrivileged?: boolean;
   }): Promise<AppInstance> {
     const id = slugify(input.name);
+    const openPath = normalizeOpenPath(input.path ?? "");
     if (!id) throw new Error("Invalid app name");
     if (this.instances.has(id)) throw new Error(`App ID already in use: ${id}`);
 
@@ -219,6 +225,8 @@ export class Apps {
         version: "custom",
         appDir,
         type: "custom",
+        path: openPath,
+        icon: input.icon,
         proxyTarget: this.portAllocator.assign(target),
         patchedContent,
       });
@@ -261,6 +269,8 @@ export class Apps {
         appDir,
         type: "template",
         templateId: input.templateId,
+        path: normalizeOpenPath(template.path ?? ""),
+        icon: template.icon || undefined,
         proxyTarget: this.portAllocator.assign(target),
         patchedContent,
       });
@@ -363,6 +373,30 @@ export class Apps {
     return updateExternal(this.store, id, input);
   }
 
+  /**
+   * Change where a custom or template app opens, and its icon, without
+   * reinstalling. Containers and proxy routing are not touched.
+   *
+   * @throws when the app is not installed, is a store app, or the path is invalid
+   */
+  async updatePresentation(
+    appId: string,
+    input: { path?: string; icon?: string },
+  ): Promise<AppInstance> {
+    const app = this.getApp(appId);
+    if (app.type !== "custom" && app.type !== "template") {
+      throw new Error("Only custom and template apps can be edited");
+    }
+    const updated = app.withChanges({
+      path: normalizeOpenPath(input.path ?? ""),
+      icon: input.icon || undefined,
+    });
+    await this.writeAppMeta(updated);
+    this.instances.set(appId, updated);
+    log.info("App presentation updated", { appId, path: updated.path });
+    return updated.toJSON();
+  }
+
   async update(appId: string): Promise<void> {
     const app = this.getApp(appId);
     const manifest = this.appStore.getApp(appId);
@@ -382,18 +416,7 @@ export class Apps {
       ? this.portAllocator.assign(baseTarget, app.proxyTarget)
       : undefined;
 
-    const updatedApp = new App(
-      {
-        id: appId,
-        name: app.name,
-        version: app.version,
-        port: app.port,
-        installedAt: app.installedAt,
-        dataDir: app.dataDir,
-        proxyTarget: effectiveProxyTarget,
-      },
-      this.docker,
-    );
+    const updatedApp = app.withChanges({ proxyTarget: effectiveProxyTarget });
     this.instances.set(appId, updatedApp);
     if (effectiveProxyTarget?.hostPort) {
       this.pendingPorts.delete(effectiveProxyTarget.hostPort);
@@ -421,6 +444,8 @@ export class Apps {
     templateId?: string;
     proxyTarget?: ProxyTarget;
     patchedContent?: string;
+    path?: string;
+    icon?: string;
   }): Promise<AppInstance> {
     const { id, name, version, appDir, type, templateId, proxyTarget, patchedContent } = params;
 
@@ -435,6 +460,9 @@ export class Apps {
         status: "installing",
         proxyTarget,
         type,
+        path: params.path,
+        icon: params.icon,
+        templateId,
       },
       this.docker,
     );
@@ -442,7 +470,7 @@ export class Apps {
     this.instances.set(id, app);
     if (proxyTarget?.hostPort) this.pendingPorts.delete(proxyTarget.hostPort);
     if (patchedContent) await prepareVolumeDirectories(appDir, patchedContent);
-    await this.writeAppMeta(app, templateId);
+    await this.writeAppMeta(app);
     await app.start();
     await this.updateInstalledList();
     if (proxyTarget) await this.proxy.addApp(id, proxyTarget);
@@ -569,7 +597,7 @@ export class Apps {
     return dumpCompose({ services: { [DEFAULT_SERVICE]: service } });
   }
 
-  private async writeAppMeta(app: App, templateId?: string): Promise<void> {
+  private async writeAppMeta(app: App): Promise<void> {
     const metaPath = path.join(app.dataDir, "tomo-meta.json");
     const meta: AppMeta = {
       name: app.name,
@@ -578,7 +606,9 @@ export class Apps {
       installedAt: app.installedAt,
       proxyTarget: app.proxyTarget,
       type: app.type,
-      ...(templateId && { templateId }),
+      path: app.path,
+      icon: app.icon,
+      templateId: app.templateId,
     };
     await writeFile(metaPath, JSON.stringify(meta), "utf-8");
   }
@@ -602,4 +632,6 @@ interface AppMeta {
   proxyTarget?: ProxyTarget;
   type?: AppType;
   templateId?: string;
+  path?: string;
+  icon?: string;
 }

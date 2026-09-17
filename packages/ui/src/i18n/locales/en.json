@@ -207,7 +207,9 @@
     "editTitle": "Edit App",
     "edit": "Edit",
     "portHelp": "The port the app listens on inside its container. Tomo serves the app through its own login proxy on a different port.",
-    "composeYamlHelp": "Do not add a \"ports:\" line for the Container Port. Tomo reaches the app over its internal network, and publishing that port would expose the app without sign-in."
+    "composeYamlHelp": "Do not add a \"ports:\" line for the Container Port. Tomo reaches the app over its internal network, and publishing that port would expose the app without sign-in.",
+    "openPath": "Open path (optional)",
+    "openPathHelp": "Where the app's web page lives if it is not at \"/\", for example \"/ui\" or \"/login\". Only the link on the desktop changes."
   },
   "common": {
     "loading": "Loading...",
