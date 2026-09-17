@@ -57,6 +57,7 @@ export type ComposeServices = Record<string, ComposeService>;
 
 type ComposeRoot = Record<string, unknown>;
 
+/** Parse compose YAML into its root mapping. @throws Error("Invalid compose YAML: ...") */
 function loadRoot(content: string): ComposeRoot | undefined {
   let doc: unknown;
   try {
@@ -83,6 +84,11 @@ function servicesOf(root: ComposeRoot | undefined): ComposeServices | undefined 
       svc && typeof svc === "object" ? (svc as ComposeService) : {},
     ]),
   );
+}
+
+/** Serialise a compose document the way Tomo writes every compose file. */
+export function dumpCompose(root: Record<string, unknown>): string {
+  return yaml.dump(root, { lineWidth: -1, noRefs: true });
 }
 
 /**
@@ -141,7 +147,7 @@ export function attachTomoNetwork(content: string): string {
       [DOCKER_NETWORK_NAME]: { external: true },
     },
   };
-  return yaml.dump(patched, { lineWidth: -1, noRefs: true });
+  return dumpCompose(patched);
 }
 
 export function extractProxyTarget(

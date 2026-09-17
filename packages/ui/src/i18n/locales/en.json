@@ -206,7 +206,8 @@
     "adding": "Adding...",
     "editTitle": "Edit App",
     "edit": "Edit",
-    "portHelp": "The port the app listens on inside its container (not a host port). Tomo puts the app behind its own login proxy, so the address you open will use a different port."
+    "portHelp": "The port the app listens on inside its container. Tomo serves the app through its own login proxy on a different port.",
+    "composeYamlHelp": "Do not add a \"ports:\" line for the Container Port. Tomo reaches the app over its internal network, and publishing that port would expose the app without sign-in."
   },
   "common": {
     "loading": "Loading...",
