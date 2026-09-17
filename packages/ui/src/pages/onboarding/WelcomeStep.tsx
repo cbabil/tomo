@@ -6,6 +6,7 @@ import ShieldIcon from "@mui/icons-material/Shield";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CloudOffIcon from "@mui/icons-material/CloudOff";
 import { useTranslation } from "react-i18next";
+import { TomoLogo } from "../../components/ui/TomoLogo";
 
 interface WelcomeStepProps {
   onNext: () => void;
@@ -19,7 +20,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
       <Box sx={styles.glassOverlay} />
 
       <Box sx={styles.content}>
-        <Typography sx={styles.logo}>tomo</Typography>
+        <TomoLogo size={56} wordmarkColor={WELCOME_WORDMARK_COLOR} sx={styles.logo} />
 
         <Box sx={styles.taglineGroup}>
           <Typography variant="h3" sx={styles.tagline}>
@@ -65,6 +66,9 @@ function FeatureItem({ icon, label }: { icon: React.ReactNode; label: string }) 
   );
 }
 
+// The welcome screen is always dark, whatever the theme mode.
+const WELCOME_WORDMARK_COLOR = "rgba(255, 255, 255, 0.95)";
+
 const styles = {
   container: {
     position: "relative" as const,
@@ -95,12 +99,6 @@ const styles = {
     py: 4,
   },
   logo: {
-    fontSize: "2rem",
-    fontWeight: 300,
-    letterSpacing: "0.25em",
-    textTransform: "uppercase" as const,
-    color: "rgba(255, 255, 255, 0.9)",
-    textShadow: "0 0 20px rgba(145, 71, 255, 0.8)",
     mb: 4,
   },
   taglineGroup: {

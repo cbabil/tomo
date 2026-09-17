@@ -85,6 +85,9 @@
       "system": "System",
       "search": "Search",
       "terminal": "Terminal"
+    },
+    "brand": {
+      "about": "About Tomo"
     }
   },
   "spotlight": {
