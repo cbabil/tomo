@@ -18,6 +18,10 @@ export const STATUS_COLORS: Record<InstalledApp["status"], string> = {
   stopped: colors.error,
   error: colors.warning,
   external: colors.info,
+  installing: colors.warning,
+  starting: colors.warning,
+  restarting: colors.warning,
+  stopping: colors.warning,
 };
 
 export function AppIcon({ name, icon, status, onClick, onContextMenu }: AppIconProps) {

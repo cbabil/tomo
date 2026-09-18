@@ -15,6 +15,25 @@ export interface MemoryUsage {
   percentage: number;
 }
 
+/**
+ * Memory in use by applications. The kernel's "used" figure also counts disk
+ * cache and buffers, which Linux fills with spare memory and hands back the
+ * moment a program needs it. Counting that makes an idle machine look nearly
+ * full, so usage is measured against what is actually available instead.
+ */
+export function toMemoryUsage(mem: {
+  total: number;
+  available: number;
+}): MemoryUsage {
+  const used = Math.max(0, mem.total - mem.available);
+  return {
+    total: mem.total,
+    used,
+    free: mem.available,
+    percentage: mem.total > 0 ? (used / mem.total) * 100 : 0,
+  };
+}
+
 export interface DiskUsage {
   filesystem: string;
   size: number;
@@ -58,13 +77,7 @@ export class Hardware {
   }
 
   async getMemoryUsage(): Promise<MemoryUsage> {
-    const mem = await si.mem();
-    return {
-      total: mem.total,
-      used: mem.used,
-      free: mem.free,
-      percentage: (mem.used / mem.total) * 100,
-    };
+    return toMemoryUsage(await si.mem());
   }
 
   async getDiskUsage(): Promise<DiskUsage[]> {

@@ -101,19 +101,45 @@ export class App {
     log.info("App status changed", { id: this.id, status });
   }
 
-  async start(): Promise<void> {
+  private get composePath(): string {
+    return `${this.dataDir}/docker-compose.yml`;
+  }
+
+  private get projectName(): string {
+    return `tomo-${this.id}`;
+  }
+
+  /**
+   * Run a lifecycle change. The app shows `during` while it runs and `settled`
+   * once it succeeds. On failure the previous status is restored and the error
+   * rethrown.
+   */
+  private async transition(
+    during: AppStatus,
+    settled: AppStatus,
+    work: () => Promise<void>,
+  ): Promise<void> {
     const previous = this.status;
-    this.status = "starting";
+    this.status = during;
     try {
-      const composePath = `${this.dataDir}/docker-compose.yml`;
-      await this.docker.composeUp(composePath, `tomo-${this.id}`);
-      await this.waitUntilReachable();
-      this.status = "running";
-      log.info("App started", { id: this.id });
+      await work();
+      this.status = settled;
     } catch (err) {
       this.status = previous;
       throw err;
     }
+  }
+
+  async start(): Promise<void> {
+    // A fresh install stays "installing" while images are pulled and containers
+    // are created, so the UI can tell that phase from waiting for the app.
+    const during = this.status === "installing" ? "installing" : "starting";
+    await this.transition(during, "running", async () => {
+      await this.docker.composeUp(this.composePath, this.projectName);
+      this.status = "starting";
+      await this.waitUntilReachable();
+    });
+    log.info("App started", { id: this.id });
   }
 
   /** Stay in the transitional status until the proxy can reach the app. */
@@ -121,33 +147,33 @@ export class App {
     if (this.proxyTarget) await waitForApp(this.id, this.proxyTarget);
   }
 
+  /**
+   * Update an app whose images are not versioned by a store manifest: pull the
+   * newest images, then let compose recreate the containers that changed.
+   */
+  async pullAndRecreate(): Promise<void> {
+    await this.transition("restarting", "running", async () => {
+      await this.docker.composePull(this.composePath, this.projectName);
+      await this.docker.composeUp(this.composePath, this.projectName);
+      await this.waitUntilReachable();
+    });
+    log.info("App images updated", { id: this.id });
+  }
+
   async stop(): Promise<void> {
-    const previous = this.status;
-    this.status = "stopping";
-    try {
-      await this.docker.composeDown(`tomo-${this.id}`);
-      this.status = "stopped";
-      log.info("App stopped", { id: this.id });
-    } catch (err) {
-      this.status = previous;
-      throw err;
-    }
+    await this.transition("stopping", "stopped", () =>
+      this.docker.composeDown(this.projectName),
+    );
+    log.info("App stopped", { id: this.id });
   }
 
   async restart(): Promise<void> {
-    const previous = this.status;
-    this.status = "restarting";
-    try {
-      await this.docker.composeDown(`tomo-${this.id}`);
-      const composePath = `${this.dataDir}/docker-compose.yml`;
-      await this.docker.composeUp(composePath, `tomo-${this.id}`);
+    await this.transition("restarting", "running", async () => {
+      await this.docker.composeDown(this.projectName);
+      await this.docker.composeUp(this.composePath, this.projectName);
       await this.waitUntilReachable();
-      this.status = "running";
-      log.info("App restarted", { id: this.id });
-    } catch (err) {
-      this.status = previous;
-      throw err;
-    }
+    });
+    log.info("App restarted", { id: this.id });
   }
 
   async syncStatus(): Promise<void> {

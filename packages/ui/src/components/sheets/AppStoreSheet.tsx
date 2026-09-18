@@ -20,6 +20,8 @@ import { usePagination } from "../../hooks/usePagination";
 import { catalogStyles } from "./catalogStyles";
 import { AppCard } from "./AppCard";
 import { TemplateCatalog } from "./TemplateCatalog";
+import Alert from "@mui/material/Alert";
+import { useInstallPhase } from "../../hooks/useInstallPhase";
 
 const APPS_PER_PAGE = 8;
 const INSTALLED_CATEGORY = "__installed__";
@@ -35,6 +37,10 @@ export function AppStoreSheet() {
   const categoriesQuery = trpc.apps.categories.useQuery();
   const installedQuery = trpc.apps.installed.useQuery();
   const installMutation = trpc.apps.install.useMutation();
+  const installPhase = useInstallPhase(
+    installMutation.isPending,
+    installMutation.variables?.appId,
+  );
 
   const installedIds = useMemo(
     () => new Set((installedQuery.data ?? []).map((a) => a.id)),
@@ -150,6 +156,12 @@ export function AppStoreSheet() {
             />
           ))}
         </Box>
+
+        {installPhase && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            {installPhase}
+          </Alert>
+        )}
 
         {pagedApps.length === 0 ? (
           <Box sx={catalogStyles.noResults}>

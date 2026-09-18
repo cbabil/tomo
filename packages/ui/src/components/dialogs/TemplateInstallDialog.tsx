@@ -16,6 +16,7 @@ import { colors } from "../../app/theme";
 import { CardIcon } from "../ui/CardIcon";
 import { SetupFieldInput } from "./SetupFieldInput";
 import { dialogStyles } from "./styles";
+import { useInstallPhase } from "../../hooks/useInstallPhase";
 
 export function TemplateInstallDialog() {
   const { t } = useTranslation();
@@ -27,6 +28,7 @@ export function TemplateInstallDialog() {
   const [error, setError] = useState("");
 
   const installMutation = trpc.apps.templates.install.useMutation();
+  const installPhase = useInstallPhase(installMutation.isPending);
 
   useEffect(() => {
     if (!template) return;
@@ -107,6 +109,11 @@ export function TemplateInstallDialog() {
         {error && (
           <Alert severity="error" sx={{ mt: 2 }}>
             {error}
+          </Alert>
+        )}
+        {installPhase && (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            {installPhase}
           </Alert>
         )}
 

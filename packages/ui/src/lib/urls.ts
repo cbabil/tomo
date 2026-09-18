@@ -1,4 +1,5 @@
 import type { InstalledApp } from "../types";
+import { isBusyStatus } from "./appStatus";
 
 /**
  * URL of an app served on `webPort`. `webPath` is where its web UI lives when
@@ -25,6 +26,8 @@ export function openAppUrl(webPort: number | undefined, webPath?: string): void 
 }
 
 export function openInstalledApp(app: InstalledApp): void {
+  // An app that is still coming up would only show a gateway error.
+  if (isBusyStatus(app.status)) return;
   if (app.type === "external" && app.externalUrl) {
     // Only allow http/https to prevent javascript: and data: scheme attacks
     if (/^https?:\/\//i.test(app.externalUrl)) {
