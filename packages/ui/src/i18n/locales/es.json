@@ -153,15 +153,29 @@
     },
     "update": {
       "title": "Actualización",
-      "currentVersion": "Versión actual",
-      "latestVersion": "Última versión",
-      "upToDate": "Actualizado",
-      "updateAvailable": "Actualización disponible",
-      "updateNow": "Actualizar ahora",
-      "updating": "Actualizando...",
-      "restartWarning": "Tomo se reiniciará automáticamente después de la actualización.",
-      "checkFailed": "No se pudieron comprobar las actualizaciones",
-      "status": "Estado"
+      "restartWarning": "Tus aplicaciones siguen funcionando. Tomo se reinicia, lo que tarda alrededor de un minuto.",
+      "state": {
+        "available": "Tomo {{version}} está disponible",
+        "current": "Tomo está actualizado",
+        "unknown": "No se pudo buscar actualizaciones"
+      },
+      "running": "Ejecutando {{version}}",
+      "checked": "comprobado {{when}}",
+      "checkAgain": "Comprobar de nuevo",
+      "checking": "Comprobando...",
+      "updateTo": "Actualizar a {{version}}",
+      "steps": {
+        "download": "Descargando {{version}}",
+        "install": "Instalando y reiniciando Tomo",
+        "reload": "Recargando esta página"
+      },
+      "slow": "Está tardando más de lo habitual. Puede que Tomo aún se esté reiniciando.",
+      "reload": "Recargar",
+      "whatsNew_one": "Novedades",
+      "whatsNew_other": "Novedades de {{count}} versiones",
+      "inThisVersion": "En esta versión",
+      "viewOnGitHub": "Ver en GitHub",
+      "noNotes": "No hay notas para esta versión."
     },
     "aiAccess": {
       "title": "Agentes"

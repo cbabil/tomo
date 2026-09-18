@@ -161,15 +161,29 @@
     },
     "update": {
       "title": "Update",
-      "currentVersion": "Current version",
-      "latestVersion": "Latest version",
-      "upToDate": "Up to date",
-      "updateAvailable": "Update available",
-      "updateNow": "Update now",
-      "updating": "Updating...",
-      "restartWarning": "Tomo will restart automatically after the update.",
-      "checkFailed": "Could not check for updates",
-      "status": "Status"
+      "restartWarning": "Your apps keep running. Tomo itself restarts, which takes about a minute.",
+      "state": {
+        "available": "Tomo {{version}} is available",
+        "current": "Tomo is up to date",
+        "unknown": "Could not check for updates"
+      },
+      "running": "Running {{version}}",
+      "checked": "checked {{when}}",
+      "checkAgain": "Check again",
+      "checking": "Checking...",
+      "updateTo": "Update to {{version}}",
+      "steps": {
+        "download": "Downloading {{version}}",
+        "install": "Installing and restarting Tomo",
+        "reload": "Reloading this page"
+      },
+      "slow": "This is taking longer than usual. Tomo may still be restarting.",
+      "reload": "Reload",
+      "whatsNew_one": "What's new",
+      "whatsNew_other": "What's new in {{count}} releases",
+      "inThisVersion": "In this version",
+      "viewOnGitHub": "View on GitHub",
+      "noNotes": "No notes for this release."
     },
     "aiAccess": {
       "title": "Agents"

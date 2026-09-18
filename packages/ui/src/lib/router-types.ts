@@ -28,6 +28,22 @@ const userRouter = t.router({
     .mutation((): void => {}),
 });
 
+export interface ReleaseInfo {
+  version: string;
+  publishedAt: string;
+  notes: string;
+  url: string;
+}
+interface VersionStatus {
+  current: string;
+  latest: string | null;
+  updateAvailable: boolean;
+  newer: ReleaseInfo[];
+  installed?: ReleaseInfo;
+  checkedAt?: string;
+}
+const emptyVersionStatus: VersionStatus = { current: "", latest: null, updateAvailable: false, newer: [] };
+
 const systemRouter = t.router({
   stats: t.procedure.query(
     (): {
@@ -68,17 +84,8 @@ const systemRouter = t.router({
       containers: { total: 0, running: 0 },
     }),
   ),
-  version: t.procedure.query(
-    (): {
-      current: string;
-      latest: string | null;
-      updateAvailable: boolean;
-    } => ({
-      current: "",
-      latest: null,
-      updateAvailable: false,
-    }),
-  ),
+  version: t.procedure.query((): VersionStatus => emptyVersionStatus),
+  checkForUpdates: t.procedure.mutation((): VersionStatus => emptyVersionStatus),
   update: t.procedure.mutation(
     (): { success: boolean; version: string } => ({
       success: true,
