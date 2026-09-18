@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, readFile } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { AuditLog, redact } from "./audit-log.js";
+import { AuditLog, redact, redactText } from "./audit-log.js";
 
 describe("redact", () => {
   it("masks values under secret-looking keys and secret-looking strings", () => {
@@ -23,12 +23,39 @@ describe("redact", () => {
     });
   });
 
+  it("masks assignments inside free-text arguments such as pasted compose YAML", () => {
+    const out = redact({ composeYaml: "environment:\n  - POSTGRES_PASSWORD=hunter2\n" }) as { composeYaml: string };
+    expect(out.composeYaml).not.toContain("hunter2");
+    expect(out.composeYaml).toContain("POSTGRES_PASSWORD=[redacted]");
+  });
+
   it("leaves ordinary values alone", () => {
     expect(redact({ name: "Gitea", port: 3000, list: ["a", 1, null] })).toEqual({
       name: "Gitea",
       port: 3000,
       list: ["a", 1, null],
     });
+  });
+});
+
+describe("redactText", () => {
+  it("masks secret-looking assignments and tokens inside free text such as logs", () => {
+    const text = [
+      "DATABASE_URL=postgresql://litellm:s3cret@db:5432/litellm",
+      "LITELLM_MASTER_KEY=sk-1234 loaded",
+      "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.abcdefghijklmnopqrstuvwxyz0123456789",
+      "token tomo_abc123_" + "f".repeat(64),
+      'password: "hunter2"',
+      "Listening on 0.0.0.0:4000",
+    ].join("\n");
+    const out = redactText(text);
+    expect(out).not.toContain("s3cret");
+    expect(out).not.toContain("sk-1234");
+    expect(out).not.toContain("hunter2");
+    expect(out).not.toContain("f".repeat(64));
+    expect(out).not.toContain("eyJhbGciOiJIUzI1NiJ9");
+    expect(out).toContain("Listening on 0.0.0.0:4000");
+    expect(out).toContain("DATABASE_URL=postgresql://litellm:[redacted]@db:5432/litellm");
   });
 });
 

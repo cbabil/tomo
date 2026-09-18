@@ -15,6 +15,16 @@ import { colors } from "../../app/theme";
 import { dialogStyles } from "./styles";
 
 const EXPIRY_CHOICES = [30, 90, 365, null] as const;
+
+/** Claude Code configuration that connects it to this Tomo with the token. */
+function mcpSnippet(token: string): string {
+  const config = {
+    mcpServers: {
+      tomo: { url: `${window.location.origin}/mcp`, headers: { Authorization: `Bearer ${token}` } },
+    },
+  };
+  return JSON.stringify(config, null, 2);
+}
 const DEFAULT_EXPIRY_DAYS = 90;
 
 interface TokenDialogProps {
@@ -138,6 +148,8 @@ export function SecretRevealDialog({ title, secret, onClose }: SecretRevealDialo
           <Alert severity="warning">{t("tokens.showOnce")}</Alert>
           <Typography component="code" sx={styles.secret}>{secret}</Typography>
           <Button variant="outlined" onClick={copy}>{copied ? t("tokens.copied") : t("tokens.copy")}</Button>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>{t("tokens.mcpHint")}</Typography>
+          <Typography component="pre" sx={styles.snippet}>{mcpSnippet(secret ?? "")}</Typography>
           <Typography variant="body2" sx={{ color: "text.secondary" }}>{t("tokens.plainHttpWarning")}</Typography>
         </Box>
       </DialogContent>
@@ -159,5 +171,15 @@ const styles = {
     wordBreak: "break-all" as const,
     backgroundColor: "rgba(255,255,255,0.06)",
     userSelect: "all" as const,
+  },
+  snippet: {
+    m: 0,
+    p: 1.5,
+    borderRadius: 2,
+    fontFamily: "monospace",
+    fontSize: "0.75rem",
+    whiteSpace: "pre-wrap" as const,
+    wordBreak: "break-all" as const,
+    backgroundColor: "rgba(255,255,255,0.06)",
   },
 };

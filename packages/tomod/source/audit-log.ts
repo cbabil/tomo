@@ -12,6 +12,10 @@ const KEPT_ROTATIONS = 3;
 const REDACTED = "[redacted]";
 const SECRET_KEY = /pass|secret|token|key|auth|credential|cookie/i;
 const SECRET_VALUE = /tomo_[a-z0-9]{6}_[a-f0-9]{64}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g;
+/** `KEY=value` or `key: "value"` where the key looks secret, as found in logs and env dumps. */
+const SECRET_ASSIGNMENT = /\b([A-Za-z0-9_]*?(?:pass|secret|token|key|auth|credential)[A-Za-z0-9_]*)(\s*[=:]\s*)("?)([^\s"',;]+)/gi;
+/** The password part of a URL such as postgresql://user:password@host. */
+const URL_PASSWORD = /(:\/\/[^\s/:@]+:)([^\s@]+)(@)/g;
 
 export interface AuditPrincipal {
   kind: "user" | "token";
@@ -30,7 +34,7 @@ export interface AuditEntry {
 
 /** Mask anything that looks like a secret, by key name or by value shape. */
 export function redact(value: unknown): unknown {
-  if (typeof value === "string") return value.replace(SECRET_VALUE, REDACTED);
+  if (typeof value === "string") return redactText(value);
   if (Array.isArray(value)) return value.map(redact);
   if (value && typeof value === "object") {
     return Object.fromEntries(
@@ -41,6 +45,14 @@ export function redact(value: unknown): unknown {
     );
   }
   return value;
+}
+
+/** Mask secrets inside free text, such as container logs, before it leaves Tomo. */
+export function redactText(text: string): string {
+  return text
+    .replace(SECRET_VALUE, REDACTED)
+    .replace(URL_PASSWORD, `$1${REDACTED}$3`)
+    .replace(SECRET_ASSIGNMENT, `$1$2$3${REDACTED}`);
 }
 
 export class AuditLog {

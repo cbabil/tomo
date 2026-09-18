@@ -4,7 +4,7 @@ import type { User, TokenPayload } from "../user.js";
 import type { ApiTokens } from "../api-tokens.js";
 import type { AuditLog } from "../audit-log.js";
 import { parseToken } from "../api-tokens.js";
-import { hasScope, isPrivateAddress, type Principal, type RequiredScope } from "../principal.js";
+import { scopeDenial, isPrivateAddress, type Principal, type RequiredScope } from "../principal.js";
 import { AUTH_COOKIE_NAME } from "../config.js";
 
 export interface Context {
@@ -30,31 +30,40 @@ export interface AuthServices {
  * real TCP peer must be private, so a forwarded header on a direct
  * connection cannot fake a local origin.
  */
+export function resolvePrincipal(
+  req: Request,
+  services: Pick<AuthServices, "user" | "tokens">,
+): { principal: Principal | null; user: TokenPayload | null } {
+  const raw = extractToken(req);
+  if (!raw) return { principal: null, user: null };
+
+  if (parseToken(raw)) {
+    const client = req.ip ?? "";
+    const peer = req.socket.remoteAddress ?? "";
+    const principal =
+      isPrivateAddress(client) && isPrivateAddress(peer)
+        ? services.tokens.verify(raw, client)
+        : undefined;
+    return { principal: principal ?? null, user: null };
+  }
+
+  try {
+    const payload = services.user.validateToken(raw);
+    return { principal: { kind: "user", name: payload.sub }, user: payload };
+  } catch {
+    return { principal: null, user: null };
+  }
+}
+
 export function createContext(
   services: AuthServices,
 ): (opts: { req: Request; res: Response }) => Context {
-  return ({ req, res }: { req: Request; res: Response }) => {
-    const base = { isSecure: req.protocol === "https", res, audit: services.audit };
-    const raw = extractToken(req);
-    if (!raw) return { ...base, principal: null, user: null };
-
-    if (parseToken(raw)) {
-      const client = req.ip ?? "";
-      const peer = req.socket.remoteAddress ?? "";
-      const principal =
-        isPrivateAddress(client) && isPrivateAddress(peer)
-          ? services.tokens.verify(raw, client)
-          : undefined;
-      return { ...base, principal: principal ?? null, user: null };
-    }
-
-    try {
-      const payload = services.user.validateToken(raw);
-      return { ...base, principal: { kind: "user", name: payload.sub }, user: payload };
-    } catch {
-      return { ...base, principal: null, user: null };
-    }
-  };
+  return ({ req, res }: { req: Request; res: Response }) => ({
+    ...resolvePrincipal(req, services),
+    isSecure: req.protocol === "https",
+    res,
+    audit: services.audit,
+  });
 }
 
 function extractToken(req: Request): string | null {
@@ -99,11 +108,8 @@ export function scoped(required: RequiredScope) {
         reason,
       });
 
-    if (!hasScope(principal, required)) {
-      const reason =
-        required === "user"
-          ? "Only a signed-in person can do this"
-          : `This token has scope "${principal.scope}"; "${required}" is required`;
+    const reason = scopeDenial(principal, required);
+    if (reason) {
       await audit("denied", reason);
       throw new TRPCError({ code: "FORBIDDEN", message: reason });
     }

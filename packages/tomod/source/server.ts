@@ -8,6 +8,7 @@ import { createLogger } from "./logger.js";
 import { parseCookies } from "./cookies.js";
 import { AUTH_COOKIE_NAME } from "./config.js";
 import { createContext } from "./trpc/middleware.js";
+import { createMcpHandler } from "./mcp/server.js";
 import { createAppRouter, type RouterDependencies } from "./trpc/router.js";
 
 const log = createLogger("server");
@@ -131,6 +132,7 @@ export function createServer(
   app.use("/trpc/user.register", authLimiter);
   app.use("/trpc/user.changePassword", authLimiter);
   app.use("/trpc", globalLimiter);
+  app.use("/mcp", globalLimiter);
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
@@ -153,6 +155,9 @@ export function createServer(
       res.sendStatus(401);
     }
   });
+
+  // MCP for agents: same principals, scopes, and audit as the API.
+  app.all("/mcp", createMcpHandler(deps));
 
   const appRouter = createAppRouter(deps);
   const contextFactory = createContext({ user: deps.user, tokens: deps.tokens, audit: deps.audit });

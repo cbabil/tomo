@@ -18,11 +18,17 @@ export type RequiredScope = TokenScope | "user";
 
 const RANK: Record<TokenScope, number> = { manage: 1, admin: 2 };
 
+/** Why a principal may not do something needing `required`, or undefined when it may. */
+export function scopeDenial(principal: Principal | null, required: RequiredScope): string | undefined {
+  if (!principal) return "Authentication required";
+  if (principal.kind === "user") return undefined;
+  if (required === "user") return "Only a signed-in person can do this";
+  if (RANK[principal.scope] >= RANK[required]) return undefined;
+  return `This token has scope "${principal.scope}"; "${required}" is required`;
+}
+
 export function hasScope(principal: Principal | null, required: RequiredScope): boolean {
-  if (!principal) return false;
-  if (principal.kind === "user") return true;
-  if (required === "user") return false;
-  return RANK[principal.scope] >= RANK[required];
+  return scopeDenial(principal, required) === undefined;
 }
 
 const PRIVATE_V4 = [/^10\./, /^192\.168\./, /^172\.(1[6-9]|2\d|3[01])\./, /^127\./, /^169\.254\./];

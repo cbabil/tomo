@@ -5,46 +5,23 @@ import { SYSTEM_APP_IDS } from "../apps.js";
 import type { Apps } from "../apps.js";
 import type { AppStore } from "../app-store.js";
 import type { TemplateRegistry } from "../templates.js";
-import { manifestOpenPath, MAX_OPEN_PATH_LENGTH } from "../open-path.js";
+import { manifestOpenPath } from "../open-path.js";
+import {
+  appIdSchema,
+  httpUrlSchema,
+  openPathSchema,
+  customSourceSchema,
+  containerPortSchema,
+  widensReach,
+  MAX_COMPOSE_YAML_LENGTH,
+} from "../schemas.js";
 import { inspectCompose } from "../custom-compose.js";
-import { hasScope, type Principal } from "../principal.js";
-
-const appIdSchema = z
-  .string()
-  .min(1)
-  .max(64)
-  .regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/, "Invalid app ID format");
-
-const httpUrlSchema = z
-  .string()
-  .url()
-  .refine(
-    (u) => /^https?:\/\//i.test(u),
-    "Only http and https URLs are allowed",
-  );
-
-// Shape only; the rules live in normalizeOpenPath, applied by Apps.
-const openPathSchema = z.string().max(MAX_OPEN_PATH_LENGTH);
-
-const MAX_COMPOSE_YAML_LENGTH = 32_000;
-
-const customSourceSchema = z
-  .object({
-    image: z.string().optional(),
-    composeYaml: z.string().max(MAX_COMPOSE_YAML_LENGTH).optional(),
-    containerPort: z.number().int().min(1).max(65535),
-    allowPrivileged: z.boolean().optional(),
-  })
-  .refine((d) => d.image || d.composeYaml, "Provide image or compose YAML");
+import { scopeDenial, type Principal } from "../principal.js";
 
 /** Widening an app's reach (own sign-in, privileged mode) is an admin decision. */
 function requireAdmin(principal: Principal): void {
-  if (!hasScope(principal, "admin")) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: 'Turning on privileged mode or own sign-in needs an "admin" token',
-    });
-  }
+  const denial = scopeDenial(principal, "admin");
+  if (denial) throw new TRPCError({ code: "FORBIDDEN", message: denial });
 }
 
 const MAX_EXTERNAL_APPS = 100;
@@ -184,7 +161,7 @@ export function createAppsRouter(
               name: z.string().min(1).max(64),
               image: z.string().optional(),
               composeYaml: z.string().max(MAX_COMPOSE_YAML_LENGTH).optional(),
-              containerPort: z.number().int().min(1).max(65535),
+              containerPort: containerPortSchema,
               path: openPathSchema.optional(),
               icon: httpUrlSchema.optional(),
               allowPrivileged: z.boolean().optional(),
@@ -196,7 +173,7 @@ export function createAppsRouter(
             ),
         )
         .mutation(async ({ input, ctx }) => {
-          if (input.ownAuth || input.allowPrivileged) requireAdmin(ctx.principal);
+          if (widensReach(input)) requireAdmin(ctx.principal);
           return apps.installCustom(input);
         }),
 
@@ -206,7 +183,7 @@ export function createAppsRouter(
           z.object({
             composeYaml: z.string().max(MAX_COMPOSE_YAML_LENGTH),
             name: z.string().max(64),
-            containerPort: z.number().int().min(1).max(65535).optional(),
+            containerPort: containerPortSchema.optional(),
           }),
         )
         .query(({ input }) => inspectCompose(input.composeYaml, input.name, input.containerPort)),
@@ -222,7 +199,7 @@ export function createAppsRouter(
           }),
         )
         .mutation(async ({ input, ctx }) => {
-          if (input.ownAuth || input.source?.allowPrivileged) requireAdmin(ctx.principal);
+          if (widensReach(input)) requireAdmin(ctx.principal);
           const { id, ...changes } = input;
           return apps.updateCustom(id, changes);
         }),
