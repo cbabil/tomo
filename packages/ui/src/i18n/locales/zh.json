@@ -162,6 +162,9 @@
       "restartWarning": "更新后 Tomo 将自动重启。",
       "checkFailed": "无法检查更新",
       "status": "状态"
+    },
+    "aiAccess": {
+      "title": "代理"
     }
   },
   "terminal": {
@@ -216,5 +219,290 @@
     "delete": "删除",
     "back": "返回",
     "next": "下一步"
+  },
+  "aiAccess": {
+    "panels": {
+      "agents": "代理",
+      "rules": "规则",
+      "activity": "活动"
+    }
+  },
+  "tokens": {
+    "intro": "Claude Code 等代理以及您自己的脚本通过令牌使用 Tomo。每个令牌都有作用域和有效期，并可随时重新生成或吊销。令牌仅接受来自本地网络的请求。",
+    "name": "名称",
+    "namePlaceholder": "笔记本电脑上的 claude-code",
+    "scope": "作用域",
+    "scopes": {
+      "manage": "管理",
+      "admin": "管理员"
+    },
+    "expiry": "过期时间",
+    "never": "永不过期",
+    "showOnce": "请立即复制此令牌，之后将不再显示。",
+    "copy": "复制令牌",
+    "copied": "已复制",
+    "plainHttpWarning": "Tomo 在您的网络上以明文 HTTP 提供服务，因此该令牌会以未加密方式传输。请仅在您自己的网络中使用。",
+    "done": "完成",
+    "empty": "暂无令牌。",
+    "status": {
+      "active": "活跃",
+      "expiring": "即将过期",
+      "expired": "已过期",
+      "revoked": "已吊销",
+      "idle": "未使用"
+    },
+    "revoke": "吊销",
+    "revokeTitle": "吊销 {{name}}？",
+    "revokeWarning": "使用此令牌的任何操作都将立即停止工作。此操作无法撤销。",
+    "outcome": {
+      "ok": "正常",
+      "restated": "已复述",
+      "denied": "已拒绝",
+      "pending": "等待中",
+      "error": "错误",
+      "observed": "已观察"
+    },
+    "addAgent": "添加代理",
+    "addTitle": "添加代理",
+    "preset": "起始模板",
+    "presets": {
+      "claudeCode": {
+        "label": "Claude Code",
+        "help": "管理应用，90 天"
+      },
+      "script": {
+        "label": "自动化脚本",
+        "help": "管理应用，一年"
+      },
+      "admin": {
+        "label": "完全控制",
+        "help": "包含移除在内的所有权限，30 天"
+      },
+      "custom": {
+        "label": "自定义",
+        "help": "自行选择作用域和过期时间"
+      }
+    },
+    "note": "备注",
+    "notePlaceholder": "保存在 1Password 中，用于 MacBook",
+    "summaryManage": "此代理可以读取所有内容、启动、停止、重启、更新和安装应用，并添加或编辑自定义应用。",
+    "summaryAdmin": "此代理可以执行任何操作，包括移除应用以及开启特权模式或独立登录。",
+    "summaryExpires": "它将于 {{date}} 过期。",
+    "summaryNever": "它永不过期，请在不再需要时记得将其吊销。",
+    "can": {
+      "manage": "可以管理应用并读取日志",
+      "admin": "可以执行任何操作，包括移除"
+    },
+    "lastSeen": "最后一次活动于 {{when}}",
+    "neverSeen": "从未使用",
+    "expiresOn": "{{date}} 过期",
+    "unused": "已 {{count}} 天未使用",
+    "graceUntil": "旧密钥在 {{time}} 之前仍然有效",
+    "oldSecretUsed": "旧密钥最后一次使用于 {{when}}",
+    "oldSecretUnused": "旧密钥此后未再使用",
+    "connectTitle": "连接 {{name}}",
+    "connectIntro": "选择客户端并粘贴配置。密钥仅在此刻显示。",
+    "connectSeen": "Tomo 于 {{when}} 检测到此代理。",
+    "connectWaiting": "正在等待此代理的首次调用。",
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "curl": "curl"
+    },
+    "regenerate": "重新生成",
+    "regenerateTitle": "重新生成 {{name}}？",
+    "regenerateWarning": "将签发一个新密钥，且仅显示一次。请选择旧密钥在您更新代理期间继续有效的时长。",
+    "grace": "旧密钥继续有效的时长",
+    "graceChoices": {
+      "0": "立即停止",
+      "60": "1 小时",
+      "1440": "24 小时",
+      "10080": "7 天"
+    },
+    "editNote": "编辑备注",
+    "editNoteTitle": "{{name}} 的备注",
+    "days": "{{count}} 天"
+  },
+  "approvals": {
+    "waiting_one": "{{count}} 项更改等待您处理",
+    "waiting_other": "{{count}} 项更改等待您处理"
+  },
+  "rules": {
+    "intro": "规则决定代理可以执行的操作，按第一条匹配的规则执行。内置规则优先执行，且无法放宽。",
+    "builtIn": "内置，始终启用",
+    "yours": "您的规则，按第一条匹配执行",
+    "empty": "您还没有自己的规则。添加一条，或从预设开始。",
+    "add": "添加规则",
+    "blank": "空白规则",
+    "tryRequest": "试运行请求",
+    "editYaml": "以 YAML 编辑全部",
+    "instructions": "给代理的说明",
+    "instructionsIntro": "每个代理连接时都会读取的建议。这只是指导，不具强制力：必须遵守的内容请放入规则中。",
+    "neverTakesEffect": "永远不会生效，内置规则「{{by}}」已决定此事",
+    "disabled": "已关闭",
+    "observing": "仅观察",
+    "sentence": {
+      "when": "当代理",
+      "anyApp": "任意应用",
+      "on": "在",
+      "everyDay": "每天",
+      "weekdays": "工作日",
+      "weekends": "周末",
+      "allDay": "全天"
+    },
+    "outcomes": {
+      "allow": "允许它",
+      "deny": "阻止它",
+      "agent_confirm": "必须复述该更改",
+      "human_confirm": "先询问我"
+    },
+    "effectChip": {
+      "allow": "允许",
+      "deny": "阻止",
+      "agent_confirm": "复述",
+      "human_confirm": "询问我"
+    },
+    "tools": {
+      "*": "执行任意操作",
+      "apps.list": "列出应用",
+      "apps.get": "读取应用详情",
+      "apps.logs": "读取日志",
+      "store.search": "搜索商店",
+      "system.stats": "读取系统统计信息",
+      "system.info": "读取系统信息",
+      "apps.start": "启动",
+      "apps.stop": "停止",
+      "apps.restart": "重启",
+      "apps.install": "安装",
+      "apps.update": "更新",
+      "apps.add_custom": "添加自定义应用",
+      "apps.edit_custom": "编辑自定义应用",
+      "apps.remove": "移除"
+    },
+    "groups": {
+      "read": "读取",
+      "operate": "启动、停止、重启",
+      "install": "安装和更新",
+      "custom": "自定义应用",
+      "remove": "移除",
+      "any": "任意操作"
+    },
+    "dialog": {
+      "addTitle": "添加规则",
+      "editTitle": "编辑规则",
+      "actions": "当代理",
+      "apps": "作用于这些应用",
+      "appsHelp": "留空表示任意应用",
+      "window": "仅限特定时间或日期",
+      "from": "从",
+      "to": "到",
+      "effect": "则",
+      "message": "给代理的消息",
+      "messageHelp": "规则生效时显示给代理",
+      "enabled": "已启用",
+      "observe": "仅观察",
+      "observeHelp": "记录此规则本应执行的操作，但不强制执行",
+      "pickAction": "请至少选择一项操作"
+    },
+    "days": {
+      "mon": "周一",
+      "tue": "周二",
+      "wed": "周三",
+      "thu": "周四",
+      "fri": "周五",
+      "sat": "周六",
+      "sun": "周日"
+    },
+    "presets": {
+      "quietHours": {
+        "label": "安静时段",
+        "help": "夜间阻止重启和更新"
+      },
+      "askInstalls": {
+        "label": "安装前先询问我",
+        "help": "安装和更新需要您的批准"
+      },
+      "handsOff": {
+        "label": "对某个应用不做任何操作",
+        "help": "您选择的应用不会发生任何更改"
+      },
+      "readOnly": {
+        "label": "只读代理",
+        "help": "阻止所有更改；代理只能读取"
+      }
+    },
+    "try": {
+      "title": "试运行请求",
+      "intro": "在没有代理的情况下查看规则的判定结果。此处不应用作用域和速率限制。",
+      "action": "操作",
+      "app": "应用",
+      "at": "时间",
+      "result": {
+        "allow": "已允许",
+        "deny": "已阻止",
+        "agent_confirm": "代理必须复述该操作",
+        "human_confirm": "将会询问您"
+      },
+      "byRule": "由规则「{{rule}}」决定",
+      "noRule": "没有匹配的规则",
+      "observed": "规则「{{rule}}」仅用于观察。它原本会给出：{{effect}}"
+    },
+    "menu": {
+      "edit": "编辑",
+      "duplicate": "复制",
+      "moveUp": "上移",
+      "moveDown": "下移",
+      "delete": "删除"
+    },
+    "yamlTitle": "以 YAML 形式的规则"
+  },
+  "activity": {
+    "needsYou": "需要您处理",
+    "digest": "本周共 {{actions}} 次代理操作，其中 {{refused}} 次被拒绝",
+    "digestChange": "较上周变化 {{change}}%",
+    "allAgents": "所有代理",
+    "range": {
+      "1": "今天",
+      "7": "最近 7 天",
+      "30": "最近 30 天",
+      "90": "最近 90 天"
+    },
+    "empty": "此时间段内没有记录。",
+    "groupByAgent": "按代理分组",
+    "export": "导出",
+    "showRule": "查看规则",
+    "askedBy": "{{name}} · 剩余 {{count}} 分钟",
+    "rule": "规则：{{rule}}",
+    "approve": "批准",
+    "deny": "拒绝",
+    "reason": "给代理的理由（可选）",
+    "remember": {
+      "none": "仅此一次",
+      "allow": "始终允许此操作",
+      "human_confirm": "始终先询问我",
+      "floor": "此操作始终需要人工确认"
+    },
+    "summary": "{{calls}} 次调用，{{refused}} 次被拒绝",
+    "detail": {
+      "title": "详情",
+      "who": "谁",
+      "what": "内容",
+      "arguments": "参数",
+      "outcome": "结果",
+      "reason": "原因",
+      "rule": "规则",
+      "time": "时间"
+    },
+    "row": {
+      "tokens.create": "添加了一个代理",
+      "tokens.rotate": "重新生成了一个令牌",
+      "tokens.revoke": "吊销了一个令牌",
+      "guardrails.save": "已保存规则",
+      "approvals.approve": "您批准了一项请求",
+      "approvals.deny": "您拒绝了一项请求"
+    },
+    "today": "今天",
+    "yesterday": "昨天"
   }
 }

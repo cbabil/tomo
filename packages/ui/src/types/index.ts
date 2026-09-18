@@ -96,4 +96,7 @@ export const SETTINGS_TABS = [
 
 export type SettingsTab = (typeof SETTINGS_TABS)[number];
 
+export const AI_ACCESS_PANELS = ["agents", "rules", "activity"] as const;
+export type AiAccessPanel = (typeof AI_ACCESS_PANELS)[number];
+
 export type ThemeMode = "dark" | "light";

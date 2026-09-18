@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Sheet, SettingsTab, ThemeMode, AppTemplate, AppType, CustomSource } from "../types";
+import type { Sheet, SettingsTab, AiAccessPanel, ThemeMode, AppTemplate, AppType, CustomSource } from "../types";
 
 interface EditingExternalApp {
   id: string;
@@ -26,6 +26,8 @@ interface LogsApp {
 interface UIState {
   activeSheet: Sheet;
   settingsTab: SettingsTab;
+  /** Which panel of the Agents settings tab to show. */
+  aiAccessPanel: AiAccessPanel;
   themeMode: ThemeMode;
   wallpaper: string;
   spotlightOpen: boolean;
@@ -40,7 +42,8 @@ interface UIState {
 interface UIActions {
   openSheet: (sheet: Sheet) => void;
   closeSheet: () => void;
-  openSettings: (tab?: SettingsTab) => void;
+  openSettings: (tab?: SettingsTab, panel?: AiAccessPanel) => void;
+  setAiAccessPanel: (panel: AiAccessPanel) => void;
   setSettingsTab: (tab: SettingsTab) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setWallpaper: (url: string) => void;
@@ -66,6 +69,7 @@ type UIStore = UIState & UIActions;
 export const useStore = create<UIStore>((set, get) => ({
   activeSheet: null,
   settingsTab: "account",
+  aiAccessPanel: "agents",
   themeMode: "dark",
   wallpaper: "default",
   spotlightOpen: false,
@@ -78,8 +82,9 @@ export const useStore = create<UIStore>((set, get) => ({
 
   openSheet: (sheet) => set({ activeSheet: sheet }),
   closeSheet: () => set({ activeSheet: null }),
-  openSettings: (tab = "account") =>
-    set({ activeSheet: "settings", settingsTab: tab }),
+  openSettings: (tab = "account", panel) =>
+    set({ activeSheet: "settings", settingsTab: tab, ...(panel && { aiAccessPanel: panel }) }),
+  setAiAccessPanel: (panel) => set({ aiAccessPanel: panel }),
   setSettingsTab: (tab) => set({ settingsTab: tab }),
   setThemeMode: (mode) => set({ themeMode: mode }),
   setWallpaper: (url) => set({ wallpaper: url }),

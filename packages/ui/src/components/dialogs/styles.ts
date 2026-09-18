@@ -1,5 +1,18 @@
 import { colors } from "../../app/theme";
 
+/** A block of code or configuration: monospace, wrapping, on a faint tint. */
+export const codeBlockSx = {
+  m: 0,
+  p: 1.5,
+  borderRadius: 2,
+  fontFamily: "monospace",
+  fontSize: "0.75rem",
+  whiteSpace: "pre-wrap" as const,
+  wordBreak: "break-all" as const,
+  overflowY: "auto" as const,
+  backgroundColor: colors.subtle,
+};
+
 export const dialogStyles = {
   paper: {
     backgroundColor: "#0f172a",

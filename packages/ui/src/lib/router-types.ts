@@ -325,15 +325,62 @@ const appsRouter = t.router({
   }),
 });
 
+export type RuleEffect = "allow" | "deny" | "agent_confirm" | "human_confirm";
+export interface OwnerRule {
+  name: string;
+  match: { tools: string[]; apps?: string[] };
+  when?: { hours?: string; days?: Array<"sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat"> };
+  effect: RuleEffect;
+  message?: string;
+  enabled?: boolean;
+  observe?: boolean;
+}
+const ownerRuleSchema = z.object({
+  name: z.string(),
+  match: z.object({ tools: z.array(z.string()), apps: z.array(z.string()).optional() }),
+  when: z
+    .object({
+      hours: z.string().optional(),
+      days: z.array(z.enum(["sun", "mon", "tue", "wed", "thu", "fri", "sat"])).optional(),
+    })
+    .optional(),
+  effect: z.enum(["allow", "deny", "agent_confirm", "human_confirm"]),
+  message: z.string().optional(),
+  enabled: z.boolean().optional(),
+  observe: z.boolean().optional(),
+});
+export const AUDIT_OUTCOMES = ["ok", "restated", "denied", "error", "pending", "observed"] as const;
+export type AuditOutcome = (typeof AUDIT_OUTCOMES)[number];
+export interface AuditEntry {
+  time: string;
+  principal: { kind: "user" | "token"; id?: string; name: string };
+  action: string;
+  args?: unknown;
+  outcome: AuditOutcome;
+  reason?: string;
+  rule?: string;
+}
+const outcomeSchema = z.enum(AUDIT_OUTCOMES);
+
 const guardrailsRouter = t.router({
   get: t.procedure.query(
     (): {
-      builtIn: Array<{ name: string; tools: string[]; effect: string; message?: string }>;
+      builtIn: Array<{ name: string; tools: string[]; effect: RuleEffect; message?: string }>;
+      rules: OwnerRule[];
       rulesYaml: string;
       instructions: string;
       shadowed: Array<{ rule: string; by: string }>;
-    } => ({ builtIn: [], rulesYaml: "", instructions: "", shadowed: [] }),
+    } => ({ builtIn: [], rules: [], rulesYaml: "", instructions: "", shadowed: [] }),
   ),
+  tools: t.procedure.query(
+    (): Array<{ name: string; description: string; group: "read" | "operate" | "install" | "custom" | "remove" }> => [],
+  ),
+  try: t.procedure
+    .input(z.object({ tool: z.string(), appId: z.string().optional(), at: z.string().optional() }))
+    .query((): { effect: RuleEffect; rule?: string; reason?: string; observed?: RuleEffect } => ({ effect: "allow" })),
+  saveRules: t.procedure
+    .input(z.object({ rules: z.array(ownerRuleSchema) }))
+    .mutation((): { success: boolean } => ({ success: true })),
   check: t.procedure
     .input(z.object({ rulesYaml: z.string() }))
     .query((): { errors: string[]; shadowed: Array<{ rule: string; by: string }>; count: number } => ({
@@ -345,11 +392,27 @@ const guardrailsRouter = t.router({
     .input(z.object({ rulesYaml: z.string().optional(), instructions: z.string().optional() }))
     .mutation((): { success: boolean } => ({ success: true })),
   pendingApprovals: t.procedure.query(
-    (): Array<{ id: string; tokenId: string; tokenName: string; tool: string; summary: string; createdAt: string; expiresAt: string }> =>
-      [],
+    (): Array<{
+      id: string;
+      tokenId: string;
+      tokenName: string;
+      tool: string;
+      args: Record<string, unknown>;
+      summary: string;
+      rule?: string;
+      createdAt: string;
+      expiresAt: string;
+    }> => [],
   ),
   decide: t.procedure
-    .input(z.object({ id: z.string(), approved: z.boolean() }))
+    .input(
+      z.object({
+        id: z.string(),
+        approved: z.boolean(),
+        reason: z.string().optional(),
+        remember: z.enum(["allow", "human_confirm"]).optional(),
+      }),
+    )
     .mutation((): { success: boolean } => ({ success: true })),
 });
 
@@ -363,6 +426,10 @@ const tokensRouter = t.router({
         lastUsedAt?: string;
         expiresAt?: string;
         revokedAt?: string;
+        rotatedAt?: string;
+        note?: string;
+        previousGraceUntil?: string;
+        previousLastUsedAt?: string;
       }> => [],
     ),
     create: t.procedure
@@ -371,26 +438,38 @@ const tokensRouter = t.router({
           name: z.string(),
           scope: z.enum(["manage", "admin"]),
           expiresInDays: z.number().nullable(),
+          note: z.string().optional(),
         }),
       )
       .mutation((): { token: string; record: { id: string } } => ({ token: "", record: { id: "" } })),
+    update: t.procedure
+      .input(z.object({ id: z.string(), note: z.string() }))
+      .mutation((): { id: string } => ({ id: "" })),
     rotate: t.procedure
-      .input(z.object({ id: z.string() }))
+      .input(z.object({ id: z.string(), graceMinutes: z.number().optional() }))
       .mutation((): { token: string; record: { id: string } } => ({ token: "", record: { id: "" } })),
     revoke: t.procedure
       .input(z.object({ id: z.string() }))
       .mutation((): { success: boolean } => ({ success: true })),
     activity: t.procedure
-      .input(z.object({ limit: z.number() }))
-      .query(
-        (): Array<{
-          time: string;
-          principal: { kind: "user" | "token"; id?: string; name: string };
-          action: string;
-          outcome: "ok" | "denied" | "error" | "pending";
-          reason?: string;
-        }> => [],
-      ),
+      .input(
+        z.object({
+          limit: z.number(),
+          tokenId: z.string().optional(),
+          outcomes: z.array(outcomeSchema).optional(),
+          days: z.number().optional(),
+        }),
+      )
+      .query((): AuditEntry[] => []),
+    activityCounts: t.procedure
+      .input(z.object({ tokenId: z.string().optional(), days: z.number().optional() }))
+      .query((): Partial<Record<AuditOutcome, number>> => ({})),
+    digest: t.procedure.query((): { actions: number; refused: number; previousActions: number } => ({
+      actions: 0,
+      refused: 0,
+      previousActions: 0,
+    })),
+    exportActivity: t.procedure.query((): string => ""),
   });
 
 const _appRouter = t.router({

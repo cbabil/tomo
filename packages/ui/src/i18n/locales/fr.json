@@ -162,6 +162,9 @@
       "restartWarning": "Tomo redémarrera automatiquement après la mise à jour.",
       "checkFailed": "Impossible de vérifier les mises à jour",
       "status": "Statut"
+    },
+    "aiAccess": {
+      "title": "Agents"
     }
   },
   "terminal": {
@@ -216,5 +219,290 @@
     "delete": "Supprimer",
     "back": "Retour",
     "next": "Suivant"
+  },
+  "aiAccess": {
+    "panels": {
+      "agents": "Agents",
+      "rules": "Règles",
+      "activity": "Activité"
+    }
+  },
+  "tokens": {
+    "intro": "Les agents comme Claude Code, ainsi que vos propres scripts, utilisent Tomo via un jeton. Chacun a une portée, expire, et peut être régénéré ou révoqué à tout moment. Les jetons ne sont acceptés que depuis votre réseau local.",
+    "name": "Nom",
+    "namePlaceholder": "claude-code sur mon ordinateur portable",
+    "scope": "Portée",
+    "scopes": {
+      "manage": "Gérer",
+      "admin": "Admin"
+    },
+    "expiry": "Expire",
+    "days": "{{count}} jours",
+    "never": "Jamais",
+    "showOnce": "Copiez ce jeton maintenant. Il ne sera plus jamais affiché.",
+    "copy": "Copier le jeton",
+    "copied": "Copié",
+    "plainHttpWarning": "Tomo sert du HTTP simple sur votre réseau, donc ce jeton circule sans chiffrement. Utilisez-le uniquement sur votre propre réseau.",
+    "done": "Terminé",
+    "empty": "Aucun jeton pour l'instant.",
+    "status": {
+      "active": "Actif",
+      "expiring": "Expire bientôt",
+      "expired": "Expiré",
+      "revoked": "Révoqué",
+      "idle": "Inutilisé"
+    },
+    "revoke": "Révoquer",
+    "revokeTitle": "Révoquer {{name}} ?",
+    "revokeWarning": "Tout ce qui utilise ce jeton cesse de fonctionner immédiatement. Cette action est irréversible.",
+    "outcome": {
+      "ok": "OK",
+      "restated": "Reformulé",
+      "denied": "Refusé",
+      "pending": "En attente",
+      "error": "Erreur",
+      "observed": "Observé"
+    },
+    "addAgent": "Ajouter un agent",
+    "addTitle": "Ajouter un agent",
+    "preset": "Partir de",
+    "presets": {
+      "claudeCode": {
+        "label": "Claude Code",
+        "help": "Gérer les applications, 90 jours"
+      },
+      "script": {
+        "label": "Script d'automatisation",
+        "help": "Gérer les applications, un an"
+      },
+      "admin": {
+        "label": "Contrôle total",
+        "help": "Tout, y compris la suppression, 30 jours"
+      },
+      "custom": {
+        "label": "Personnalisé",
+        "help": "Choisissez vous-même la portée et l'expiration"
+      }
+    },
+    "note": "Note",
+    "notePlaceholder": "Enregistré dans 1Password, utilisé sur le MacBook",
+    "summaryManage": "Cet agent peut tout lire, démarrer, arrêter, redémarrer, mettre à jour et installer des applications, et ajouter ou modifier des applications personnalisées.",
+    "summaryAdmin": "Cet agent peut tout faire, y compris supprimer des applications et activer le mode privilégié ou sa propre connexion.",
+    "summaryExpires": "Il expire le {{date}}.",
+    "summaryNever": "Il n'expire jamais, pensez donc à le révoquer lorsqu'il n'est plus nécessaire.",
+    "can": {
+      "manage": "Peut gérer les applications et lire les journaux",
+      "admin": "Peut tout faire, y compris la suppression"
+    },
+    "lastSeen": "vu pour la dernière fois {{when}}",
+    "neverSeen": "jamais utilisé",
+    "expiresOn": "expire {{date}}",
+    "unused": "Inutilisé depuis {{count}} jours",
+    "graceUntil": "l'ancien secret fonctionne jusqu'à {{time}}",
+    "oldSecretUsed": "ancien secret utilisé pour la dernière fois {{when}}",
+    "oldSecretUnused": "ancien secret inutilisé depuis",
+    "connectTitle": "Connecter {{name}}",
+    "connectIntro": "Choisissez le client et collez la configuration. Le secret n'est affiché que maintenant.",
+    "connectSeen": "Tomo a vu cet agent {{when}}.",
+    "connectWaiting": "En attente du premier appel de cet agent.",
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "curl": "curl"
+    },
+    "regenerate": "Régénérer",
+    "regenerateTitle": "Régénérer {{name}} ?",
+    "regenerateWarning": "Un nouveau secret est émis et affiché une seule fois. Choisissez combien de temps l'ancien continue de fonctionner pendant que vous mettez à jour l'agent.",
+    "grace": "L'ancien secret continue de fonctionner pendant",
+    "graceChoices": {
+      "0": "S'arrête maintenant",
+      "60": "1 heure",
+      "1440": "24 heures",
+      "10080": "7 jours"
+    },
+    "editNote": "Modifier la note",
+    "editNoteTitle": "Note pour {{name}}"
+  },
+  "approvals": {
+    "waiting_one": "{{count}} changement en attente de votre validation",
+    "waiting_other": "{{count}} changements en attente de votre validation"
+  },
+  "rules": {
+    "intro": "Les règles décident de ce qu'un agent peut faire. La première correspondance l'emporte. Les règles intégrées s'appliquent en premier et ne peuvent pas être assouplies.",
+    "builtIn": "Intégrées, toujours actives",
+    "yours": "Vos règles, la première correspondance l'emporte",
+    "empty": "Vous n'avez pas encore de règles à vous. Ajoutez-en une, ou partez d'un préréglage.",
+    "add": "Ajouter une règle",
+    "blank": "Règle vierge",
+    "tryRequest": "Essayer une requête",
+    "editYaml": "Tout modifier en YAML",
+    "instructions": "Instructions pour les agents",
+    "instructionsIntro": "Conseils que chaque agent lit lors de sa connexion. Ce sont des recommandations, pas une application stricte : placez tout ce qui doit être garanti dans une règle.",
+    "neverTakesEffect": "ne s'applique jamais, la règle intégrée « {{by}} » en décide",
+    "disabled": "désactivée",
+    "observing": "observation seule",
+    "sentence": {
+      "when": "Quand un agent",
+      "anyApp": "n'importe quelle application",
+      "on": "sur",
+      "everyDay": "tous les jours",
+      "weekdays": "en semaine",
+      "weekends": "le week-end",
+      "allDay": "toute la journée"
+    },
+    "outcomes": {
+      "allow": "l'autoriser",
+      "deny": "le bloquer",
+      "agent_confirm": "il doit reformuler le changement",
+      "human_confirm": "me demander d'abord"
+    },
+    "effectChip": {
+      "allow": "Autoriser",
+      "deny": "Bloquer",
+      "agent_confirm": "Reformuler",
+      "human_confirm": "Me demander"
+    },
+    "tools": {
+      "*": "fait quoi que ce soit",
+      "apps.list": "liste les applications",
+      "apps.get": "lit les détails d'une application",
+      "apps.logs": "lit les journaux",
+      "store.search": "recherche dans le store",
+      "system.stats": "lit les statistiques système",
+      "system.info": "lit les informations système",
+      "apps.start": "démarre",
+      "apps.stop": "arrête",
+      "apps.restart": "redémarre",
+      "apps.install": "installe",
+      "apps.update": "met à jour",
+      "apps.add_custom": "ajoute une application personnalisée",
+      "apps.edit_custom": "modifie une application personnalisée",
+      "apps.remove": "supprime"
+    },
+    "groups": {
+      "read": "Lecture",
+      "operate": "Démarrer, arrêter, redémarrer",
+      "install": "Installer et mettre à jour",
+      "custom": "Applications personnalisées",
+      "remove": "Supprimer",
+      "any": "Tout"
+    },
+    "dialog": {
+      "addTitle": "Ajouter une règle",
+      "editTitle": "Modifier la règle",
+      "actions": "Quand un agent",
+      "apps": "Sur ces applications",
+      "appsHelp": "Laissez vide pour n'importe quelle application",
+      "window": "Uniquement à certaines heures ou certains jours",
+      "from": "De",
+      "to": "À",
+      "effect": "Alors",
+      "message": "Message pour l'agent",
+      "messageHelp": "Affiché à l'agent lorsque la règle s'applique",
+      "enabled": "Activée",
+      "observe": "Observation seule",
+      "observeHelp": "Consigne ce que cette règle ferait sans l'appliquer",
+      "pickAction": "Choisissez au moins une action"
+    },
+    "days": {
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mer",
+      "thu": "Jeu",
+      "fri": "Ven",
+      "sat": "Sam",
+      "sun": "Dim"
+    },
+    "presets": {
+      "quietHours": {
+        "label": "Heures calmes",
+        "help": "Bloquer les redémarrages et mises à jour la nuit"
+      },
+      "askInstalls": {
+        "label": "Me demander avant les installations",
+        "help": "Les installations et mises à jour nécessitent votre approbation"
+      },
+      "handsOff": {
+        "label": "Ne pas toucher à une application",
+        "help": "Rien ne change sur une application que vous choisissez"
+      },
+      "readOnly": {
+        "label": "Agents en lecture seule",
+        "help": "Bloquer tout changement ; les agents peuvent seulement lire"
+      }
+    },
+    "try": {
+      "title": "Essayer une requête",
+      "intro": "Voyez ce que les règles décident, sans agent. La portée et les limites de débit ne s'appliquent pas ici.",
+      "action": "Action",
+      "app": "Application",
+      "at": "À",
+      "result": {
+        "allow": "Autorisé",
+        "deny": "Bloqué",
+        "agent_confirm": "L'agent doit le reformuler",
+        "human_confirm": "Vous seriez sollicité"
+      },
+      "byRule": "Décidé par la règle « {{rule}} »",
+      "noRule": "Aucune règle ne correspond",
+      "observed": "La règle « {{rule}} » est en observation seule. Elle aurait dit : {{effect}}"
+    },
+    "menu": {
+      "edit": "Modifier",
+      "duplicate": "Dupliquer",
+      "moveUp": "Monter",
+      "moveDown": "Descendre",
+      "delete": "Supprimer"
+    },
+    "yamlTitle": "Règles en YAML"
+  },
+  "activity": {
+    "needsYou": "A besoin de vous",
+    "digest": "{{actions}} actions d'agents cette semaine, {{refused}} refusées",
+    "digestChange": "{{change}} % par rapport à la semaine dernière",
+    "allAgents": "Tous les agents",
+    "range": {
+      "1": "Aujourd'hui",
+      "7": "7 derniers jours",
+      "30": "30 derniers jours",
+      "90": "90 derniers jours"
+    },
+    "empty": "Rien d'enregistré sur cette période.",
+    "groupByAgent": "Regrouper par agent",
+    "export": "Exporter",
+    "showRule": "Afficher la règle",
+    "askedBy": "{{name}} · {{count}} min restantes",
+    "rule": "règle : {{rule}}",
+    "approve": "Approuver",
+    "deny": "Refuser",
+    "reason": "Raison pour l'agent, facultatif",
+    "remember": {
+      "none": "Juste cette fois",
+      "allow": "Toujours autoriser",
+      "human_confirm": "Toujours me demander",
+      "floor": "Ceci demande toujours l'avis d'une personne"
+    },
+    "summary": "{{calls}} appels, {{refused}} refusés",
+    "detail": {
+      "title": "Détails",
+      "who": "Qui",
+      "what": "Quoi",
+      "arguments": "Arguments",
+      "outcome": "Résultat",
+      "reason": "Raison",
+      "rule": "Règle",
+      "time": "Heure"
+    },
+    "row": {
+      "tokens.create": "A ajouté un agent",
+      "tokens.rotate": "A régénéré un jeton",
+      "tokens.revoke": "A révoqué un jeton",
+      "guardrails.save": "A enregistré les règles",
+      "approvals.approve": "Vous avez approuvé une requête",
+      "approvals.deny": "Vous avez refusé une requête"
+    },
+    "today": "Aujourd'hui",
+    "yesterday": "Hier"
   }
 }

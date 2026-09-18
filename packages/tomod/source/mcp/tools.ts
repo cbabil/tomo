@@ -23,8 +23,13 @@ export interface ToolServices {
   hardware: Hardware;
 }
 
+export const TOOL_GROUPS = ["read", "operate", "install", "custom", "remove"] as const;
+export type ToolGroup = (typeof TOOL_GROUPS)[number];
+
 export interface ToolDefinition {
   name: string;
+  /** What kind of action this is. Everything but "read" changes state. */
+  group: ToolGroup;
   description: string;
   input: z.ZodRawShape;
   /** One sentence describing what this call will do, shown when a confirmation is required. */
@@ -38,6 +43,7 @@ const containerPort = containerPortSchema;
 export const TOOLS: ToolDefinition[] = [
   {
     name: "apps.list",
+    group: "read",
     description: "Installed apps with their status, type, port, and open path.",
     input: {},
     summary: () => "List installed apps",
@@ -45,6 +51,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "apps.get",
+    group: "read",
     description: "One installed app in detail, including the compose source of a custom app.",
     input: { appId },
     summary: (a) => `Show app ${a.appId}`,
@@ -56,6 +63,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "apps.logs",
+    group: "read",
     description: "Recent container log lines for an app.",
     input: { appId, lines: z.number().int().min(1).max(MAX_LOG_LINES).default(100) },
     summary: (a) => `Read logs of ${a.appId}`,
@@ -63,6 +71,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "store.search",
+    group: "read",
     description: "Search the configured app stores.",
     input: { query: z.string().min(1).max(100) },
     summary: (a) => `Search the store for ${a.query}`,
@@ -70,6 +79,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "system.stats",
+    group: "read",
     description: "CPU, memory, and disk usage, as the desktop widgets show them.",
     input: {},
     summary: () => "Read system stats",
@@ -77,6 +87,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "system.info",
+    group: "read",
     description: "Host name, operating system, and uptime.",
     input: {},
     summary: () => "Read system info",
@@ -84,6 +95,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "apps.start",
+    group: "operate",
     description: "Start a stopped app and wait until it answers.",
     input: { appId },
     summary: (a) => `Start ${a.appId}`,
@@ -91,6 +103,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "apps.stop",
+    group: "operate",
     description: "Stop a running app.",
     input: { appId },
     summary: (a) => `Stop ${a.appId}`,
@@ -98,6 +111,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "apps.restart",
+    group: "operate",
     description: "Restart an app and wait until it answers.",
     input: { appId },
     summary: (a) => `Restart ${a.appId}`,
@@ -105,6 +119,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "apps.update",
+    group: "install",
     description: "Update an app: store apps from the store, custom apps by pulling newer images.",
     input: { appId },
     summary: (a) => `Update ${a.appId} to its newest version and restart it`,
@@ -112,6 +127,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "apps.install",
+    group: "install",
     description: "Install an app from a configured store by its store id.",
     input: { appId },
     summary: (a) => `Install ${a.appId} from the app store and start it`,
@@ -119,6 +135,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "apps.add_custom",
+    group: "custom",
     description: "Add a custom Docker app from an image or a compose file, as the Add dialog does.",
     input: {
       name: z.string().min(1).max(64),
@@ -141,6 +158,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "apps.edit_custom",
+    group: "custom",
     description: "Change a custom app's image, compose file, port, open path, or icon, and redeploy it keeping its data.",
     input: {
       appId,
@@ -164,6 +182,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "apps.remove",
+    group: "remove",
     description: "Remove an app, deleting its containers and data. Needs a person; refused for now.",
     input: { appId },
     summary: (a) => `Remove ${a.appId} and delete its data`,

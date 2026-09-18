@@ -4,6 +4,7 @@
  */
 import { appendFile, readFile, rename, rm, stat } from "node:fs/promises";
 import { createLogger } from "./logger.js";
+import { filterEntries, type AuditFilter } from "./audit-query.js";
 
 const log = createLogger("audit");
 
@@ -23,13 +24,17 @@ export interface AuditPrincipal {
   name: string;
 }
 
+export const AUDIT_OUTCOMES = ["ok", "restated", "denied", "error", "pending", "observed"] as const;
+
 export interface AuditEntry {
   time: string;
   principal: AuditPrincipal;
   action: string;
   args?: unknown;
-  outcome: "ok" | "denied" | "error" | "pending";
+  outcome: (typeof AUDIT_OUTCOMES)[number];
   reason?: string;
+  /** The guardrail that decided this, when one did. */
+  rule?: string;
 }
 
 /** Mask anything that looks like a secret, by key name or by value shape. */
@@ -56,6 +61,9 @@ export function redactText(text: string): string {
 }
 
 export class AuditLog {
+  /** Parsed entries, reused until the file changes, so several views of one screen share a read. */
+  private cache?: { stamp: string; entries: AuditEntry[] };
+
   constructor(
     private readonly filePath: string,
     private readonly now: () => number = Date.now,
@@ -77,19 +85,37 @@ export class AuditLog {
 
   /** The most recent entries, newest first. */
   async list(limit: number): Promise<AuditEntry[]> {
-    let raw: string;
+    return (await this.readAll()).slice(0, limit);
+  }
+
+  /** Entries matching a filter, newest first. */
+  async query(filter: AuditFilter): Promise<AuditEntry[]> {
+    return filterEntries(await this.readAll(), filter, this.now());
+  }
+
+  /** The current file as text, for the owner to download. */
+  async exportText(): Promise<string> {
     try {
-      raw = await readFile(this.filePath, "utf-8");
+      return await readFile(this.filePath, "utf-8");
     } catch {
-      return [];
+      return "";
     }
-    return raw
+  }
+
+  /** Every entry in the current file, newest first. */
+  async readAll(): Promise<AuditEntry[]> {
+    const info = await stat(this.filePath).catch(() => undefined);
+    if (!info) return [];
+    const stamp = `${info.mtimeMs}:${info.size}`;
+    if (this.cache?.stamp === stamp) return this.cache.entries;
+    const entries = (await this.exportText())
       .trim()
       .split("\n")
       .filter(Boolean)
-      .slice(-limit)
       .reverse()
       .map((line) => JSON.parse(line) as AuditEntry);
+    this.cache = { stamp, entries };
+    return entries;
   }
 
   private async rotateIfLarge(): Promise<void> {

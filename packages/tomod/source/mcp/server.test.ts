@@ -185,6 +185,25 @@ describe("MCP endpoint", () => {
     expect(apps.uninstall).toHaveBeenCalledTimes(1);
   });
 
+  it("audits restatements, approvals, and observed rules with the rule name", async () => {
+    await policies.save({ rulesYaml: "- name: watch-restarts\n  match:\n    tools: [apps.restart]\n  effect: deny\n  observe: true\n" });
+    const client = await connect(adminToken);
+    await client.callTool({ name: "apps.install", arguments: { appId: "immich" } });
+    await client.callTool({ name: "apps.restart", arguments: { appId: "gitea" } });
+    const ask = parse((await client.callTool({ name: "apps.remove", arguments: { appId: "gitea" } })) as never);
+    confirmations.decide(String(ask.confirmationId), true, "pi");
+    await client.callTool({ name: "tomo.confirm", arguments: { confirmationId: ask.confirmationId } });
+    await client.close();
+    await policies.save({ rulesYaml: "" });
+
+    const recent = await audit.list(10);
+    expect(recent.find((e) => e.action === "mcp:apps.install")).toMatchObject({ outcome: "restated", rule: "restate-changes" });
+    expect(recent.find((e) => e.action === "mcp:apps.restart" && e.outcome === "observed")).toMatchObject({ rule: "watch-restarts" });
+    expect(recent.find((e) => e.action === "mcp:apps.restart" && e.outcome === "ok")).toBeDefined();
+    expect(recent.filter((e) => e.action === "mcp:apps.remove").slice(0, 2).map((e) => e.outcome)).toEqual(["ok", "pending"]);
+    expect(recent.find((e) => e.action === "mcp:apps.remove" && e.outcome === "ok")?.reason).toContain("pi");
+  });
+
   it("applies owner rules from policies.yaml at once", async () => {
     await policies.save({ rulesYaml: "- name: no-restarts\n  match:\n    tools: [apps.restart]\n  effect: deny\n  message: Not now\n" });
     const client = await connect(manageToken);

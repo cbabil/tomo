@@ -22,9 +22,11 @@ export interface PendingConfirmation {
   summary: string;
   /** True when a person must approve it on the desktop before it can run. */
   needsPerson: boolean;
+  /** The guardrail that asked for this confirmation. */
+  rule?: string;
   createdAt: string;
   expiresAt: string;
-  decision?: { approved: boolean; by: string; at: string };
+  decision?: { approved: boolean; by: string; at: string; reason?: string };
 }
 
 export type ConfirmationStatus = "unknown" | "awaiting_person" | "ready" | "denied";
@@ -73,10 +75,10 @@ export class Confirmations {
   }
 
   /** What a person decided. Only a signed-in person calls this. */
-  decide(id: string, approved: boolean, by: string): PendingConfirmation {
+  decide(id: string, approved: boolean, by: string, reason?: string): PendingConfirmation {
     const entry = this.find(id);
     if (!entry?.needsPerson || entry.decision) throw new Error(`Approval not found or already decided: ${id}`);
-    const decided = { ...entry, decision: { approved, by, at: new Date(this.now()).toISOString() } };
+    const decided = { ...entry, decision: { approved, by, at: new Date(this.now()).toISOString(), reason } };
     this.entries.set(id, decided);
     log.info("Approval decided", { id, approved, by });
     return decided;
@@ -93,7 +95,7 @@ export class Confirmations {
     return [...this.entries.values()].filter((e) => e.tokenId === tokenId);
   }
 
-  private find(id: string, tokenId?: string): PendingConfirmation | undefined {
+  find(id: string, tokenId?: string): PendingConfirmation | undefined {
     this.prune();
     const entry = this.entries.get(id);
     if (!entry || (tokenId !== undefined && entry.tokenId !== tokenId)) return undefined;

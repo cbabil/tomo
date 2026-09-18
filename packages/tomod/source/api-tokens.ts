@@ -8,93 +8,37 @@
  */
 import { readOptionalFile, writeFileAtomic } from "./fs-utils.js";
 import crypto from "node:crypto";
-import { z } from "zod";
 import { createLogger } from "./logger.js";
+import { TokenLockout } from "./token-lockout.js";
+import { matches, newSecret, parseToken } from "./token-secret.js";
+import { FileSchema, MAX_NOTE, toView, type ApiTokenView, type TokenPrincipal, type TokenRecord, type TokenScope } from "./token-record.js";
+
+export { parseToken } from "./token-secret.js";
+export { TOKEN_SCOPES } from "./token-record.js";
+export type { ApiTokenView, TokenPrincipal, TokenScope } from "./token-record.js";
 
 const log = createLogger("api-tokens");
 
-export const TOKEN_SCOPES = ["manage", "admin"] as const;
-export type TokenScope = (typeof TOKEN_SCOPES)[number];
 
 const ID_LENGTH = 6;
-const SECRET_BYTES = 32;
-const SALT_BYTES = 16;
-const HASH_BYTES = 32;
 const DAY_MS = 24 * 60 * 60 * 1000;
-/** How long the previous secret keeps working after a rotation. */
-const ROTATION_GRACE_MS = 15 * 60 * 1000;
-const FAILURES_BEFORE_PAUSE = 10;
-const PAUSE_MS = 60 * 1000;
-/** Each further batch of failures lengthens the pause, up to this many times. */
-const MAX_PAUSE_MULTIPLIER = 16;
+/** How long the previous secret keeps working after a rotation, unless the owner picks otherwise. */
+export const DEFAULT_ROTATION_GRACE_MS = 15 * 60 * 1000;
 /** lastUsedAt is a rough indicator; the audit log has exact times. */
 const LAST_USED_RESOLUTION_MS = 60 * 1000;
 
-const HashedSecretSchema = z.object({ salt: z.string(), hash: z.string() });
-
-const TokenRecordSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  scope: z.enum(TOKEN_SCOPES),
-  secret: HashedSecretSchema,
-  createdAt: z.string(),
-  lastUsedAt: z.string().optional(),
-  expiresAt: z.string().optional(),
-  revokedAt: z.string().optional(),
-  rotatedAt: z.string().optional(),
-  /** The secret before the last rotation, honoured until graceUntil. */
-  previous: HashedSecretSchema.extend({ graceUntil: z.string() }).optional(),
-});
-type TokenRecord = z.infer<typeof TokenRecordSchema>;
-const FileSchema = z.object({ version: z.literal(1), tokens: z.array(TokenRecordSchema) });
-
-/** A token as shown to the owner: everything but the secret material. */
-export type ApiTokenView = Omit<TokenRecord, "secret" | "previous">;
-
-/** The principal a verified token represents. */
-export interface TokenPrincipal {
-  kind: "token";
-  id: string;
-  name: string;
-  scope: TokenScope;
-}
-
-export function parseToken(raw: string): { id: string; secret: string } | undefined {
-  const match = /^tomo_([a-z0-9]{6})_([a-f0-9]{64})$/.exec(raw);
-  return match ? { id: match[1], secret: match[2] } : undefined;
-}
-
-function hashSecret(secret: string, salt: string): string {
-  return crypto.scryptSync(secret, salt, HASH_BYTES).toString("hex");
-}
-
-function newSecret(): { secret: string; stored: z.infer<typeof HashedSecretSchema> } {
-  const secret = crypto.randomBytes(SECRET_BYTES).toString("hex");
-  const salt = crypto.randomBytes(SALT_BYTES).toString("hex");
-  return { secret, stored: { salt, hash: hashSecret(secret, salt) } };
-}
-
-function matches(secret: string, stored: { salt: string; hash: string }): boolean {
-  const candidate = Buffer.from(hashSecret(secret, stored.salt), "hex");
-  const expected = Buffer.from(stored.hash, "hex");
-  return candidate.length === expected.length && crypto.timingSafeEqual(candidate, expected);
-}
-
-function toView(record: TokenRecord): ApiTokenView {
-  const { secret: _secret, previous: _previous, ...view } = record;
-  return view;
-}
-
 export class ApiTokens {
   private records: TokenRecord[] = [];
-  private readonly failures = new Map<string, { count: number; pausedUntil: number }>();
+  private readonly lockout: TokenLockout;
   /** Writes run one after another so a last-use stamp never races a rotation. */
   private writes: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly filePath: string,
     private readonly now: () => number = Date.now,
-  ) {}
+  ) {
+    this.lockout = new TokenLockout(now);
+  }
 
   async load(): Promise<void> {
     const raw = await readOptionalFile(this.filePath, (error) =>
@@ -136,15 +80,23 @@ export class ApiTokens {
     return { token: `tomo_${id}_${secret}`, record: toView(record) };
   }
 
-  /** Issue a new secret for a token; the old one keeps working for ROTATION_GRACE_MS. */
-  async rotate(id: string): Promise<{ token: string; record: ApiTokenView }> {
+  async update(id: string, input: { note?: string }): Promise<ApiTokenView> {
+    const record = this.active(id);
+    const updated = { ...record, ...(input.note !== undefined && { note: input.note.slice(0, MAX_NOTE) }) };
+    this.records = this.records.map((r) => (r.id === id ? updated : r));
+    await this.save();
+    return toView(updated);
+  }
+
+  /** Issue a new secret for a token; the old one keeps working for the grace window. */
+  async rotate(id: string, graceMs = DEFAULT_ROTATION_GRACE_MS): Promise<{ token: string; record: ApiTokenView }> {
     const record = this.active(id);
     const { secret, stored } = newSecret();
     const rotated: TokenRecord = {
       ...record,
       secret: stored,
       rotatedAt: this.iso(),
-      previous: { ...record.secret, graceUntil: new Date(this.now() + ROTATION_GRACE_MS).toISOString() },
+      previous: graceMs > 0 ? { ...record.secret, graceUntil: new Date(this.now() + graceMs).toISOString() } : undefined,
     };
     this.records = this.records.map((r) => (r.id === id ? rotated : r));
     await this.save();
@@ -171,28 +123,28 @@ export class ApiTokens {
     // Failures count against the caller's address and against the token id,
     // so guessing one token from many addresses is paused as well.
     const keys = [address, ...(parsed ? [`token:${parsed.id}`] : [])];
-    if (keys.some((key) => this.isPaused(key))) return undefined;
+    if (keys.some((key) => this.lockout.isPaused(key))) return undefined;
     const record = parsed && this.records.find((r) => r.id === parsed.id);
-    const accepted =
-      parsed && record && !record.revokedAt && !this.expired(record) && this.secretAccepted(record, parsed.secret);
+    const accepted = parsed && record && !record.revokedAt && !this.expired(record) && this.secretAccepted(record, parsed.secret);
     if (!accepted) {
-      keys.forEach((key) => this.noteFailure(key));
+      keys.forEach((key) => this.lockout.noteFailure(key));
       return undefined;
     }
-    keys.forEach((key) => this.failures.delete(key));
-    this.stampLastUsed(record);
+    keys.forEach((key) => this.lockout.clear(key));
+    this.stampLastUsed(record, accepted === "previous");
     return { kind: "token", id: record.id, name: record.name, scope: record.scope };
   }
 
   isPaused(address: string): boolean {
-    const entry = this.failures.get(address);
-    return entry !== undefined && entry.pausedUntil > this.now();
+    return this.lockout.isPaused(address);
   }
 
-  private secretAccepted(record: TokenRecord, secret: string): boolean {
-    if (matches(secret, record.secret)) return true;
+  /** Which secret matched, if any: the current one, or the previous one still in its grace window. */
+  private secretAccepted(record: TokenRecord, secret: string): "current" | "previous" | undefined {
+    if (matches(secret, record.secret)) return "current";
     const previous = record.previous;
-    return previous !== undefined && Date.parse(previous.graceUntil) > this.now() && matches(secret, previous);
+    if (previous !== undefined && Date.parse(previous.graceUntil) > this.now() && matches(secret, previous)) return "previous";
+    return undefined;
   }
 
   private expired(record: TokenRecord): boolean {
@@ -200,23 +152,12 @@ export class ApiTokens {
   }
 
   /** Rewrite the file at most once a minute per token, not on every call. */
-  private stampLastUsed(record: TokenRecord): void {
-    const last = record.lastUsedAt ? Date.parse(record.lastUsedAt) : 0;
+  private stampLastUsed(record: TokenRecord, viaPrevious: boolean): void {
+    const holder = viaPrevious && record.previous ? record.previous : record;
+    const last = holder.lastUsedAt ? Date.parse(holder.lastUsedAt) : 0;
     if (this.now() - last < LAST_USED_RESOLUTION_MS) return;
-    record.lastUsedAt = this.iso();
+    holder.lastUsedAt = this.iso();
     void this.save();
-  }
-
-  /** Count failures without ever resetting, so each new batch pauses for longer. */
-  private noteFailure(key: string): void {
-    const entry = this.failures.get(key) ?? { count: 0, pausedUntil: 0 };
-    const count = entry.count + 1;
-    const batches = Math.floor(count / FAILURES_BEFORE_PAUSE);
-    const pausedUntil =
-      count % FAILURES_BEFORE_PAUSE === 0
-        ? this.now() + PAUSE_MS * Math.min(batches, MAX_PAUSE_MULTIPLIER)
-        : entry.pausedUntil;
-    this.failures.set(key, { count, pausedUntil });
   }
 
   private active(id: string): TokenRecord {

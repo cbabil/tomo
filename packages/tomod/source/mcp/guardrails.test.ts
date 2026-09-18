@@ -85,3 +85,22 @@ describe("Guardrails rate limits", () => {
     expect(g.evaluate("apps.list", {}, manage).effect).toBe("allow");
   });
 });
+
+describe("Guardrails rule flags", () => {
+  const night: Rule = { name: "night", match: { tools: ["apps.restart"] }, effect: "deny", message: "no" };
+
+  it("skips disabled rules", () => {
+    const g = new Guardrails(() => [{ ...night, enabled: false }, ...BUILT_IN_RULES], () => 0);
+    expect(g.evaluate("apps.restart", { appId: "x" }, manage).effect).toBe("allow");
+  });
+
+  it("only observes a rule marked observe, reporting what it would have done", () => {
+    const g = new Guardrails(() => [{ ...night, observe: true }, ...BUILT_IN_RULES], () => 0);
+    expect(g.evaluate("apps.restart", { appId: "x" }, manage)).toEqual({
+      effect: "allow",
+      rule: "night",
+      reason: "no",
+      observed: "deny",
+    });
+  });
+});

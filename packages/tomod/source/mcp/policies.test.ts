@@ -104,3 +104,46 @@ describe("PolicyStore", () => {
     expect(store.rules().map((r) => r.name)).toContain("keep");
   });
 });
+
+describe("day windows and structured saves", () => {
+  const rulesYaml = `
+- name: weekend-quiet
+  match:
+    tools: [apps.restart]
+  when:
+    hours: "22:00-07:00"
+    days: [sat, sun]
+  effect: deny
+  enabled: true
+  observe: false
+`;
+
+  it("applies day-of-week windows in local time", () => {
+    const { rules, errors } = parsePolicies(rulesYaml);
+    expect(errors).toEqual([]);
+    const saturdayNight = Date.parse("2026-09-19T23:30:00");
+    const mondayNight = Date.parse("2026-09-21T23:30:00");
+    expect(ownerRuleToRule(rules[0], () => saturdayNight).match.when?.({})).toBe(true);
+    expect(ownerRuleToRule(rules[0], () => mondayNight).match.when?.({})).toBe(false);
+  });
+
+  it("rejects unknown day names", () => {
+    expect(parsePolicies("- name: x\n  match:\n    tools: [apps.list]\n  when:\n    hours: \"01:00-02:00\"\n    days: [funday]\n  effect: deny\n").errors[0]).toMatch(/days/);
+  });
+
+  it("saves structured rules as YAML and evaluates them at a chosen time", async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "tomo-policies-"));
+    const store = new PolicyStore(dir, () => NOON);
+    await store.load();
+    await store.saveRules([
+      { name: "night", match: { tools: ["apps.restart"], apps: ["nextcloud"] }, when: { hours: "22:00-07:00" }, effect: "deny" },
+    ]);
+    expect(store.ownerRules()).toHaveLength(1);
+    expect(await readFile(path.join(dir, "policies.yaml"), "utf-8")).toContain("nextcloud");
+    const atMidnight = store.rulesAt(MIDNIGHT_PLUS).find((r) => r.name === "night");
+    const atNoon = store.rulesAt(NOON).find((r) => r.name === "night");
+    expect(atMidnight?.match.when?.({})).toBe(true);
+    expect(atNoon?.match.when?.({})).toBe(false);
+    await rm(dir, { recursive: true, force: true });
+  });
+});
