@@ -170,6 +170,9 @@
       "restartWarning": "Tomo will restart automatically after the update.",
       "checkFailed": "Could not check for updates",
       "status": "Status"
+    },
+    "aiAccess": {
+      "title": "AI & API access"
     }
   },
   "terminal": {
@@ -244,5 +247,55 @@
       "installing": "Downloading images and creating containers. Large apps can take a few minutes.",
       "starting": "Containers are up. Waiting for the app to respond..."
     }
+  },
+  "tokens": {
+    "intro": "Tokens let agents such as Claude Code, and your own scripts, use Tomo without a browser. Each token has a scope and can be rotated or revoked at any time. Tokens are accepted from your local network only.",
+    "title": "Tokens",
+    "create": "Create token",
+    "createTitle": "Create a token",
+    "name": "Name",
+    "namePlaceholder": "claude-code on my laptop",
+    "scope": "Scope",
+    "scopes": {
+      "manage": "Manage",
+      "admin": "Admin"
+    },
+    "scopeHelp": {
+      "manage": "Read everything, start, stop, restart, update, install apps, and add or edit custom apps.",
+      "admin": "Everything in Manage, plus remove apps, change app stores, and turn on privileged mode or own sign-in."
+    },
+    "expiry": "Expires",
+    "days": "{{count}} days",
+    "never": "Never",
+    "neverWarning": "A token that never expires stays valid until you revoke it. Prefer an expiry and rotate.",
+    "showOnce": "Copy this token now. It will not be shown again.",
+    "copy": "Copy token",
+    "copied": "Copied",
+    "plainHttpWarning": "Tomo serves plain HTTP on your network, so this token travels unencrypted. Use it on your own network only.",
+    "done": "Done",
+    "empty": "No tokens yet.",
+    "rowDetail": "{{id}} · {{scope}} · last used {{lastUsed}} · expires {{expires}}",
+    "neverUsed": "never",
+    "status": {
+      "active": "Active",
+      "expiring": "Expires soon",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "rotate": "Rotate",
+    "rotateTitle": "Rotate {{name}}?",
+    "rotateWarning": "A new secret is issued and shown once. The old secret keeps working for 15 minutes, then stops.",
+    "rotatedTitle": "Token rotated",
+    "revoke": "Revoke",
+    "revokeTitle": "Revoke {{name}}?",
+    "revokeWarning": "Anything using this token stops working immediately. This cannot be undone.",
+    "activity": "Activity",
+    "noActivity": "No API activity yet.",
+    "outcome": {
+      "ok": "OK",
+      "denied": "Denied",
+      "error": "Error"
+    },
+    "createdTitle": "Token created"
   }
 }

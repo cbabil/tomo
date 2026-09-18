@@ -6,6 +6,7 @@ import PaletteIcon from "@mui/icons-material/Palette";
 import TranslateIcon from "@mui/icons-material/Translate";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import SystemUpdateAltIcon from "@mui/icons-material/SystemUpdateAlt";
+import KeyIcon from "@mui/icons-material/Key";
 import { useTranslation } from "react-i18next";
 import { useStore } from "../../hooks/useStore";
 import { SETTINGS_TABS, type SettingsTab } from "../../types";
@@ -14,6 +15,7 @@ import { AppearanceSection } from "./settings/AppearanceSection";
 import { LanguageSection } from "./settings/LanguageSection";
 import { AppStoreSection } from "./settings/AppStoreSection";
 import { UpdateSection } from "./settings/UpdateSection";
+import { AiAccessSection } from "./settings/AiAccessSection";
 
 const TAB_ICONS: Record<SettingsTab, React.ReactElement> = {
   account: <PersonIcon sx={{ fontSize: 20 }} />,
@@ -21,6 +23,7 @@ const TAB_ICONS: Record<SettingsTab, React.ReactElement> = {
   language: <TranslateIcon sx={{ fontSize: 20 }} />,
   appStore: <StorefrontIcon sx={{ fontSize: 20 }} />,
   update: <SystemUpdateAltIcon sx={{ fontSize: 20 }} />,
+  aiAccess: <KeyIcon sx={{ fontSize: 20 }} />,
 };
 
 const TAB_CONTENT: Record<SettingsTab, React.FC> = {
@@ -29,6 +32,7 @@ const TAB_CONTENT: Record<SettingsTab, React.FC> = {
   language: LanguageSection,
   appStore: AppStoreSection,
   update: UpdateSection,
+  aiAccess: AiAccessSection,
 };
 
 export function SettingsSheet() {

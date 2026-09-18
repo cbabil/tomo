@@ -325,7 +325,48 @@ const appsRouter = t.router({
   }),
 });
 
+const tokensRouter = t.router({
+    list: t.procedure.query(
+      (): Array<{
+        id: string;
+        name: string;
+        scope: "manage" | "admin";
+        createdAt: string;
+        lastUsedAt?: string;
+        expiresAt?: string;
+        revokedAt?: string;
+      }> => [],
+    ),
+    create: t.procedure
+      .input(
+        z.object({
+          name: z.string(),
+          scope: z.enum(["manage", "admin"]),
+          expiresInDays: z.number().nullable(),
+        }),
+      )
+      .mutation((): { token: string; record: { id: string } } => ({ token: "", record: { id: "" } })),
+    rotate: t.procedure
+      .input(z.object({ id: z.string() }))
+      .mutation((): { token: string; record: { id: string } } => ({ token: "", record: { id: "" } })),
+    revoke: t.procedure
+      .input(z.object({ id: z.string() }))
+      .mutation((): { success: boolean } => ({ success: true })),
+    activity: t.procedure
+      .input(z.object({ limit: z.number() }))
+      .query(
+        (): Array<{
+          time: string;
+          principal: { kind: "user" | "token"; id?: string; name: string };
+          action: string;
+          outcome: "ok" | "denied" | "error";
+          reason?: string;
+        }> => [],
+      ),
+  });
+
 const _appRouter = t.router({
+  tokens: tokensRouter,
   user: userRouter,
   system: systemRouter,
   apps: appsRouter,

@@ -1,5 +1,6 @@
 import { createLogger } from "./logger.js";
-import { PORT, STATIC_DIR, CORS_ORIGIN } from "./config.js";
+import path from "node:path";
+import { PORT, STATIC_DIR, CORS_ORIGIN, TOMO_DATA_DIR } from "./config.js";
 import { Store } from "./store.js";
 import { User } from "./user.js";
 import { Docker } from "./docker.js";
@@ -9,6 +10,8 @@ import { TemplateRegistry } from "./templates.js";
 import { Apps } from "./apps.js";
 import { TraefikProxy } from "./traefik-proxy.js";
 import { Notifications } from "./notifications.js";
+import { ApiTokens } from "./api-tokens.js";
+import { AuditLog } from "./audit-log.js";
 import { createServer } from "./server.js";
 
 const log = createLogger("tomod");
@@ -25,6 +28,8 @@ export class Tomod {
   private readonly proxy: TraefikProxy;
   private readonly apps: Apps;
   private readonly notifications: Notifications;
+  private readonly tokens: ApiTokens;
+  private readonly audit: AuditLog;
   private syncTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
@@ -37,6 +42,8 @@ export class Tomod {
     this.proxy = new TraefikProxy(this.docker);
     this.apps = new Apps(this.appStore, this.templateRegistry, this.docker, this.store, this.proxy);
     this.notifications = new Notifications();
+    this.tokens = new ApiTokens(path.join(TOMO_DATA_DIR, "api-tokens.json"));
+    this.audit = new AuditLog(path.join(TOMO_DATA_DIR, "audit.jsonl"));
   }
 
   async start(): Promise<void> {
@@ -44,6 +51,7 @@ export class Tomod {
 
     await this.store.load();
     await this.user.init();
+    await this.tokens.load();
     await this.proxy.init();
     await this.templateRegistry.init();
     await this.appStore.sync();
@@ -61,6 +69,8 @@ export class Tomod {
         templateRegistry: this.templateRegistry,
         hardware: this.hardware,
         docker: this.docker,
+        tokens: this.tokens,
+        audit: this.audit,
       },
       { port, staticDir, corsOrigin },
     );
@@ -100,6 +110,7 @@ export class Tomod {
       }
 
       httpServer.close();
+      await this.tokens.flush();
       log.info("tomod shutdown complete");
       process.exit(0);
     };

@@ -91,6 +91,7 @@ export const SETTINGS_TABS = [
   "language",
   "appStore",
   "update",
+  "aiAccess",
 ] as const;
 
 export type SettingsTab = (typeof SETTINGS_TABS)[number];
