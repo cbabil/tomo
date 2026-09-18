@@ -296,6 +296,7 @@
       "denied": "Denied",
       "error": "Error"
     },
-    "createdTitle": "Token created"
+    "createdTitle": "Token created",
+    "mcpHint": "To let Claude Code operate Tomo, add this to its MCP configuration:"
   }
 }
