@@ -6,8 +6,7 @@
  * scope, expire by default, can be rotated with a grace period, and can be
  * revoked at once.
  */
-import { readFile } from "node:fs/promises";
-import { writeFileAtomic } from "./fs-utils.js";
+import { readOptionalFile, writeFileAtomic } from "./fs-utils.js";
 import crypto from "node:crypto";
 import { z } from "zod";
 import { createLogger } from "./logger.js";
@@ -98,13 +97,13 @@ export class ApiTokens {
   ) {}
 
   async load(): Promise<void> {
+    const raw = await readOptionalFile(this.filePath, (error) =>
+      log.error("Could not read API tokens; starting with none", { error }),
+    );
     try {
-      const raw = await readFile(this.filePath, "utf-8");
-      this.records = FileSchema.parse(JSON.parse(raw)).tokens;
+      this.records = raw === undefined ? [] : FileSchema.parse(JSON.parse(raw)).tokens;
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-        log.error("Could not read API tokens; starting with none", { error: String(err) });
-      }
+      log.error("API tokens file is not valid; starting with none", { error: String(err) });
       this.records = [];
     }
   }

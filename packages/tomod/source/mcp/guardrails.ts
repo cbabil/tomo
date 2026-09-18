@@ -8,7 +8,8 @@ import { scopeDenial } from "../principal.js";
 import { widensReach } from "../schemas.js";
 import type { TokenPrincipal, TokenScope } from "../api-tokens.js";
 
-export type Effect = "allow" | "deny" | "agent_confirm";
+export const EFFECTS = ["allow", "deny", "agent_confirm", "human_confirm"] as const;
+export type Effect = (typeof EFFECTS)[number];
 
 export interface Rule {
   name: string;
@@ -22,6 +23,22 @@ export interface Rule {
   };
   effect: Effect;
   message?: string;
+}
+
+/**
+ * Whether a rule's tool and app selectors cover every one of these tools and
+ * apps, ignoring `when`. `apps` omitted means "any app".
+ */
+export function ruleCovers(rule: Rule, tools: string[], apps?: string[]): boolean {
+  const toolsCovered = rule.match.tools.includes("*") || tools.every((t) => rule.match.tools.includes(t));
+  const appsCovered = !rule.match.apps || (apps !== undefined && apps.every((a) => rule.match.apps?.includes(a)));
+  return toolsCovered && appsCovered;
+}
+
+/** Whether a rule applies to this call: selectors plus its `when` condition. */
+export function ruleMatches(rule: Rule, tool: string, args: Record<string, unknown>): boolean {
+  const apps = typeof args.appId === "string" ? [args.appId] : undefined;
+  return ruleCovers(rule, [tool], apps) && (!rule.match.when || rule.match.when(args));
 }
 
 export interface Decision {
@@ -54,14 +71,14 @@ export const BUILT_IN_RULES: Rule[] = [
   {
     name: "removal-needs-a-person",
     match: { tools: ["apps.remove"] },
-    effect: "deny",
-    message: "Removing an app deletes its data. Do it from the Tomo desktop.",
+    effect: "human_confirm",
+    message: "Removing an app deletes its data, so a person approves it on the Tomo desktop.",
   },
   {
     name: "widening-needs-a-person",
     match: { tools: ["apps.add_custom", "apps.edit_custom"], when: widensReach },
-    effect: "deny",
-    message: "Privileged mode and own sign-in widen what an app can reach. Turn them on from the Tomo desktop.",
+    effect: "human_confirm",
+    message: "Privileged mode and own sign-in widen what an app can reach, so a person approves them on the Tomo desktop.",
   },
   {
     name: "restate-changes",
@@ -72,9 +89,9 @@ export const BUILT_IN_RULES: Rule[] = [
 
 export class Guardrails {
   private readonly calls = new Map<string, number[]>();
-
+  /** `rules` is read on every call, so owner rules can change without a restart. */
   constructor(
-    private readonly rules: Rule[],
+    private readonly rules: () => Rule[],
     private readonly now: () => number = Date.now,
   ) {}
 
@@ -86,13 +103,7 @@ export class Guardrails {
     const limited = this.overLimit(principal.id, MUTATING_TOOLS.has(tool));
     if (limited) return { effect: "deny", rule: "rate-limit", reason: limited };
 
-    const appId = typeof args.appId === "string" ? args.appId : undefined;
-    const rule = this.rules.find(
-      (r) =>
-        (r.match.tools.includes("*") || r.match.tools.includes(tool)) &&
-        (!r.match.apps || (appId !== undefined && r.match.apps.includes(appId))) &&
-        (!r.match.when || r.match.when(args)),
-    );
+    const rule = this.rules().find((r) => ruleMatches(r, tool, args));
     if (!rule) return { effect: "allow" };
     return { effect: rule.effect, rule: rule.name, reason: rule.message };
   }

@@ -294,9 +294,43 @@
     "outcome": {
       "ok": "OK",
       "denied": "Denied",
+      "pending": "Waiting for approval",
       "error": "Error"
     },
     "createdTitle": "Token created",
     "mcpHint": "To let Claude Code operate Tomo, add this to its MCP configuration:"
+  },
+  "aiAccess": {
+    "panels": {
+      "tokens": "Tokens",
+      "guardrails": "Guardrails",
+      "approvals": "Approvals",
+      "activity": "Activity"
+    }
+  },
+  "guardrails": {
+    "builtInTitle": "Built-in rules",
+    "builtInIntro": "These ship with Tomo and cannot be changed. Your own rules below run after them, so they can tighten but never loosen.",
+    "effects": {
+      "allow": "Allow",
+      "deny": "Refuse",
+      "agent_confirm": "Agent must restate",
+      "human_confirm": "You approve"
+    },
+    "rulesTitle": "Your rules",
+    "rulesIntro": "Enforced on every tool call, first match wins. Stored in policies.yaml in the data directory.",
+    "shadowed": "Rule \"{{rule}}\" never takes effect: the built-in rule \"{{by}}\" already decides those tools.",
+    "instructionsTitle": "Instructions for agents",
+    "instructionsIntro": "Advice every agent reads when it connects. This is guidance, not enforcement: put anything that must hold in the rules above.",
+    "saved": "Saved."
+  },
+  "approvals": {
+    "intro": "Changes an agent asked for that need your approval. Unanswered requests expire after 10 minutes.",
+    "empty": "Nothing is waiting for approval.",
+    "askedBy": "Asked by {{name}} at {{time}}",
+    "approve": "Approve",
+    "deny": "Deny",
+    "waiting_one": "{{count}} change waiting for your approval",
+    "waiting_other": "{{count}} changes waiting for your approval"
   }
 }

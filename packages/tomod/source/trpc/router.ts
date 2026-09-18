@@ -5,6 +5,9 @@ import { createSystemRouter } from "./system.js";
 import { createTokensRouter } from "./tokens.js";
 import type { ApiTokens } from "../api-tokens.js";
 import type { AuditLog } from "../audit-log.js";
+import type { PolicyStore } from "../mcp/policies.js";
+import type { Confirmations } from "../mcp/confirmations.js";
+import { createGuardrailsRouter } from "./guardrails.js";
 import type { User } from "../user.js";
 import type { Apps } from "../apps.js";
 import type { AppStore } from "../app-store.js";
@@ -21,6 +24,8 @@ export interface RouterDependencies {
   docker: Docker;
   tokens: ApiTokens;
   audit: AuditLog;
+  policies: PolicyStore;
+  confirmations: Confirmations;
 }
 
 export function createAppRouter(deps: RouterDependencies) {
@@ -29,6 +34,7 @@ export function createAppRouter(deps: RouterDependencies) {
     apps: createAppsRouter(deps.apps, deps.appStore, deps.templateRegistry),
     system: createSystemRouter(deps.hardware, deps.docker),
     tokens: createTokensRouter(deps.tokens, deps.audit),
+    guardrails: createGuardrailsRouter(deps.policies, deps.confirmations, deps.audit),
   });
 }
 

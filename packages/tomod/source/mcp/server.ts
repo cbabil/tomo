@@ -8,21 +8,21 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
 import { createLogger } from "../logger.js";
-import { redact } from "../audit-log.js";
+import { redact, type AuditEntry } from "../audit-log.js";
 import { resolvePrincipal } from "../trpc/middleware.js";
 import type { RouterDependencies } from "../trpc/router.js";
 import type { TokenPrincipal } from "../api-tokens.js";
-import { Guardrails, BUILT_IN_RULES } from "./guardrails.js";
-import { Confirmations } from "./confirmations.js";
+import { Guardrails } from "./guardrails.js";
 import { TOOLS, type ToolDefinition } from "./tools.js";
 
 const log = createLogger("mcp");
 
-const INSTRUCTIONS = `You are connected to Tomo, a self-hosted app platform, with an API token.
+/** How the tools work, sent to every agent ahead of the owner's own instructions. */
+const HOW_TOMO_WORKS = `You are connected to Tomo, a self-hosted app platform, with an API token.
 Read tools (apps.list, apps.get, apps.logs, store.search, system.stats, system.info) run at once.
-Changes (apps.install, apps.update, apps.add_custom, apps.edit_custom) return "confirmation_required"
-with an id and a summary: restate the summary to the user, then call tomo.confirm with the id.
-Removing an app, and turning on privileged mode or own sign-in, must be done by a person on the Tomo desktop.
+Some changes return "confirmation_required" with an id and a summary: restate the summary to the user,
+then call tomo.confirm with the id. Others return "approval_required": a person must approve them on the
+Tomo desktop; tell the user, then call tomo.confirm with the id to check and run once approved.
 Call tomo.whoami to learn this token's name and scope.`;
 
 type ToolResult = { content: Array<{ type: "text"; text: string }>; isError?: boolean };
@@ -47,10 +47,10 @@ const text = (value: unknown): ToolResult => {
 };
 const failure = (message: string): ToolResult => ({ ...text({ error: message }), isError: true });
 
-/** Build the express handler. The guardrail and confirmation state is shared across requests. */
+/** Build the express handler. The guardrail state is shared across requests. */
 export function createMcpHandler(deps: RouterDependencies) {
-  const guardrails = new Guardrails(BUILT_IN_RULES);
-  const confirmations = new Confirmations();
+  const policies = deps.policies;
+  const guardrails = new Guardrails(() => policies.rules());
 
   return async (req: Request, res: Response): Promise<void> => {
     const { principal } = resolvePrincipal(req, deps);
@@ -58,7 +58,7 @@ export function createMcpHandler(deps: RouterDependencies) {
       res.status(401).json({ error: "An API token is required. Create one in Settings, API access." });
       return;
     }
-    const server = buildServer(principal, deps, guardrails, confirmations);
+    const server = buildServer(principal, deps, guardrails);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     res.on("close", () => {
       void transport.close();
@@ -73,11 +73,12 @@ function buildServer(
   principal: TokenPrincipal,
   deps: RouterDependencies,
   guardrails: Guardrails,
-  confirmations: Confirmations,
 ): McpServer {
-  const server = new McpServer({ name: "tomo", version: "1" }, { instructions: INSTRUCTIONS });
+  const confirmations = deps.confirmations;
+  const instructions = `${HOW_TOMO_WORKS}\n\nThe owner's instructions:\n${deps.policies.instructions()}`;
+  const server = new McpServer({ name: "tomo", version: "1" }, { instructions });
 
-  const audit = (action: string, args: unknown, outcome: "ok" | "denied" | "error", reason?: string) =>
+  const audit = (action: string, args: unknown, outcome: AuditEntry["outcome"], reason?: string) =>
     deps.audit.record({ principal: { kind: "token", id: principal.id, name: principal.name }, action, args, outcome, reason });
 
   const execute = async (tool: ToolDefinition, args: Record<string, unknown>): Promise<ToolResult> => {
@@ -101,17 +102,28 @@ function buildServer(
         await audit(`mcp:${tool.name}`, args, "denied", decision.reason);
         return failure(decision.reason ?? `Refused by rule ${decision.rule}`);
       }
-      if (decision.effect === "agent_confirm") {
-        const pending = confirmations.create({ tokenId: principal.id, tool: tool.name, args, summary: tool.summary(args) });
-        return text({
-          status: "confirmation_required",
-          confirmationId: pending.id,
-          summary: pending.summary,
-          expiresAt: pending.expiresAt,
-          next: "Restate the summary to the user, then call tomo.confirm with confirmationId.",
-        });
-      }
-      return execute(tool, args);
+      if (decision.effect === "allow") return execute(tool, args);
+
+      const needsPerson = decision.effect === "human_confirm";
+      const pending = confirmations.create({
+        tokenId: principal.id,
+        tokenName: principal.name,
+        tool: tool.name,
+        args,
+        summary: tool.summary(args),
+        needsPerson,
+      });
+      if (needsPerson) await audit(`mcp:${tool.name}`, args, "pending", decision.reason);
+      return text({
+        status: needsPerson ? "approval_required" : "confirmation_required",
+        confirmationId: pending.id,
+        summary: pending.summary,
+        reason: decision.reason,
+        expiresAt: pending.expiresAt,
+        next: needsPerson
+          ? "Tell the user a person must approve this on the Tomo desktop, then call tomo.confirm with confirmationId."
+          : "Restate the summary to the user, then call tomo.confirm with confirmationId.",
+      });
     });
   }
 
@@ -119,18 +131,21 @@ function buildServer(
     "tomo.confirm",
     { description: "Run a change after restating it: pass the confirmationId you were given.", inputSchema: { confirmationId: z.string() } },
     async (args) => {
-      const pending = confirmations.take(String(args?.confirmationId ?? ""), principal.id);
+      const id = String(args?.confirmationId ?? "");
+      const { status, entry: pending } = confirmations.claim(id, principal.id);
+      if (status === "awaiting_person") return text({ status: "waiting_for_approval", confirmationId: id });
+      if (status === "denied") return failure("A person denied this on the Tomo desktop");
       if (!pending) return failure("Unknown, expired, or already used confirmation id");
       const tool = TOOLS.find((t) => t.name === pending.tool);
       if (!tool) return failure(`Unknown tool ${pending.tool}`);
-      log.info("Confirmed tool call", { token: principal.id, tool: tool.name });
+      log.info("Confirmed tool call", { token: principal.id, tool: tool.name, approved: Boolean(pending.decision) });
       return execute(tool, pending.args);
     },
   );
 
   registry.registerTool(
     "tomo.pending_confirmations",
-    { description: "Changes this token asked for that still need tomo.confirm.", inputSchema: {} },
+    { description: "Changes this token asked for that still need tomo.confirm, including ones awaiting a person.", inputSchema: {} },
     async () => text(confirmations.listFor(principal.id)),
   );
 

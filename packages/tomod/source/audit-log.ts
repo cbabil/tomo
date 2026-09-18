@@ -28,7 +28,7 @@ export interface AuditEntry {
   principal: AuditPrincipal;
   action: string;
   args?: unknown;
-  outcome: "ok" | "denied" | "error";
+  outcome: "ok" | "denied" | "error" | "pending";
   reason?: string;
 }
 

@@ -7,6 +7,7 @@ import { AppGrid } from "./AppGrid";
 import { Dock } from "./Dock";
 import { SpotlightSearch } from "./SpotlightSearch";
 import { UpdateBanner } from "./UpdateBanner";
+import { ApprovalsBanner } from "./ApprovalsBanner";
 import { DesktopLogout } from "./DesktopLogout";
 import { DesktopBrand } from "./DesktopBrand";
 
@@ -17,6 +18,7 @@ export function Desktop() {
     <Box sx={styles.root}>
       <Wallpaper />
       <Box sx={styles.topRight}>
+        <ApprovalsBanner />
         <UpdateBanner />
         <DesktopLogout />
       </Box>

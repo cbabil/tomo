@@ -5,7 +5,7 @@ import { trpc } from "../../../lib/trpc";
 import { colors } from "../../../app/theme";
 
 const ACTIVITY_LIMIT = 50;
-const OUTCOME_COLOR = { ok: colors.success, denied: colors.warning, error: colors.error } as const;
+const OUTCOME_COLOR = { ok: colors.success, denied: colors.warning, error: colors.error, pending: colors.info } as const;
 
 /** The most recent API calls, newest first, as recorded in the audit log. */
 export function TokenActivity() {

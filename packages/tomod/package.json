@@ -1,6 +1,6 @@
 {
   "name": "tomod",
-  "version": "0.0.73",
+  "version": "0.0.74",
   "private": true,
   "type": "module",
   "main": "dist/index.js",

@@ -325,6 +325,34 @@ const appsRouter = t.router({
   }),
 });
 
+const guardrailsRouter = t.router({
+  get: t.procedure.query(
+    (): {
+      builtIn: Array<{ name: string; tools: string[]; effect: string; message?: string }>;
+      rulesYaml: string;
+      instructions: string;
+      shadowed: Array<{ rule: string; by: string }>;
+    } => ({ builtIn: [], rulesYaml: "", instructions: "", shadowed: [] }),
+  ),
+  check: t.procedure
+    .input(z.object({ rulesYaml: z.string() }))
+    .query((): { errors: string[]; shadowed: Array<{ rule: string; by: string }>; count: number } => ({
+      errors: [],
+      shadowed: [],
+      count: 0,
+    })),
+  save: t.procedure
+    .input(z.object({ rulesYaml: z.string().optional(), instructions: z.string().optional() }))
+    .mutation((): { success: boolean } => ({ success: true })),
+  pendingApprovals: t.procedure.query(
+    (): Array<{ id: string; tokenId: string; tokenName: string; tool: string; summary: string; createdAt: string; expiresAt: string }> =>
+      [],
+  ),
+  decide: t.procedure
+    .input(z.object({ id: z.string(), approved: z.boolean() }))
+    .mutation((): { success: boolean } => ({ success: true })),
+});
+
 const tokensRouter = t.router({
     list: t.procedure.query(
       (): Array<{
@@ -359,7 +387,7 @@ const tokensRouter = t.router({
           time: string;
           principal: { kind: "user" | "token"; id?: string; name: string };
           action: string;
-          outcome: "ok" | "denied" | "error";
+          outcome: "ok" | "denied" | "error" | "pending";
           reason?: string;
         }> => [],
       ),
@@ -367,6 +395,7 @@ const tokensRouter = t.router({
 
 const _appRouter = t.router({
   tokens: tokensRouter,
+  guardrails: guardrailsRouter,
   user: userRouter,
   system: systemRouter,
   apps: appsRouter,
