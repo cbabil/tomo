@@ -63,12 +63,14 @@ const sharedOptions: ThemeOptions = {
           textTransform: "none",
           fontWeight: 600,
         },
-        containedPrimary: {
+        containedPrimary: ({ ownerState }) => ({
           backgroundColor: colors.primary,
           "&:hover": { backgroundColor: colors.primaryBoost },
           borderRadius: 8,
-          padding: "12px 0",
-        },
+          // Tall padding suits full-width form buttons (login, onboarding);
+          // inline actions keep MUI's size-based padding.
+          ...(ownerState.fullWidth && { padding: "12px 0" }),
+        }),
       },
     },
     MuiIconButton: {
