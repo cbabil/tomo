@@ -68,7 +68,12 @@
       "open": "Open",
       "addCustom": "Add custom app",
       "edit": "Edit",
-      "logs": "View logs"
+      "logs": "View logs",
+      "start": "Start",
+      "update": "Update",
+      "removeTitle": "Remove {{name}}?",
+      "removeWarning": "This stops {{name}} and permanently deletes its containers and everything in its data folder. This cannot be undone.",
+      "removeExternalWarning": "This removes the {{name}} shortcut from your desktop. The service itself is not affected."
     },
     "logs": {
       "title": "{{name}} — Logs",
@@ -225,5 +230,12 @@
     "delete": "Delete",
     "back": "Back",
     "next": "Next"
+  },
+  "install": {
+    "phase": {
+      "preparing": "Preparing the app...",
+      "installing": "Downloading images and creating containers. Large apps can take a few minutes.",
+      "starting": "Containers are up. Waiting for the app to respond..."
+    }
   }
 }

@@ -36,7 +36,15 @@ export interface AppTemplate {
 }
 
 export interface InstalledApp extends App {
-  status: "running" | "stopped" | "error" | "external";
+  status:
+    | "running"
+    | "stopped"
+    | "error"
+    | "external"
+    | "installing"
+    | "starting"
+    | "restarting"
+    | "stopping";
   webPort?: number;
   /** Where the tile opens when the web UI is not at "/", e.g. "/ui". */
   webPath?: string;

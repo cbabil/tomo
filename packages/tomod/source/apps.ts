@@ -399,6 +399,13 @@ export class Apps {
 
   async update(appId: string): Promise<void> {
     const app = this.getApp(appId);
+    // Custom and template apps have no store manifest to sync from. Updating
+    // them means pulling newer images for the same compose file.
+    if (app.type === "custom" || app.type === "template") {
+      await app.pullAndRecreate();
+      log.info("App updated", { appId, type: app.type });
+      return;
+    }
     const manifest = this.appStore.getApp(appId);
     if (!manifest) throw new Error(`App not found in store: ${appId}`);
 

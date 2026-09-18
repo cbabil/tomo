@@ -128,7 +128,15 @@ const appsRouter = t.router({
       version: string;
       repo: string;
       developer: string;
-      status: "running" | "stopped" | "error" | "external";
+      status:
+        | "running"
+        | "stopped"
+        | "error"
+        | "external"
+        | "installing"
+        | "starting"
+        | "restarting"
+        | "stopping";
       webPort?: number;
       webPath?: string;
       type?: "store" | "custom" | "template" | "external";
@@ -140,6 +148,9 @@ const appsRouter = t.router({
     .input(z.object({ appId: z.string() }))
     .mutation((): void => {}),
   uninstall: t.procedure
+    .input(z.object({ appId: z.string() }))
+    .mutation((): void => {}),
+  update: t.procedure
     .input(z.object({ appId: z.string() }))
     .mutation((): void => {}),
   start: t.procedure

@@ -22,6 +22,7 @@ import { useStore } from "../../hooks/useStore";
 import { colors } from "../../app/theme";
 import { dialogStyles } from "./styles";
 import { SwitchWithHelp } from "./SwitchWithHelp";
+import { useInstallPhase } from "../../hooks/useInstallPhase";
 
 export function AddCustomAppDialog() {
   const { t } = useTranslation();
@@ -107,6 +108,7 @@ export function AddCustomAppDialog() {
   };
 
   const isSubmitting = installDocker.isPending || addExternal.isPending;
+  const installPhase = useInstallPhase(installDocker.isPending);
 
   return (
     <Dialog
@@ -135,6 +137,11 @@ export function AddCustomAppDialog() {
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
+          </Alert>
+        )}
+        {installPhase && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            {installPhase}
           </Alert>
         )}
 

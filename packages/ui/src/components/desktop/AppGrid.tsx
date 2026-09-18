@@ -1,22 +1,19 @@
 import { useState } from "react";
 import Box from "@mui/material/Box";
-import { colors } from "../../app/theme";
 import Typography from "@mui/material/Typography";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import StopIcon from "@mui/icons-material/Stop";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import EditIcon from "@mui/icons-material/Edit";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import { useTranslation } from "react-i18next";
+import { colors } from "../../app/theme";
 import { trpc } from "../../lib/trpc";
 import { openInstalledApp } from "../../lib/urls";
+import { isBusyStatus } from "../../lib/appStatus";
 import { useStore } from "../../hooks/useStore";
 import { AppIcon } from "../ui/AppIcon";
+import { ConfirmDialog } from "../dialogs/ConfirmDialog";
+import { AppContextMenu, type AppAction } from "./AppContextMenu";
 import type { InstalledApp } from "../../types";
+
+// While any app is installing, starting or stopping, keep the tiles live.
+const BUSY_POLL_INTERVAL_MS = 2000;
 
 export function AppGrid() {
   const { t } = useTranslation();
@@ -24,84 +21,84 @@ export function AppGrid() {
   const openEditExternalApp = useStore((s) => s.openEditExternalApp);
   const openEditCustomApp = useStore((s) => s.openEditCustomApp);
   const openLogs = useStore((s) => s.openLogs);
-  const installedQuery = trpc.apps.installed.useQuery();
+  const startMutation = trpc.apps.start.useMutation();
   const stopMutation = trpc.apps.stop.useMutation();
   const restartMutation = trpc.apps.restart.useMutation();
+  const updateMutation = trpc.apps.update.useMutation();
   const uninstallMutation = trpc.apps.uninstall.useMutation();
   const removeExternalMutation = trpc.apps.custom.removeExternal.useMutation();
+  const lifecyclePending = [startMutation, stopMutation, restartMutation, updateMutation]
+    .some((m) => m.isPending);
+  // The server flips an app to a busy status as soon as a request starts, so
+  // poll while one is in flight and for as long as anything stays busy.
+  const installedQuery = trpc.apps.installed.useQuery(undefined, {
+    refetchInterval: (query) =>
+      lifecyclePending || query.state.data?.some((app) => isBusyStatus(app.status))
+        ? BUSY_POLL_INTERVAL_MS
+        : false,
+  });
 
   const [contextMenu, setContextMenu] = useState<{
     anchor: HTMLElement;
     app: InstalledApp;
   } | null>(null);
+  const [removing, setRemoving] = useState<InstalledApp | null>(null);
 
   // System apps (e.g. the Terminal, opened from the dock) are hidden from the grid.
   const apps = (installedQuery.data ?? []).filter((app) => !app.hidden);
 
-  const handleContextMenu = (
-    event: React.MouseEvent<HTMLElement>,
-    app: InstalledApp,
-  ) => {
-    event.preventDefault();
-    setContextMenu({ anchor: event.currentTarget, app });
+  /** Run a change to an app, then show its result. */
+  const run = async (change: Promise<unknown>) => {
+    try {
+      await change;
+    } catch {
+      // Mutation errors are surfaced via the mutation's error state
+    }
+    await installedQuery.refetch();
   };
 
-  const handleAction = async (
-    action: "stop" | "restart" | "remove" | "edit" | "logs",
-  ) => {
+  const handleAction = (action: AppAction) => {
     if (!contextMenu) return;
     const { app } = contextMenu;
     setContextMenu(null);
 
-    if (action === "logs") {
-      openLogs({ id: app.id, name: app.name });
-      return;
-    }
-
+    if (action === "logs") return openLogs({ id: app.id, name: app.name });
+    if (action === "remove") return setRemoving(app);
     if (action === "edit" && app.type === "external") {
-      openEditExternalApp({
+      return openEditExternalApp({
         id: app.id,
         name: app.name,
         url: app.externalUrl ?? "",
         icon: app.icon || undefined,
       });
-      return;
     }
-
     if (action === "edit") {
-      openEditCustomApp({
+      return openEditCustomApp({
         id: app.id,
         name: app.name,
         path: app.webPath,
         icon: app.icon || undefined,
       });
-      return;
     }
 
-    try {
-      if (action === "stop") {
-        await stopMutation.mutateAsync({ appId: app.id });
-      } else if (action === "restart") {
-        await restartMutation.mutateAsync({ appId: app.id });
-      } else if (action === "remove" && app.type === "external") {
-        await removeExternalMutation.mutateAsync({ id: app.id });
-      } else if (action === "remove") {
-        await uninstallMutation.mutateAsync({ appId: app.id });
-      }
-      await installedQuery.refetch();
-    } catch {
-      // Mutation errors are surfaced via the mutation's error state
-    }
+    const mutations = {
+      start: startMutation,
+      stop: stopMutation,
+      restart: restartMutation,
+      update: updateMutation,
+    };
+    void run(mutations[action].mutateAsync({ appId: app.id }));
   };
 
-  const handleOpen = (app: InstalledApp) => {
-    openInstalledApp(app);
+  const handleConfirmRemove = async () => {
+    if (!removing) return;
+    await run(
+      removing.type === "external"
+        ? removeExternalMutation.mutateAsync({ id: removing.id })
+        : uninstallMutation.mutateAsync({ appId: removing.id }),
+    );
+    setRemoving(null);
   };
-
-  const isExternal = contextMenu?.app.type === "external";
-  // Store apps take their open path and icon from their manifest.
-  const isEditable =
-    contextMenu?.app.type === "custom" || contextMenu?.app.type === "template";
 
   if (apps.length === 0) {
     return (
@@ -128,76 +125,37 @@ export function AppGrid() {
             name={app.name}
             icon={app.icon}
             status={app.status}
-            onClick={() => handleOpen(app)}
-            onContextMenu={(e) => handleContextMenu(e, app)}
+            onClick={() => openInstalledApp(app)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setContextMenu({ anchor: e.currentTarget, app });
+            }}
           />
         ))}
       </Box>
 
-      <Menu
-        open={Boolean(contextMenu)}
-        anchorEl={contextMenu?.anchor}
+      <AppContextMenu
+        anchor={contextMenu?.anchor ?? null}
+        app={contextMenu?.app ?? null}
         onClose={() => setContextMenu(null)}
-        slotProps={{
-          paper: { sx: styles.menuPaper },
-        }}
-      >
-        {isExternal ? (
-          <>
-            <MenuItem onClick={() => handleAction("edit")}>
-              <ListItemIcon>
-                <EditIcon fontSize="small" sx={{ color: "text.secondary" }} />
-              </ListItemIcon>
-              <ListItemText>{t("desktop.apps.edit")}</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={() => handleAction("remove")}>
-              <ListItemIcon>
-                <DeleteOutlineIcon fontSize="small" sx={{ color: "error.main" }} />
-              </ListItemIcon>
-              <ListItemText sx={{ color: "error.main" }}>
-                {t("desktop.apps.remove")}
-              </ListItemText>
-            </MenuItem>
-          </>
-        ) : (
-          <>
-            {isEditable && (
-              <MenuItem onClick={() => handleAction("edit")}>
-                <ListItemIcon>
-                  <EditIcon fontSize="small" sx={{ color: "text.secondary" }} />
-                </ListItemIcon>
-                <ListItemText>{t("desktop.apps.edit")}</ListItemText>
-              </MenuItem>
-            )}
-            <MenuItem onClick={() => handleAction("stop")}>
-              <ListItemIcon>
-                <StopIcon fontSize="small" sx={{ color: "text.secondary" }} />
-              </ListItemIcon>
-              <ListItemText>{t("desktop.apps.stop")}</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={() => handleAction("restart")}>
-              <ListItemIcon>
-                <RestartAltIcon fontSize="small" sx={{ color: "text.secondary" }} />
-              </ListItemIcon>
-              <ListItemText>{t("desktop.apps.restart")}</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={() => handleAction("logs")}>
-              <ListItemIcon>
-                <DescriptionOutlinedIcon fontSize="small" sx={{ color: "text.secondary" }} />
-              </ListItemIcon>
-              <ListItemText>{t("desktop.apps.logs")}</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={() => handleAction("remove")}>
-              <ListItemIcon>
-                <DeleteOutlineIcon fontSize="small" sx={{ color: "error.main" }} />
-              </ListItemIcon>
-              <ListItemText sx={{ color: "error.main" }}>
-                {t("desktop.apps.remove")}
-              </ListItemText>
-            </MenuItem>
-          </>
+        onAction={handleAction}
+      />
+
+      <ConfirmDialog
+        open={Boolean(removing)}
+        title={t("desktop.apps.removeTitle", { name: removing?.name })}
+        message={t(
+          removing?.type === "external"
+            ? "desktop.apps.removeExternalWarning"
+            : "desktop.apps.removeWarning",
+          { name: removing?.name },
         )}
-      </Menu>
+        confirmLabel={t("desktop.apps.remove")}
+        destructive
+        pending={uninstallMutation.isPending || removeExternalMutation.isPending}
+        onConfirm={handleConfirmRemove}
+        onClose={() => setRemoving(null)}
+      />
     </>
   );
 }
@@ -224,10 +182,5 @@ const styles = {
     color: "primary.main",
     cursor: "pointer",
     "&:hover": { color: colors.iconHover },
-  },
-  menuPaper: {
-    backgroundColor: colors.surface,
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 2,
   },
 };

@@ -156,6 +156,12 @@ export class Docker {
     return { version: info.Version, apiVersion: info.ApiVersion };
   }
 
+  /** Pull the newest images referenced by a compose file, without touching containers. */
+  async composePull(composePath: string, projectName: string): Promise<void> {
+    log.info("Running docker compose pull", { composePath, projectName });
+    await execa("docker", ["compose", "-f", composePath, "-p", projectName, "pull"]);
+  }
+
   async composeDown(projectName: string): Promise<void> {
     log.info("Running docker compose down", { projectName });
     await execa("docker", ["compose", "-p", projectName, "down"]);
