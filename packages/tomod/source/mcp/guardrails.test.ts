@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { Guardrails, BUILT_IN_RULES } from "./guardrails.js";
+import { Guardrails, BUILT_IN_RULES, type Rule } from "./guardrails.js";
 import type { TokenPrincipal } from "../api-tokens.js";
 
 const manage: TokenPrincipal = { kind: "token", id: "aaa111", name: "claude", scope: "manage" };
 const admin: TokenPrincipal = { kind: "token", id: "bbb222", name: "ops", scope: "admin" };
 
 function guardrails(now = () => Date.parse("2026-09-18T12:00:00Z")) {
-  return new Guardrails(BUILT_IN_RULES, now);
+  return new Guardrails(() => BUILT_IN_RULES, now);
 }
 
 describe("Guardrails.evaluate", () => {
@@ -28,23 +28,28 @@ describe("Guardrails.evaluate", () => {
     }
   });
 
-  it("keeps removal and reach-widening changes for a person until human approval exists", () => {
-    expect(guardrails().evaluate("apps.remove", { appId: "x" }, admin).effect).toBe("deny");
+  it("sends removal and reach-widening changes to a person for approval", () => {
+    expect(guardrails().evaluate("apps.remove", { appId: "x" }, admin).effect).toBe("human_confirm");
     expect(guardrails().evaluate("apps.add_custom", { name: "x", ownAuth: true }, admin)).toMatchObject({
-      effect: "deny",
+      effect: "human_confirm",
       rule: "widening-needs-a-person",
     });
     expect(
       guardrails().evaluate("apps.edit_custom", { appId: "x", source: { allowPrivileged: true } }, admin).effect,
-    ).toBe("deny");
+    ).toBe("human_confirm");
+  });
+
+  it("reads rules from a provider, so owner rules apply without a restart", () => {
+    let extra: Rule[] = [];
+    const g = new Guardrails(() => [...BUILT_IN_RULES, ...extra], () => 0);
+    expect(g.evaluate("apps.restart", { appId: "x" }, manage).effect).toBe("allow");
+    extra = [{ name: "owner", match: { tools: ["apps.restart"] }, effect: "deny", message: "no" }];
+    expect(g.evaluate("apps.restart", { appId: "x" }, manage)).toMatchObject({ effect: "deny", rule: "owner" });
   });
 
   it("applies the first matching rule", () => {
     const custom = new Guardrails(
-      [
-        { name: "night", match: { tools: ["apps.restart"] }, effect: "deny", message: "not at night" },
-        ...BUILT_IN_RULES,
-      ],
+      () => [{ name: "night", match: { tools: ["apps.restart"] }, effect: "deny", message: "not at night" }, ...BUILT_IN_RULES],
       () => Date.parse("2026-09-18T12:00:00Z"),
     );
     expect(custom.evaluate("apps.restart", { appId: "x" }, manage)).toMatchObject({
@@ -56,7 +61,7 @@ describe("Guardrails.evaluate", () => {
 
   it("matches on app ids when a rule names them", () => {
     const custom = new Guardrails(
-      [{ name: "careful", match: { tools: ["apps.restart"], apps: ["nextcloud"] }, effect: "agent_confirm" }],
+      () => [{ name: "careful", match: { tools: ["apps.restart"], apps: ["nextcloud"] }, effect: "agent_confirm" }],
       () => 0,
     );
     expect(custom.evaluate("apps.restart", { appId: "nextcloud" }, manage).effect).toBe("agent_confirm");

@@ -3,12 +3,19 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
 import { useTranslation } from "react-i18next";
 import { trpc } from "../../../lib/trpc";
 import { TokenDialog, SecretRevealDialog } from "../../dialogs/TokenDialog";
 import { ConfirmDialog } from "../../dialogs/ConfirmDialog";
 import { TokenTable, type TokenRow } from "./TokenTable";
 import { TokenActivity } from "./TokenActivity";
+import { GuardrailsSection } from "./GuardrailsSection";
+import { ApprovalsSection } from "./ApprovalsSection";
+
+const PANELS = ["tokens", "guardrails", "approvals", "activity"] as const;
+type Panel = (typeof PANELS)[number];
 
 /** Settings tab: API tokens for agents and scripts, and what they did. */
 export function AiAccessSection() {
@@ -23,6 +30,7 @@ export function AiAccessSection() {
   const [reveal, setReveal] = useState<{ title: string; secret: string } | null>(null);
   const [revoking, setRevoking] = useState<TokenRow | null>(null);
   const [error, setError] = useState("");
+  const [panel, setPanel] = useState<Panel>("tokens");
 
   const refresh = () => Promise.all([utils.tokens.list.invalidate(), utils.tokens.activity.invalidate()]);
 
@@ -53,25 +61,32 @@ export function AiAccessSection() {
 
   return (
     <Box sx={styles.root}>
-      <Typography variant="body2" sx={{ color: "text.secondary" }}>
-        {t("tokens.intro")}
-      </Typography>
-      {error && <Alert severity="error">{error}</Alert>}
+      <Tabs value={panel} onChange={(_, v: Panel) => setPanel(v)} sx={styles.tabs}>
+        {PANELS.map((key) => <Tab key={key} value={key} label={t(`aiAccess.panels.${key}`)} sx={styles.tab} />)}
+      </Tabs>
 
-      <Box sx={styles.header}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{t("tokens.title")}</Typography>
-        <Button variant="contained" size="small" onClick={() => setCreating(true)}>
-          {t("tokens.create")}
-        </Button>
-      </Box>
-      <TokenTable
-        tokens={tokensQuery.data ?? []}
-        onRotate={setRotating}
-        onRevoke={setRevoking}
-      />
-
-      <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 2 }}>{t("tokens.activity")}</Typography>
-      <TokenActivity />
+      {panel === "tokens" && (
+        <>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            {t("tokens.intro")}
+          </Typography>
+          {error && <Alert severity="error">{error}</Alert>}
+          <Box sx={styles.header}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{t("tokens.title")}</Typography>
+            <Button variant="contained" size="small" onClick={() => setCreating(true)}>
+              {t("tokens.create")}
+            </Button>
+          </Box>
+          <TokenTable
+            tokens={tokensQuery.data ?? []}
+            onRotate={setRotating}
+            onRevoke={setRevoking}
+          />
+        </>
+      )}
+      {panel === "guardrails" && <GuardrailsSection />}
+      {panel === "approvals" && <ApprovalsSection />}
+      {panel === "activity" && <TokenActivity />}
 
       <TokenDialog
         open={creating}
@@ -113,6 +128,8 @@ export function AiAccessSection() {
 
 const styles = {
   root: { display: "flex", flexDirection: "column" as const, gap: 2 },
+  tabs: { minHeight: 40, "& .MuiTabs-indicator": { backgroundColor: "primary.main" } },
+  tab: { textTransform: "none" as const, minHeight: 40, fontWeight: 500 },
   header: {
     display: "flex",
     alignItems: "center",

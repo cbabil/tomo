@@ -5,6 +5,7 @@ import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
 import { colors } from "../../../app/theme";
 import { tokenStatus, type TokenStatus } from "../../../lib/tokenStatus";
+import { listRowSx } from "./listRow";
 
 export interface TokenRow {
   id: string;
@@ -75,14 +76,6 @@ export function TokenTable({ tokens, onRotate, onRevoke }: TokenTableProps) {
 
 const styles = {
   list: { display: "flex", flexDirection: "column" as const, gap: 1 },
-  row: {
-    display: "flex",
-    alignItems: "center",
-    gap: 1.5,
-    p: 1.5,
-    borderRadius: 2,
-    border: 1,
-    borderColor: "divider",
-  },
+  row: listRowSx,
   main: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column" as const },
 };

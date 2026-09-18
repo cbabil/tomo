@@ -12,6 +12,8 @@ import { TraefikProxy } from "./traefik-proxy.js";
 import { Notifications } from "./notifications.js";
 import { ApiTokens } from "./api-tokens.js";
 import { AuditLog } from "./audit-log.js";
+import { PolicyStore } from "./mcp/policies.js";
+import { Confirmations } from "./mcp/confirmations.js";
 import { createServer } from "./server.js";
 
 const log = createLogger("tomod");
@@ -30,6 +32,8 @@ export class Tomod {
   private readonly notifications: Notifications;
   private readonly tokens: ApiTokens;
   private readonly audit: AuditLog;
+  private readonly policies: PolicyStore;
+  private readonly confirmations: Confirmations;
   private syncTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
@@ -44,14 +48,14 @@ export class Tomod {
     this.notifications = new Notifications();
     this.tokens = new ApiTokens(path.join(TOMO_DATA_DIR, "api-tokens.json"));
     this.audit = new AuditLog(path.join(TOMO_DATA_DIR, "audit.jsonl"));
+    this.policies = new PolicyStore(TOMO_DATA_DIR);
+    this.confirmations = new Confirmations();
   }
 
   async start(): Promise<void> {
     log.info("Starting tomod...");
 
-    await this.store.load();
-    await this.user.init();
-    await this.tokens.load();
+    await Promise.all([this.store.load(), this.user.init(), this.tokens.load(), this.policies.load()]);
     await this.proxy.init();
     await this.templateRegistry.init();
     await this.appStore.sync();
@@ -71,6 +75,8 @@ export class Tomod {
         docker: this.docker,
         tokens: this.tokens,
         audit: this.audit,
+        policies: this.policies,
+        confirmations: this.confirmations,
       },
       { port, staticDir, corsOrigin },
     );
