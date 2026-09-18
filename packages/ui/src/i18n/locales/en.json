@@ -172,7 +172,7 @@
       "status": "Status"
     },
     "aiAccess": {
-      "title": "API access"
+      "title": "Agents"
     }
   },
   "terminal": {
@@ -249,10 +249,7 @@
     }
   },
   "tokens": {
-    "intro": "Tokens let agents such as Claude Code, and your own scripts, use Tomo without a browser. Each token has a scope and can be rotated or revoked at any time. Tokens are accepted from your local network only.",
-    "title": "Tokens",
-    "create": "Create token",
-    "createTitle": "Create a token",
+    "intro": "Agents such as Claude Code, and your own scripts, use Tomo through a token. Each has a scope, expires, and can be regenerated or revoked at any time. Tokens are accepted from your local network only.",
     "name": "Name",
     "namePlaceholder": "claude-code on my laptop",
     "scope": "Scope",
@@ -260,77 +257,280 @@
       "manage": "Manage",
       "admin": "Admin"
     },
-    "scopeHelp": {
-      "manage": "Read everything, start, stop, restart, update, install apps, and add or edit custom apps.",
-      "admin": "Everything in Manage, plus remove apps, change app stores, and turn on privileged mode or own sign-in."
-    },
     "expiry": "Expires",
     "days": "{{count}} days",
     "never": "Never",
-    "neverWarning": "A token that never expires stays valid until you revoke it. Prefer an expiry and rotate.",
     "showOnce": "Copy this token now. It will not be shown again.",
     "copy": "Copy token",
     "copied": "Copied",
     "plainHttpWarning": "Tomo serves plain HTTP on your network, so this token travels unencrypted. Use it on your own network only.",
     "done": "Done",
     "empty": "No tokens yet.",
-    "rowDetail": "{{id}} · {{scope}} · last used {{lastUsed}} · expires {{expires}}",
-    "neverUsed": "never",
     "status": {
       "active": "Active",
       "expiring": "Expires soon",
       "expired": "Expired",
-      "revoked": "Revoked"
+      "revoked": "Revoked",
+      "idle": "Unused"
     },
-    "rotate": "Rotate",
-    "rotateTitle": "Rotate {{name}}?",
-    "rotateWarning": "A new secret is issued and shown once. The old secret keeps working for 15 minutes, then stops.",
-    "rotatedTitle": "Token rotated",
     "revoke": "Revoke",
     "revokeTitle": "Revoke {{name}}?",
     "revokeWarning": "Anything using this token stops working immediately. This cannot be undone.",
-    "activity": "Activity",
-    "noActivity": "No API activity yet.",
     "outcome": {
       "ok": "OK",
-      "denied": "Denied",
-      "pending": "Waiting for approval",
-      "error": "Error"
+      "restated": "Restated",
+      "denied": "Refused",
+      "pending": "Waiting",
+      "error": "Error",
+      "observed": "Observed"
     },
-    "createdTitle": "Token created",
-    "mcpHint": "To let Claude Code operate Tomo, add this to its MCP configuration:"
+    "addAgent": "Add agent",
+    "addTitle": "Add an agent",
+    "preset": "Start from",
+    "presets": {
+      "claudeCode": {
+        "label": "Claude Code",
+        "help": "Manage apps, 90 days"
+      },
+      "script": {
+        "label": "Automation script",
+        "help": "Manage apps, one year"
+      },
+      "admin": {
+        "label": "Full control",
+        "help": "Everything, including removal, 30 days"
+      },
+      "custom": {
+        "label": "Custom",
+        "help": "Pick the scope and expiry yourself"
+      }
+    },
+    "note": "Note",
+    "notePlaceholder": "Saved in 1Password, used on the MacBook",
+    "summaryManage": "This agent can read everything, start, stop, restart, update and install apps, and add or edit custom apps.",
+    "summaryAdmin": "This agent can do everything, including removing apps and turning on privileged mode or own sign-in.",
+    "summaryExpires": "It expires on {{date}}.",
+    "summaryNever": "It never expires, so remember to revoke it when it is no longer needed.",
+    "can": {
+      "manage": "Can manage apps and read logs",
+      "admin": "Can do everything, including removal"
+    },
+    "lastSeen": "last seen {{when}}",
+    "neverSeen": "never used",
+    "expiresOn": "expires {{date}}",
+    "unused": "Unused for {{count}} days",
+    "graceUntil": "old secret works until {{time}}",
+    "oldSecretUsed": "old secret last used {{when}}",
+    "oldSecretUnused": "old secret not used since",
+    "connectTitle": "Connect {{name}}",
+    "connectIntro": "Pick the client and paste the configuration. The secret is shown only now.",
+    "connectSeen": "Tomo saw this agent {{when}}.",
+    "connectWaiting": "Waiting for the first call from this agent.",
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "curl": "curl"
+    },
+    "regenerate": "Regenerate",
+    "regenerateTitle": "Regenerate {{name}}?",
+    "regenerateWarning": "A new secret is issued and shown once. Choose how long the old one keeps working while you update the agent.",
+    "grace": "Old secret keeps working for",
+    "graceChoices": {
+      "0": "Stops now",
+      "60": "1 hour",
+      "1440": "24 hours",
+      "10080": "7 days"
+    },
+    "editNote": "Edit note",
+    "editNoteTitle": "Note for {{name}}"
   },
   "aiAccess": {
     "panels": {
-      "tokens": "Tokens",
-      "guardrails": "Guardrails",
-      "approvals": "Approvals",
+      "agents": "Agents",
+      "rules": "Rules",
       "activity": "Activity"
     }
   },
-  "guardrails": {
-    "builtInTitle": "Built-in rules",
-    "builtInIntro": "These ship with Tomo and cannot be changed. Your own rules below run after them, so they can tighten but never loosen.",
-    "effects": {
-      "allow": "Allow",
-      "deny": "Refuse",
-      "agent_confirm": "Agent must restate",
-      "human_confirm": "You approve"
-    },
-    "rulesTitle": "Your rules",
-    "rulesIntro": "Enforced on every tool call, first match wins. Stored in policies.yaml in the data directory.",
-    "shadowed": "Rule \"{{rule}}\" never takes effect: the built-in rule \"{{by}}\" already decides those tools.",
-    "instructionsTitle": "Instructions for agents",
-    "instructionsIntro": "Advice every agent reads when it connects. This is guidance, not enforcement: put anything that must hold in the rules above.",
-    "saved": "Saved."
-  },
   "approvals": {
-    "intro": "Changes an agent asked for that need your approval. Unanswered requests expire after 10 minutes.",
-    "empty": "Nothing is waiting for approval.",
-    "askedBy": "Asked by {{name}} at {{time}}",
+    "waiting_one": "{{count}} change waiting for you",
+    "waiting_other": "{{count}} changes waiting for you"
+  },
+  "rules": {
+    "intro": "Rules decide what an agent may do. First match wins. Built-in rules run first and cannot be loosened.",
+    "builtIn": "Built in, always on",
+    "yours": "Your rules, first match wins",
+    "empty": "No rules of your own yet. Add one, or start from a preset.",
+    "add": "Add rule",
+    "blank": "Blank rule",
+    "tryRequest": "Try a request",
+    "editYaml": "Edit all as YAML",
+    "instructions": "Instructions for agents",
+    "instructionsIntro": "Advice every agent reads when it connects. This is guidance, not enforcement: put anything that must hold in a rule.",
+    "neverTakesEffect": "never takes effect, the built-in rule \"{{by}}\" decides this",
+    "disabled": "off",
+    "observing": "observing only",
+    "sentence": {
+      "when": "When an agent",
+      "anyApp": "any app",
+      "on": "on",
+      "everyDay": "every day",
+      "weekdays": "weekdays",
+      "weekends": "weekends",
+      "allDay": "all day"
+    },
+    "outcomes": {
+      "allow": "allow it",
+      "deny": "block it",
+      "agent_confirm": "it must restate the change",
+      "human_confirm": "ask me first"
+    },
+    "effectChip": {
+      "allow": "Allow",
+      "deny": "Block",
+      "agent_confirm": "Restate",
+      "human_confirm": "Ask me"
+    },
+    "tools": {
+      "*": "does anything",
+      "apps.list": "lists apps",
+      "apps.get": "reads app details",
+      "apps.logs": "reads logs",
+      "store.search": "searches the store",
+      "system.stats": "reads system stats",
+      "system.info": "reads system info",
+      "apps.start": "starts",
+      "apps.stop": "stops",
+      "apps.restart": "restarts",
+      "apps.install": "installs",
+      "apps.update": "updates",
+      "apps.add_custom": "adds a custom app",
+      "apps.edit_custom": "edits a custom app",
+      "apps.remove": "removes"
+    },
+    "groups": {
+      "read": "Read",
+      "operate": "Start, stop, restart",
+      "install": "Install and update",
+      "custom": "Custom apps",
+      "remove": "Remove",
+      "any": "Anything"
+    },
+    "dialog": {
+      "addTitle": "Add a rule",
+      "editTitle": "Edit rule",
+      "actions": "When an agent",
+      "apps": "On these apps",
+      "appsHelp": "Leave empty for any app",
+      "window": "Only during certain hours or days",
+      "from": "From",
+      "to": "To",
+      "effect": "Then",
+      "message": "Message for the agent",
+      "messageHelp": "Shown to the agent when the rule applies",
+      "enabled": "Enabled",
+      "observe": "Observe only",
+      "observeHelp": "Log what this rule would do without enforcing it",
+      "pickAction": "Pick at least one action"
+    },
+    "days": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "presets": {
+      "quietHours": {
+        "label": "Quiet hours",
+        "help": "Block restarts and updates overnight"
+      },
+      "askInstalls": {
+        "label": "Ask me before installs",
+        "help": "Installs and updates need your approval"
+      },
+      "handsOff": {
+        "label": "Hands off one app",
+        "help": "Nothing changes on an app you pick"
+      },
+      "readOnly": {
+        "label": "Read-only agents",
+        "help": "Block every change; agents can only read"
+      }
+    },
+    "try": {
+      "title": "Try a request",
+      "intro": "See what the rules decide, without an agent. Scope and rate limits are not applied here.",
+      "action": "Action",
+      "app": "App",
+      "at": "At",
+      "result": {
+        "allow": "Allowed",
+        "deny": "Blocked",
+        "agent_confirm": "The agent must restate it",
+        "human_confirm": "You would be asked"
+      },
+      "byRule": "Decided by the rule \"{{rule}}\"",
+      "noRule": "No rule matched",
+      "observed": "The rule \"{{rule}}\" is observing only. It would have said: {{effect}}"
+    },
+    "menu": {
+      "edit": "Edit",
+      "duplicate": "Duplicate",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "delete": "Delete"
+    },
+    "yamlTitle": "Rules as YAML"
+  },
+  "activity": {
+    "needsYou": "Needs you",
+    "digest": "{{actions}} agent actions this week, {{refused}} refused",
+    "digestChange": "{{change}}% vs last week",
+    "allAgents": "All agents",
+    "range": {
+      "1": "Today",
+      "7": "Last 7 days",
+      "30": "Last 30 days",
+      "90": "Last 90 days"
+    },
+    "empty": "Nothing recorded in this window.",
+    "groupByAgent": "Group by agent",
+    "export": "Export",
+    "showRule": "Show rule",
+    "askedBy": "{{name}} · {{count}} min left",
+    "rule": "rule: {{rule}}",
     "approve": "Approve",
     "deny": "Deny",
-    "waiting_one": "{{count}} change waiting for your approval",
-    "waiting_other": "{{count}} changes waiting for your approval"
+    "reason": "Reason for the agent, optional",
+    "remember": {
+      "none": "Just this once",
+      "allow": "Always allow this",
+      "human_confirm": "Always ask me",
+      "floor": "This always asks a person"
+    },
+    "summary": "{{calls}} calls, {{refused}} refused",
+    "detail": {
+      "title": "Details",
+      "who": "Who",
+      "what": "What",
+      "arguments": "Arguments",
+      "outcome": "Outcome",
+      "reason": "Reason",
+      "rule": "Rule",
+      "time": "Time"
+    },
+    "row": {
+      "tokens.create": "Added an agent",
+      "tokens.rotate": "Regenerated a token",
+      "tokens.revoke": "Revoked a token",
+      "guardrails.save": "Saved rules",
+      "approvals.approve": "You approved a request",
+      "approvals.deny": "You denied a request"
+    },
+    "today": "Today",
+    "yesterday": "Yesterday"
   }
 }

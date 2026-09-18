@@ -18,7 +18,7 @@ export function ApprovalsBanner() {
   const label = t("approvals.waiting", { count });
   return (
     <Tooltip title={label} placement="bottom">
-      <IconButton onClick={() => openSettings("aiAccess")} aria-label={label} sx={styles.button}>
+      <IconButton onClick={() => openSettings("aiAccess", "activity")} aria-label={label} sx={styles.button}>
         <Badge badgeContent={count} color="primary">
           <HowToRegIcon sx={styles.icon} />
         </Badge>

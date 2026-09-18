@@ -97,3 +97,17 @@ describe("AuditLog", () => {
     expect(await audit.list(10)).toEqual([]);
   });
 });
+
+describe("AuditLog.query", () => {
+  it("filters and keeps the rule that decided an entry", async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "tomo-audit-"));
+    const audit = new AuditLog(path.join(dir, "audit.jsonl"), () => Date.parse("2026-09-18T12:00:00Z"));
+    await audit.record({ principal: { kind: "token", id: "a", name: "x" }, action: "mcp:apps.restart", outcome: "denied", rule: "night" });
+    await audit.record({ principal: { kind: "token", id: "b", name: "y" }, action: "mcp:apps.list", outcome: "ok" });
+    const denied = await audit.query({ outcomes: ["denied"], limit: 10 });
+    expect(denied).toEqual([expect.objectContaining({ rule: "night", principal: expect.objectContaining({ id: "a" }) })]);
+    expect(await audit.query({ tokenId: "b", limit: 10 })).toHaveLength(1);
+    expect(await audit.exportText()).toContain("mcp:apps.list");
+    await rm(dir, { recursive: true, force: true });
+  });
+});

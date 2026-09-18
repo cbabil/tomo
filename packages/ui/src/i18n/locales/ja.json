@@ -162,6 +162,9 @@
       "restartWarning": "アップデート後、Tomoは自動的に再起動します。",
       "checkFailed": "アップデートを確認できません",
       "status": "ステータス"
+    },
+    "aiAccess": {
+      "title": "エージェント"
     }
   },
   "terminal": {
@@ -216,5 +219,290 @@
     "delete": "削除",
     "back": "戻る",
     "next": "次へ"
+  },
+  "aiAccess": {
+    "panels": {
+      "agents": "エージェント",
+      "rules": "ルール",
+      "activity": "アクティビティ"
+    }
+  },
+  "tokens": {
+    "intro": "Claude Code などのエージェントや、お使いのスクリプトは、トークンを使って Tomo にアクセスします。各トークンにはスコープと有効期限があり、いつでも再生成または失効できます。トークンはローカルネットワークからのアクセスのみ受け付けます。",
+    "name": "名前",
+    "namePlaceholder": "ノートパソコンの claude-code",
+    "scope": "スコープ",
+    "scopes": {
+      "manage": "管理",
+      "admin": "管理者"
+    },
+    "expiry": "有効期限",
+    "never": "無期限",
+    "showOnce": "このトークンを今すぐコピーしてください。二度と表示されません。",
+    "copy": "トークンをコピー",
+    "copied": "コピーしました",
+    "plainHttpWarning": "Tomo はネットワーク上で平文の HTTP で通信するため、このトークンは暗号化されずに送信されます。自分のネットワーク内でのみ使用してください。",
+    "done": "完了",
+    "empty": "トークンはまだありません。",
+    "status": {
+      "active": "有効",
+      "expiring": "まもなく期限切れ",
+      "expired": "期限切れ",
+      "revoked": "失効済み",
+      "idle": "未使用"
+    },
+    "revoke": "失効",
+    "revokeTitle": "{{name}} を失効しますか？",
+    "revokeWarning": "このトークンを使用しているものはすべて即座に動作しなくなります。この操作は取り消せません。",
+    "outcome": {
+      "ok": "OK",
+      "restated": "再確認済み",
+      "denied": "拒否",
+      "pending": "待機中",
+      "error": "エラー",
+      "observed": "観察のみ"
+    },
+    "addAgent": "エージェントを追加",
+    "addTitle": "エージェントを追加",
+    "preset": "テンプレートから開始",
+    "presets": {
+      "claudeCode": {
+        "label": "Claude Code",
+        "help": "アプリの管理、90日間"
+      },
+      "script": {
+        "label": "自動化スクリプト",
+        "help": "アプリの管理、1年間"
+      },
+      "admin": {
+        "label": "フルコントロール",
+        "help": "削除を含むすべての操作、30日間"
+      },
+      "custom": {
+        "label": "カスタム",
+        "help": "スコープと有効期限を自分で選択"
+      }
+    },
+    "note": "メモ",
+    "notePlaceholder": "1Password に保存、MacBook で使用",
+    "summaryManage": "このエージェントはすべてを読み取り、アプリの起動、停止、再起動、更新、インストールができ、カスタムアプリの追加や編集もできます。",
+    "summaryAdmin": "このエージェントはアプリの削除や特権モード・独自サインインの有効化を含め、すべての操作ができます。",
+    "summaryExpires": "{{date}} に期限切れになります。",
+    "summaryNever": "無期限のため、不要になったら必ず失効させてください。",
+    "can": {
+      "manage": "アプリを管理し、ログを読み取れます",
+      "admin": "削除を含め、すべての操作ができます"
+    },
+    "lastSeen": "最終アクセス：{{when}}",
+    "neverSeen": "未使用",
+    "expiresOn": "{{date}} に期限切れ",
+    "unused": "{{count}} 日間未使用",
+    "graceUntil": "古いシークレットは {{time}} まで使用可能",
+    "oldSecretUsed": "古いシークレットの最終使用：{{when}}",
+    "oldSecretUnused": "古いシークレットはその後使用されていません",
+    "connectTitle": "{{name}} を接続",
+    "connectIntro": "クライアントを選び、設定を貼り付けてください。シークレットは今だけ表示されます。",
+    "connectSeen": "Tomo はこのエージェントを {{when}} に検出しました。",
+    "connectWaiting": "このエージェントからの最初の呼び出しを待っています。",
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "curl": "curl"
+    },
+    "regenerate": "再生成",
+    "regenerateTitle": "{{name}} を再生成しますか？",
+    "regenerateWarning": "新しいシークレットが発行され、一度だけ表示されます。エージェントを更新する間、古いシークレットをどれくらい有効にしておくか選択してください。",
+    "grace": "古いシークレットを有効にしておく期間",
+    "graceChoices": {
+      "0": "今すぐ停止",
+      "60": "1時間",
+      "1440": "24時間",
+      "10080": "7日間"
+    },
+    "editNote": "メモを編集",
+    "editNoteTitle": "{{name}} のメモ",
+    "days": "{{count}} 日"
+  },
+  "approvals": {
+    "waiting_one": "{{count}} 件の変更があなたの確認を待っています",
+    "waiting_other": "{{count}} 件の変更があなたの確認を待っています"
+  },
+  "rules": {
+    "intro": "ルールはエージェントが行える操作を決定します。最初に一致したルールが適用されます。組み込みルールが最優先で実行され、緩めることはできません。",
+    "builtIn": "組み込み、常に有効",
+    "yours": "あなたのルール、最初に一致したものが適用されます",
+    "empty": "まだ自分のルールがありません。ルールを追加するか、プリセットから始めてください。",
+    "add": "ルールを追加",
+    "blank": "空のルール",
+    "tryRequest": "リクエストを試す",
+    "editYaml": "すべて YAML で編集",
+    "instructions": "エージェントへの指示",
+    "instructionsIntro": "エージェントが接続する際に読み取るアドバイスです。これは強制力のない指針です。必ず守らせたい内容はルールに設定してください。",
+    "neverTakesEffect": "この設定は適用されません。組み込みルール「{{by}}」がこれを決定します",
+    "disabled": "オフ",
+    "observing": "観察のみ",
+    "sentence": {
+      "when": "エージェントが",
+      "anyApp": "任意のアプリ",
+      "on": "対象は",
+      "everyDay": "毎日",
+      "weekdays": "平日",
+      "weekends": "週末",
+      "allDay": "終日"
+    },
+    "outcomes": {
+      "allow": "許可する",
+      "deny": "ブロックする",
+      "agent_confirm": "変更を復唱する必要がある",
+      "human_confirm": "先に確認する"
+    },
+    "effectChip": {
+      "allow": "許可",
+      "deny": "ブロック",
+      "agent_confirm": "復唱",
+      "human_confirm": "確認"
+    },
+    "tools": {
+      "*": "何でも実行する",
+      "apps.list": "アプリを一覧表示する",
+      "apps.get": "アプリの詳細を読み取る",
+      "apps.logs": "ログを読み取る",
+      "store.search": "ストアを検索する",
+      "system.stats": "システム統計を読み取る",
+      "system.info": "システム情報を読み取る",
+      "apps.start": "起動する",
+      "apps.stop": "停止する",
+      "apps.restart": "再起動する",
+      "apps.install": "インストールする",
+      "apps.update": "更新する",
+      "apps.add_custom": "カスタムアプリを追加する",
+      "apps.edit_custom": "カスタムアプリを編集する",
+      "apps.remove": "削除する"
+    },
+    "groups": {
+      "read": "読み取り",
+      "operate": "起動、停止、再起動",
+      "install": "インストールと更新",
+      "custom": "カスタムアプリ",
+      "remove": "削除",
+      "any": "すべての操作"
+    },
+    "dialog": {
+      "addTitle": "ルールを追加",
+      "editTitle": "ルールを編集",
+      "actions": "エージェントが",
+      "apps": "対象のアプリ",
+      "appsHelp": "空欄の場合はすべてのアプリが対象になります",
+      "window": "特定の時間帯や曜日のみ",
+      "from": "開始",
+      "to": "終了",
+      "effect": "結果",
+      "message": "エージェントへのメッセージ",
+      "messageHelp": "ルールが適用されたときにエージェントに表示されます",
+      "enabled": "有効",
+      "observe": "観察のみ",
+      "observeHelp": "このルールが行う操作を記録するだけで、実際には適用しません",
+      "pickAction": "少なくとも1つの操作を選択してください"
+    },
+    "days": {
+      "mon": "月",
+      "tue": "火",
+      "wed": "水",
+      "thu": "木",
+      "fri": "金",
+      "sat": "土",
+      "sun": "日"
+    },
+    "presets": {
+      "quietHours": {
+        "label": "静かな時間帯",
+        "help": "夜間の再起動と更新をブロック"
+      },
+      "askInstalls": {
+        "label": "インストール前に確認",
+        "help": "インストールと更新にはあなたの承認が必要です"
+      },
+      "handsOff": {
+        "label": "特定のアプリには手を触れない",
+        "help": "選択したアプリには何も変更されません"
+      },
+      "readOnly": {
+        "label": "読み取り専用エージェント",
+        "help": "すべての変更をブロックします。エージェントは読み取りのみ可能です"
+      }
+    },
+    "try": {
+      "title": "リクエストを試す",
+      "intro": "エージェントを使わずにルールの判定結果を確認できます。ここではスコープとレート制限は適用されません。",
+      "action": "操作",
+      "app": "アプリ",
+      "at": "時刻",
+      "result": {
+        "allow": "許可されました",
+        "deny": "ブロックされました",
+        "agent_confirm": "エージェントは復唱する必要があります",
+        "human_confirm": "あなたに確認が求められます"
+      },
+      "byRule": "ルール「{{rule}}」による判定",
+      "noRule": "一致するルールはありません",
+      "observed": "ルール「{{rule}}」は観察のみです。本来の判定は次のとおりです：{{effect}}"
+    },
+    "menu": {
+      "edit": "編集",
+      "duplicate": "複製",
+      "moveUp": "上へ移動",
+      "moveDown": "下へ移動",
+      "delete": "削除"
+    },
+    "yamlTitle": "YAML 形式のルール"
+  },
+  "activity": {
+    "needsYou": "確認が必要",
+    "digest": "今週のエージェント操作は {{actions}} 件、うち {{refused}} 件が拒否されました",
+    "digestChange": "先週比 {{change}}%",
+    "allAgents": "すべてのエージェント",
+    "range": {
+      "1": "今日",
+      "7": "過去7日間",
+      "30": "過去30日間",
+      "90": "過去90日間"
+    },
+    "empty": "この期間の記録はありません。",
+    "groupByAgent": "エージェントごとにグループ化",
+    "export": "エクスポート",
+    "showRule": "ルールを表示",
+    "askedBy": "{{name}} ・残り{{count}}分",
+    "rule": "ルール：{{rule}}",
+    "approve": "承認",
+    "deny": "拒否",
+    "reason": "エージェントへの理由（任意）",
+    "remember": {
+      "none": "今回のみ",
+      "allow": "常に許可する",
+      "human_confirm": "常に確認する",
+      "floor": "これは常に人による確認が必要です"
+    },
+    "summary": "{{calls}} 回の呼び出し、{{refused}} 回拒否",
+    "detail": {
+      "title": "詳細",
+      "who": "誰が",
+      "what": "内容",
+      "arguments": "引数",
+      "outcome": "結果",
+      "reason": "理由",
+      "rule": "ルール",
+      "time": "時刻"
+    },
+    "row": {
+      "tokens.create": "エージェントを追加しました",
+      "tokens.rotate": "トークンを再生成しました",
+      "tokens.revoke": "トークンを失効しました",
+      "guardrails.save": "ルールを保存しました",
+      "approvals.approve": "リクエストを承認しました",
+      "approvals.deny": "リクエストを拒否しました"
+    },
+    "today": "今日",
+    "yesterday": "昨日"
   }
 }

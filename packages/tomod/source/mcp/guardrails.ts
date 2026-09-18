@@ -6,6 +6,7 @@
  */
 import { scopeDenial } from "../principal.js";
 import { widensReach } from "../schemas.js";
+import { TOOLS } from "./tools.js";
 import type { TokenPrincipal, TokenScope } from "../api-tokens.js";
 
 export const EFFECTS = ["allow", "deny", "agent_confirm", "human_confirm"] as const;
@@ -23,6 +24,10 @@ export interface Rule {
   };
   effect: Effect;
   message?: string;
+  /** A disabled rule is kept but skipped. */
+  enabled?: boolean;
+  /** An observed rule never blocks: the call runs and the audit log says what it would have done. */
+  observe?: boolean;
 }
 
 /**
@@ -45,22 +50,23 @@ export interface Decision {
   effect: Effect;
   rule?: string;
   reason?: string;
+  /** Set when an observed rule matched: the effect it would have had. */
+  observed?: Effect;
+}
+
+/** The first enabled rule that matches, as a decision; allow when none does. */
+export function decide(rules: Rule[], tool: string, args: Record<string, unknown>): Decision {
+  const rule = rules.find((r) => r.enabled !== false && ruleMatches(r, tool, args));
+  if (!rule) return { effect: "allow" };
+  if (rule.observe) return { effect: "allow", rule: rule.name, reason: rule.message, observed: rule.effect };
+  return { effect: rule.effect, rule: rule.name, reason: rule.message };
 }
 
 /** Scope each tool needs. Tools not listed here need `manage`. */
 const ADMIN_TOOLS = new Set(["apps.remove"]);
 
 /** Tools that change state, subject to the tighter rate limit. */
-const MUTATING_TOOLS = new Set([
-  "apps.start",
-  "apps.stop",
-  "apps.restart",
-  "apps.update",
-  "apps.install",
-  "apps.add_custom",
-  "apps.edit_custom",
-  "apps.remove",
-]);
+const MUTATING_TOOLS = new Set(TOOLS.filter((t) => t.group !== "read").map((t) => t.name));
 
 const CALLS_PER_MINUTE = 60;
 const CHANGES_PER_MINUTE = 10;
@@ -103,9 +109,7 @@ export class Guardrails {
     const limited = this.overLimit(principal.id, MUTATING_TOOLS.has(tool));
     if (limited) return { effect: "deny", rule: "rate-limit", reason: limited };
 
-    const rule = this.rules().find((r) => ruleMatches(r, tool, args));
-    if (!rule) return { effect: "allow" };
-    return { effect: rule.effect, rule: rule.name, reason: rule.message };
+    return decide(this.rules(), tool, args);
   }
 
   /** Record the call and report a limit message when this token is over it. */

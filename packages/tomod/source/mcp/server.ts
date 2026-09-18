@@ -78,13 +78,13 @@ function buildServer(
   const instructions = `${HOW_TOMO_WORKS}\n\nThe owner's instructions:\n${deps.policies.instructions()}`;
   const server = new McpServer({ name: "tomo", version: "1" }, { instructions });
 
-  const audit = (action: string, args: unknown, outcome: AuditEntry["outcome"], reason?: string) =>
-    deps.audit.record({ principal: { kind: "token", id: principal.id, name: principal.name }, action, args, outcome, reason });
+  const audit = (action: string, args: unknown, outcome: AuditEntry["outcome"], reason?: string, rule?: string) =>
+    deps.audit.record({ principal: { kind: "token", id: principal.id, name: principal.name }, action, args, outcome, reason, rule });
 
-  const execute = async (tool: ToolDefinition, args: Record<string, unknown>): Promise<ToolResult> => {
+  const execute = async (tool: ToolDefinition, args: Record<string, unknown>, note?: string): Promise<ToolResult> => {
     try {
       const result = await tool.run(args, deps);
-      await audit(`mcp:${tool.name}`, args, "ok");
+      await audit(`mcp:${tool.name}`, args, "ok", note);
       return text(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -99,8 +99,11 @@ function buildServer(
       const args = (rawArgs ?? {}) as Record<string, unknown>;
       const decision = guardrails.evaluate(tool.name, args, principal);
       if (decision.effect === "deny") {
-        await audit(`mcp:${tool.name}`, args, "denied", decision.reason);
+        await audit(`mcp:${tool.name}`, args, "denied", decision.reason, decision.rule);
         return failure(decision.reason ?? `Refused by rule ${decision.rule}`);
+      }
+      if (decision.observed) {
+        await audit(`mcp:${tool.name}`, args, "observed", `Would ${decision.observed}: ${decision.reason ?? ""}`.trim(), decision.rule);
       }
       if (decision.effect === "allow") return execute(tool, args);
 
@@ -112,8 +115,9 @@ function buildServer(
         args,
         summary: tool.summary(args),
         needsPerson,
+        rule: decision.rule,
       });
-      if (needsPerson) await audit(`mcp:${tool.name}`, args, "pending", decision.reason);
+      await audit(`mcp:${tool.name}`, args, needsPerson ? "pending" : "restated", decision.reason, decision.rule);
       return text({
         status: needsPerson ? "approval_required" : "confirmation_required",
         confirmationId: pending.id,
@@ -134,12 +138,15 @@ function buildServer(
       const id = String(args?.confirmationId ?? "");
       const { status, entry: pending } = confirmations.claim(id, principal.id);
       if (status === "awaiting_person") return text({ status: "waiting_for_approval", confirmationId: id });
-      if (status === "denied") return failure("A person denied this on the Tomo desktop");
+      if (status === "denied") {
+        const why = confirmations.find(id, principal.id)?.decision?.reason;
+        return failure(why ? `A person denied this on the Tomo desktop: ${why}` : "A person denied this on the Tomo desktop");
+      }
       if (!pending) return failure("Unknown, expired, or already used confirmation id");
       const tool = TOOLS.find((t) => t.name === pending.tool);
       if (!tool) return failure(`Unknown tool ${pending.tool}`);
       log.info("Confirmed tool call", { token: principal.id, tool: tool.name, approved: Boolean(pending.decision) });
-      return execute(tool, pending.args);
+      return execute(tool, pending.args, pending.decision && `Approved by ${pending.decision.by}`);
     },
   );
 

@@ -11,6 +11,8 @@ const colors = {
   textPrimary: "#e2e8f0",
   textSecondary: "#94a3b8",
   surface: "#1e293b",
+  /** A faint raised tint for code blocks, previews, and row hover. */
+  subtle: "rgba(255,255,255,0.06)",
 };
 
 const sharedOptions: ThemeOptions = {

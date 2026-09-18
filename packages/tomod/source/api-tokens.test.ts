@@ -43,7 +43,7 @@ describe("ApiTokens", () => {
     expect((await stat(path.join(dir, "api-tokens.json"))).mode & 0o777).toBe(0o600);
 
     expect(tokens.verify(token)).toMatchObject({ id: record.id, scope: "manage" });
-    expect(tokens.verify(token.slice(0, -1) + "0")).toBeUndefined();
+    expect(tokens.verify(token.slice(0, -1) + (token.endsWith("0") ? "1" : "0"))).toBeUndefined();
   });
 
   it("records last use, and refuses expired or revoked tokens", async () => {
@@ -120,5 +120,46 @@ describe("ApiTokens", () => {
     expect(tokens.verify(token, "10.0.0.99")).toBeUndefined();
     now += 61_000;
     expect(tokens.verify(token, "10.0.0.99")).toBeDefined();
+  });
+});
+
+describe("ApiTokens notes and grace windows", () => {
+  let dir: string;
+  let tokens: ApiTokens;
+  let now: number;
+  beforeEach(async () => {
+    dir = await mkdtemp(path.join(os.tmpdir(), "tomo-tokens-"));
+    now = Date.parse("2026-09-18T12:00:00Z");
+    tokens = new ApiTokens(path.join(dir, "api-tokens.json"), () => now);
+    await tokens.load();
+  });
+  afterEach(async () => {
+    await tokens.flush();
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("keeps an owner note per token", async () => {
+    const { record } = await tokens.create({ name: "t", scope: "manage", expiresInDays: 1 });
+    await tokens.update(record.id, { note: "saved in 1Password" });
+    expect(tokens.list()[0].note).toBe("saved in 1Password");
+  });
+
+  it("rotates with a chosen grace window and reports when the old secret was last used", async () => {
+    const { token, record } = await tokens.create({ name: "t", scope: "manage", expiresInDays: 1 });
+    const rotated = await tokens.rotate(record.id, 60 * 60 * 1000);
+    now += 30 * 60 * 1000;
+    expect(tokens.verify(token)).toBeDefined();
+    const view = tokens.list()[0];
+    expect(view.previousLastUsedAt).toBe(new Date(now).toISOString());
+    expect(view.previousGraceUntil).toBe(new Date(now + 30 * 60 * 1000).toISOString());
+    expect(tokens.verify(rotated.token)).toBeDefined();
+    now += 31 * 60 * 1000;
+    expect(tokens.verify(token)).toBeUndefined();
+  });
+
+  it("rotating with no grace ends the old secret at once", async () => {
+    const { token, record } = await tokens.create({ name: "t", scope: "manage", expiresInDays: 1 });
+    await tokens.rotate(record.id, 0);
+    expect(tokens.verify(token)).toBeUndefined();
   });
 });
