@@ -5,10 +5,19 @@
  *
  * Traefik reaches the app over the internal Docker network using the
  * container-side port, so a `ports:` mapping for it is never needed. Worse,
- * it would expose the app on the host without the Tomo login, so such a
- * mapping is rejected at install with an actionable message.
+ * it would expose the app on the host without the Tomo login, so the install
+ * removes that mapping (see unpublishProxiedPort) and the dialog says so up
+ * front (see inspectCompose).
  */
-import { loadServices, type ComposeService, type ComposeServices } from "./compose-utils.js";
+import {
+  dumpCompose,
+  loadRoot,
+  loadServices,
+  servicesOf,
+  type ComposeService,
+  type ComposeServices,
+} from "./compose-utils.js";
+import { slugify } from "./utils.js";
 import type { ProxyTarget } from "./app.js";
 
 /** Service name Tomo generates and prefers when a compose file has several. */
@@ -77,15 +86,19 @@ function dependencies(service: ComposeService): string[] {
  * the only service, one named "app", one that maps or exposes the port, one
  * named after the app, or the single service nothing else depends on.
  */
-function chooseService(services: ComposeServices, requestedPort: number, appId: string): string {
+function chooseService(
+  services: ComposeServices,
+  requestedPort: number | undefined,
+  appId: string,
+): string {
   const names = Object.keys(services);
   if (names.length === 1) return names[0];
   if (DEFAULT_SERVICE in services) return DEFAULT_SERVICE;
 
-  const byPort = names.find((n) => {
-    const svc = services[n];
-    return findWebMapping([...parsePortList(svc.ports), ...parsePortList(svc.expose)], requestedPort);
-  });
+  const byPort =
+    requestedPort === undefined
+      ? undefined
+      : names.find((n) => findWebMapping(allMappings(services[n]), requestedPort));
   if (byPort) return byPort;
 
   if (appId in services) return appId;
@@ -99,25 +112,43 @@ function chooseService(services: ComposeServices, requestedPort: number, appId: 
   );
 }
 
+/** Every port a service maps or exposes, published ones first. */
+function allMappings(service: ComposeService): PortMapping[] {
+  return [...parsePortList(service.ports), ...parsePortList(service.expose)];
+}
+
+/** The one TCP port a service is evidently meant to serve on, if that is unambiguous. */
+function inferContainerPort(service: ComposeService): number | undefined {
+  const tcp = allMappings(service).filter((m) => !m.udp);
+  const distinct = [...new Set(tcp.map((m) => m.container))];
+  return distinct.length === 1 ? distinct[0] : undefined;
+}
+
 function describeMapping(mapping: PortMapping): string {
   return mapping.host === undefined
     ? String(mapping.container)
     : `${mapping.host}:${mapping.container}`;
 }
 
+interface MainService {
+  service: string;
+  definition: ComposeService;
+  hostNetwork: boolean;
+}
+
 /**
- * Pick the service Traefik should proxy and the container port to dial.
+ * Find the service that is the app, after checking the file is usable.
  *
  * @param appId slug of the app being installed, used to recognise its service
  * @throws when the YAML is invalid, has no services, is ambiguous about the
- *   main service, sets `container_name` on any service (Tomo locates
- *   containers by compose's generated names), or publishes the proxied port.
+ *   main service, or sets `container_name` on any service (Tomo locates
+ *   containers by compose's generated names).
  */
-export function resolveProxyTarget(
+function locateMainService(
   composeYaml: string,
-  requestedPort: number,
+  requestedPort: number | undefined,
   appId: string,
-): ProxyTarget {
+): MainService {
   const services = loadServices(composeYaml);
   if (!services || Object.keys(services).length === 0) {
     throw new Error("Compose YAML must define at least one service");
@@ -133,21 +164,92 @@ export function resolveProxyTarget(
   }
 
   const service = chooseService(services, requestedPort, appId);
-  const hostNetwork = services[service].network_mode === "host";
+  const definition = services[service];
+  return { service, definition, hostNetwork: definition.network_mode === "host" };
+}
 
-  // Compose ignores `ports:` under host networking, so there is nothing to publish.
-  const published = hostNetwork
-    ? undefined
-    : findWebMapping(parsePortList(services[service].ports), requestedPort);
-  if (published) {
-    const fixPort =
-      published.container === requestedPort
-        ? ""
-        : ` and set Container Port to ${published.container}`;
-    throw new Error(
-      `Remove the "${describeMapping(published)}" port mapping from service "${service}"${fixPort}. Tomo serves the app through its login proxy using the Container Port field, so the mapping is not needed and would expose the app without sign-in`,
+/**
+ * Pick the service Traefik should proxy and the container port to dial. A
+ * requested port that matches the host side of a mapping is translated to
+ * the container side.
+ *
+ * @throws see locateMainService
+ */
+export function resolveProxyTarget(
+  composeYaml: string,
+  requestedPort: number,
+  appId: string,
+): ProxyTarget {
+  const { service, definition, hostNetwork } = locateMainService(composeYaml, requestedPort, appId);
+  const port = findWebMapping(allMappings(definition), requestedPort)?.container ?? requestedPort;
+  return { service, port, hostNetwork };
+}
+
+export interface ComposeInspection {
+  service?: string;
+  /** Port the main service listens on, when the file makes that unambiguous. */
+  containerPort?: number;
+  /** A host mapping of that port, as written, which the install will remove. */
+  publishedMapping?: string;
+  /** Why the file cannot be used as is, when it cannot. */
+  error?: string;
+}
+
+/**
+ * What the Add dialog needs to know about a pasted compose file before the
+ * user clicks Add: which service is the app, which port to prefill, and
+ * whether a published mapping will be removed. Never throws.
+ */
+export function inspectCompose(
+  composeYaml: string,
+  appName: string,
+  requestedPort?: number,
+): ComposeInspection {
+  try {
+    const { service, definition, hostNetwork } = locateMainService(
+      composeYaml,
+      requestedPort,
+      slugify(appName),
     );
+    const containerPort =
+      requestedPort === undefined
+        ? inferContainerPort(definition)
+        : (findWebMapping(allMappings(definition), requestedPort)?.container ?? requestedPort);
+    const published =
+      containerPort === undefined || hostNetwork
+        ? undefined
+        : parsePortList(definition.ports).find((m) => !m.udp && m.container === containerPort);
+    return {
+      service,
+      ...(containerPort !== undefined && { containerPort }),
+      ...(published && { publishedMapping: describeMapping(published) }),
+    };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
   }
+}
 
-  return { service, port: requestedPort, hostNetwork };
+/**
+ * Remove the host mapping for the proxied TCP port so the app is reachable
+ * only through Traefik, behind the Tomo login. Other published ports (SSH,
+ * DNS, UDP...) are kept. Host-networked apps publish nothing and are skipped.
+ *
+ * @returns the compose YAML, unchanged when there is nothing to remove
+ */
+export function unpublishProxiedPort(composeYaml: string, target: ProxyTarget): string {
+  if (target.hostNetwork) return composeYaml;
+  const root = loadRoot(composeYaml);
+  const services = servicesOf(root);
+  const service = services?.[target.service];
+  if (!root || !services || !service || !Array.isArray(service.ports)) return composeYaml;
+
+  const kept = service.ports.filter((entry) => {
+    const mapping = parsePortEntry(entry);
+    return !mapping || mapping.udp || mapping.container !== target.port;
+  });
+  if (kept.length === service.ports.length) return composeYaml;
+
+  const { ports: _removed, ...rest } = service;
+  const patched = kept.length > 0 ? { ...rest, ports: kept } : rest;
+  return dumpCompose({ ...root, services: { ...services, [target.service]: patched } });
 }

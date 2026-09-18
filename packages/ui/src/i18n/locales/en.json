@@ -215,9 +215,16 @@
     "editTitle": "Edit App",
     "edit": "Edit",
     "portHelp": "The port the app listens on inside its container. Tomo serves the app through its own login proxy on a different port.",
-    "composeYamlHelp": "Do not add a \"ports:\" line for the Container Port. Tomo reaches the app over its internal network, and publishing that port would expose the app without sign-in.",
+    "composeYamlHelp": "Paste the app's compose file. Tomo reads the port from it and removes any host mapping for that port, so the app is only reachable through Tomo.",
     "openPath": "Open path (optional)",
-    "openPathHelp": "Where the app's web page lives if it is not at \"/\", for example \"/ui\" or \"/login\". Only the link on the desktop changes."
+    "openPathHelp": "Where the app's web page lives if it is not at \"/\", for example \"/ui\" or \"/login\". Only the link on the desktop changes.",
+    "ownAuth": "This app has its own sign-in",
+    "ownAuthHelp": "Serve it without the Tomo login so tools outside the browser can reach it, for example an API. Only for apps that require their own password or API key.",
+    "detectedPort": "Port {{port}} detected from the YAML.",
+    "willUnpublish": "Port {{port}} detected from the YAML. The \"{{mapping}}\" mapping will be removed so the app is only reachable through Tomo.",
+    "yamlProblem": "This YAML cannot be used yet: {{error}}",
+    "redeployNote": "Changing the image, port, YAML, or privileged setting restarts the app with the new settings. Its data is kept.",
+    "saveRedeploy": "Save and redeploy"
   },
   "common": {
     "loading": "Loading...",

@@ -76,8 +76,11 @@ export function AppGrid() {
       return openEditCustomApp({
         id: app.id,
         name: app.name,
+        type: app.type,
         path: app.webPath,
         icon: app.icon || undefined,
+        ownAuth: app.ownAuth,
+        source: app.source,
       });
     }
 

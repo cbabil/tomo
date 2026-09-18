@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { resolveProxyTarget } from "./custom-compose.js";
+import yaml from "js-yaml";
+import { resolveProxyTarget, inspectCompose, unpublishProxiedPort } from "./custom-compose.js";
 
 const LITELLM = `services:
   litellm:
@@ -79,7 +80,7 @@ describe("resolveProxyTarget: choosing the main service", () => {
 });
 
 describe("resolveProxyTarget: published web port", () => {
-  it("rejects a mapping of the container port on the main service", () => {
+  it("accepts a mapping of the container port; the install strips it", () => {
     const yaml = `services:
   litellm:
     image: litellm
@@ -90,53 +91,105 @@ describe("resolveProxyTarget: published web port", () => {
   db:
     image: postgres:16
 `;
-    expect(() => resolveProxyTarget(yaml, 4000, "litellm")).toThrow(
-      /Remove the "4000:4000" port mapping from service "litellm"/,
-    );
+    expect(resolveProxyTarget(yaml, 4000, "litellm")).toEqual({
+      service: "litellm",
+      port: 4000,
+      hostNetwork: false,
+    });
   });
 
-  it("rejects it when the user typed the host side of the mapping", () => {
+  it("translates the host side of a mapping to the container port", () => {
     const yaml = "services:\n  web:\n    image: nginx\n    ports:\n      - \"8080:3000/tcp\"\n";
-    expect(() => resolveProxyTarget(yaml, 8080, "site")).toThrow(
-      /Remove the "8080:3000" port mapping.*Container Port to 3000/s,
-    );
+    expect(resolveProxyTarget(yaml, 8080, "site").port).toBe(3000);
+  });
+});
+
+describe("inspectCompose", () => {
+  const litellm = `services:
+  litellm:
+    image: litellm
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+  db:
+    image: postgres:16
+`;
+
+  it("detects the container port and the mapping that will be removed", () => {
+    expect(inspectCompose(litellm, "LiteLLM")).toEqual({
+      service: "litellm",
+      containerPort: 4000,
+      publishedMapping: "4000:4000",
+    });
   });
 
-  it("rejects long-syntax mappings too", () => {
+  it("uses the port the user typed to pick among several mappings", () => {
     const yaml = `services:
   web:
-    image: nginx
+    image: x
     ports:
-      - target: 3000
-        published: 4000
+      - "2222:22"
+      - "8080:3000"
 `;
-    expect(() => resolveProxyTarget(yaml, 3000, "site")).toThrow(/Remove the "4000:3000" port mapping/);
+    expect(inspectCompose(yaml, "Web", 3000)).toEqual({
+      service: "web",
+      containerPort: 3000,
+      publishedMapping: "8080:3000",
+    });
+    expect(inspectCompose(yaml, "Web", 8080).containerPort).toBe(3000);
   });
 
-  it("allows other ports on the main service and ports on other services", () => {
-    const yaml = `services:
+  it("falls back to a single expose entry and reports nothing to remove", () => {
+    const yaml = "services:\n  web:\n    image: x\n    expose:\n      - \"9000\"\n";
+    expect(inspectCompose(yaml, "Web")).toEqual({ service: "web", containerPort: 9000 });
+  });
+
+  it("leaves the port undefined when it cannot be inferred", () => {
+    const yaml = "services:\n  web:\n    image: x\n";
+    expect(inspectCompose(yaml, "Web")).toEqual({ service: "web" });
+  });
+
+  it("returns an error message instead of throwing for unusable YAML", () => {
+    expect(inspectCompose("not: [valid", "Web")).toEqual({
+      error: expect.stringMatching(/Invalid compose YAML/),
+    });
+    expect(inspectCompose("services:\n  a:\n    image: x\n  b:\n    image: y\n", "Web")).toEqual({
+      error: expect.stringMatching(/several services/),
+    });
+  });
+});
+
+describe("unpublishProxiedPort", () => {
+  type Doc = { services: Record<string, { ports?: unknown[] }> };
+  const portsOf = (content: string, service: string) =>
+    (yaml.load(content) as Doc).services[service].ports;
+
+  it("removes only the TCP mapping of the proxied port on the proxied service", () => {
+    const input = `services:
   gitea:
     image: gitea
     ports:
+      - "3000:3000"
       - "2222:22"
       - "3000:3000/udp"
-    depends_on:
-      - db
   db:
     image: postgres
     ports:
       - "5432:5432"
 `;
-    expect(resolveProxyTarget(yaml, 3000, "gitea")).toEqual({
-      service: "gitea",
-      port: 3000,
-      hostNetwork: false,
-    });
+    const out = unpublishProxiedPort(input, { service: "gitea", port: 3000 });
+    expect(portsOf(out, "gitea")).toEqual(["2222:22", "3000:3000/udp"]);
+    expect(portsOf(out, "db")).toEqual(["5432:5432"]);
   });
 
-  it("ignores ports on host-networked apps, where compose ignores them too", () => {
-    const yaml = "services:\n  web:\n    image: nginx\n    network_mode: host\n    ports:\n      - \"80:80\"\n";
-    expect(resolveProxyTarget(yaml, 80, "site").hostNetwork).toBe(true);
+  it("drops the ports key when nothing is left, and leaves untouched files alone", () => {
+    const only = "services:\n  web:\n    image: x\n    ports:\n      - target: 80\n        published: 8080\n";
+    expect(portsOf(unpublishProxiedPort(only, { service: "web", port: 80 }), "web")).toBeUndefined();
+    const none = "services:\n  web:\n    image: x\n";
+    expect(unpublishProxiedPort(none, { service: "web", port: 80 })).toBe(none);
+    const host = "services:\n  web:\n    image: x\n    network_mode: host\n    ports:\n      - \"80:80\"\n";
+    expect(unpublishProxiedPort(host, { service: "web", port: 80, hostNetwork: true })).toBe(host);
   });
 });
 

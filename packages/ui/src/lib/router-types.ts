@@ -139,6 +139,13 @@ const appsRouter = t.router({
         | "stopping";
       webPort?: number;
       webPath?: string;
+      ownAuth?: boolean;
+      source?: {
+        image?: string;
+        composeYaml?: string;
+        containerPort: number;
+        allowPrivileged?: boolean;
+      };
       type?: "store" | "custom" | "template" | "external";
       externalUrl?: string;
       hidden?: boolean;
@@ -177,9 +184,26 @@ const appsRouter = t.router({
           path: z.string().optional(),
           icon: z.string().optional(),
           allowPrivileged: z.boolean().optional(),
+          ownAuth: z.boolean().optional(),
         }),
       )
       .mutation((): void => {}),
+    inspectCompose: t.procedure
+      .input(
+        z.object({
+          composeYaml: z.string(),
+          name: z.string(),
+          containerPort: z.number().optional(),
+        }),
+      )
+      .query(
+        (): {
+          service?: string;
+          containerPort?: number;
+          publishedMapping?: string;
+          error?: string;
+        } => ({}),
+      ),
     addExternal: t.procedure
       .input(
         z.object({
@@ -198,6 +222,15 @@ const appsRouter = t.router({
           id: z.string(),
           path: z.string().optional(),
           icon: z.string().optional(),
+          ownAuth: z.boolean().optional(),
+          source: z
+            .object({
+              image: z.string().optional(),
+              composeYaml: z.string().optional(),
+              containerPort: z.number(),
+              allowPrivileged: z.boolean().optional(),
+            })
+            .optional(),
         }),
       )
       .mutation((): void => {}),
