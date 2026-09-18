@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import { spawn } from "node:child_process";
-import { router, privateProcedure } from "./middleware.js";
+import { router, privateProcedure, userProcedure } from "./middleware.js";
 import { TOMO_VERSION } from "../config.js";
 import { createLogger } from "../logger.js";
 import type { Hardware } from "../hardware.js";
@@ -75,7 +75,7 @@ export function createSystemRouter(hardware: Hardware, docker: Docker) {
       };
     }),
 
-    update: privateProcedure.mutation(async () => {
+    update: userProcedure.mutation(async () => {
       const latest = await fetchLatestVersion();
       if (!latest) {
         throw new Error("Could not fetch latest version from GitHub");

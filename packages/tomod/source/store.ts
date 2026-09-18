@@ -1,9 +1,9 @@
-import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
-import crypto from "node:crypto";
 import yaml from "js-yaml";
 import { z } from "zod";
 import { createLogger } from "./logger.js";
+import { writeFileAtomic } from "./fs-utils.js";
 import { TOMO_DATA_DIR } from "./config.js";
 
 const log = createLogger("store");
@@ -88,17 +88,7 @@ export class Store {
   }
 
   async save(): Promise<void> {
-    const dir = path.dirname(this.filePath);
-    await mkdir(dir, { recursive: true });
-
-    const tmpPath = path.join(
-      path.dirname(this.filePath),
-      `.tomo-${crypto.randomBytes(16).toString("hex")}.tmp`,
-    );
-    const content = yaml.dump(this.config, { sortKeys: true });
-
-    await writeFile(tmpPath, content, { encoding: "utf-8", mode: 0o600 });
-    await rename(tmpPath, this.filePath);
+    await writeFileAtomic(this.filePath, yaml.dump(this.config, { sortKeys: true }));
     log.info("Configuration saved", { path: this.filePath });
   }
 }

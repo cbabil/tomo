@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, privateProcedure } from "./middleware.js";
+import { router, privateProcedure, scoped } from "./middleware.js";
 import { SYSTEM_APP_IDS } from "../apps.js";
 import type { Apps } from "../apps.js";
 import type { AppStore } from "../app-store.js";
 import type { TemplateRegistry } from "../templates.js";
 import { manifestOpenPath, MAX_OPEN_PATH_LENGTH } from "../open-path.js";
 import { inspectCompose } from "../custom-compose.js";
+import { hasScope, type Principal } from "../principal.js";
 
 const appIdSchema = z
   .string()
@@ -35,6 +36,16 @@ const customSourceSchema = z
     allowPrivileged: z.boolean().optional(),
   })
   .refine((d) => d.image || d.composeYaml, "Provide image or compose YAML");
+
+/** Widening an app's reach (own sign-in, privileged mode) is an admin decision. */
+function requireAdmin(principal: Principal): void {
+  if (!hasScope(principal, "admin")) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: 'Turning on privileged mode or own sign-in needs an "admin" token',
+    });
+  }
+}
 
 const MAX_EXTERNAL_APPS = 100;
 
@@ -114,7 +125,7 @@ export function createAppsRouter(
         return apps.install(input.appId);
       }),
 
-    uninstall: privateProcedure
+    uninstall: scoped("admin")
       .input(z.object({ appId: appIdSchema }))
       .mutation(async ({ input }) => {
         await apps.uninstall(input.appId);
@@ -184,7 +195,8 @@ export function createAppsRouter(
               "Provide image or compose YAML",
             ),
         )
-        .mutation(async ({ input }) => {
+        .mutation(async ({ input, ctx }) => {
+          if (input.ownAuth || input.allowPrivileged) requireAdmin(ctx.principal);
           return apps.installCustom(input);
         }),
 
@@ -209,7 +221,8 @@ export function createAppsRouter(
             source: customSourceSchema.optional(),
           }),
         )
-        .mutation(async ({ input }) => {
+        .mutation(async ({ input, ctx }) => {
+          if (input.ownAuth || input.source?.allowPrivileged) requireAdmin(ctx.principal);
           const { id, ...changes } = input;
           return apps.updateCustom(id, changes);
         }),
@@ -233,7 +246,7 @@ export function createAppsRouter(
           return apps.addExternal(input);
         }),
 
-      removeExternal: privateProcedure
+      removeExternal: scoped("admin")
         .input(z.object({ id: appIdSchema }))
         .mutation(async ({ input }) => {
           await apps.removeExternal(input.id);
@@ -260,7 +273,7 @@ export function createAppsRouter(
         return appStore.listRepos();
       }),
 
-      add: privateProcedure
+      add: scoped("admin")
         .input(
           z.object({
             url: z.string().url(),
@@ -272,7 +285,7 @@ export function createAppsRouter(
           return { success: true };
         }),
 
-      remove: privateProcedure
+      remove: scoped("admin")
         .input(z.object({ url: z.string().url() }))
         .mutation(async ({ input }) => {
           await appStore.removeRepo(input.url);

@@ -155,7 +155,7 @@ export function createServer(
   });
 
   const appRouter = createAppRouter(deps);
-  const contextFactory = createContext(deps.user);
+  const contextFactory = createContext({ user: deps.user, tokens: deps.tokens, audit: deps.audit });
 
   app.use(
     "/trpc",

@@ -1,11 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  router,
-  publicProcedure,
-  privateProcedure,
-  type Context,
-} from "./middleware.js";
+import { router, publicProcedure, type Context, userProcedure } from "./middleware.js";
 import { AUTH_COOKIE_NAME, SESSION_DURATION_DAYS } from "../config.js";
 import { createLogger } from "../logger.js";
 import type { User } from "../user.js";
@@ -109,7 +104,7 @@ export function createUserRouter(userService: User) {
       return { success: true };
     }),
 
-    changePassword: privateProcedure
+    changePassword: userProcedure
       .input(
         z.object({
           oldPassword: z.string(),
@@ -128,7 +123,7 @@ export function createUserRouter(userService: User) {
         }
       }),
 
-    me: privateProcedure.query(({ ctx }) => {
+    me: userProcedure.query(({ ctx }) => {
       return {
         name: ctx.user.sub,
       };
