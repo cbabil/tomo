@@ -9,11 +9,6 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import Accordion from "@mui/material/Accordion";
-import AccordionSummary from "@mui/material/AccordionSummary";
-import AccordionDetails from "@mui/material/AccordionDetails";
-import Typography from "@mui/material/Typography";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
@@ -21,8 +16,30 @@ import { trpc } from "../../lib/trpc";
 import { useStore } from "../../hooks/useStore";
 import { colors } from "../../app/theme";
 import { dialogStyles } from "./styles";
-import { SwitchWithHelp } from "./SwitchWithHelp";
 import { useInstallPhase } from "../../hooks/useInstallPhase";
+import { CustomAppFields, EMPTY_CUSTOM_APP, type CustomAppValues } from "./CustomAppFields";
+
+/** The mutation input for a custom Docker app, from its form values. */
+export function toInstallInput(values: CustomAppValues) {
+  return {
+    name: values.name.trim(),
+    image: values.image.trim() || undefined,
+    composeYaml: values.composeYaml.trim() || undefined,
+    containerPort: parseInt(values.port, 10),
+    path: values.path.trim() || undefined,
+    icon: values.icon.trim() || undefined,
+    allowPrivileged: values.allowPrivileged,
+    ownAuth: values.ownAuth,
+  };
+}
+
+/** A user-facing reason the form cannot be submitted, or undefined when it can. */
+export function validateCustomApp(values: CustomAppValues): string | undefined {
+  const port = parseInt(values.port, 10);
+  if (isNaN(port) || port < 1 || port > 65535) return "Invalid port number (1-65535)";
+  if (!values.image.trim() && !values.composeYaml.trim()) return "Provide a Docker image or compose YAML";
+  return undefined;
+}
 
 export function AddCustomAppDialog() {
   const { t } = useTranslation();
@@ -32,57 +49,33 @@ export function AddCustomAppDialog() {
 
   const [tab, setTab] = useState(0);
   const [error, setError] = useState("");
-
-  const defaultDocker = { name: "", image: "", port: "", path: "", icon: "", composeYaml: "" };
   const defaultExt = { name: "", url: "", icon: "" };
-  const [docker, setDocker] = useState(defaultDocker);
+  const [docker, setDocker] = useState<CustomAppValues>(EMPTY_CUSTOM_APP);
   const [ext, setExt] = useState(defaultExt);
-  const [allowPrivileged, setAllowPrivileged] = useState(false);
 
   const installDocker = trpc.apps.custom.installDocker.useMutation();
   const addExternal = trpc.apps.custom.addExternal.useMutation();
+  const installPhase = useInstallPhase(installDocker.isPending);
 
-  const updateDocker = (field: keyof typeof defaultDocker, value: string) =>
-    setDocker((prev) => ({ ...prev, [field]: value }));
   const updateExt = (field: keyof typeof defaultExt, value: string) =>
     setExt((prev) => ({ ...prev, [field]: value }));
 
-  const resetForm = () => {
-    setDocker(defaultDocker);
+  const handleClose = () => {
+    setDocker(EMPTY_CUSTOM_APP);
     setExt(defaultExt);
-    setAllowPrivileged(false);
     setError("");
     setTab(0);
-  };
-
-  const handleClose = () => {
-    resetForm();
     close();
   };
 
   const handleSubmitDocker = async () => {
     setError("");
-    const port = parseInt(docker.port, 10);
     if (!docker.name.trim()) return;
-    if (isNaN(port) || port < 1 || port > 65535) {
-      setError("Invalid port number (1-65535)");
-      return;
-    }
-    if (!docker.image.trim() && !docker.composeYaml.trim()) {
-      setError("Provide a Docker image or compose YAML");
-      return;
-    }
+    const problem = validateCustomApp(docker);
+    if (problem) return setError(problem);
 
     try {
-      await installDocker.mutateAsync({
-        name: docker.name.trim(),
-        image: docker.image.trim() || undefined,
-        composeYaml: docker.composeYaml.trim() || undefined,
-        containerPort: port,
-        path: docker.path.trim() || undefined,
-        icon: docker.icon.trim() || undefined,
-        allowPrivileged,
-      });
+      await installDocker.mutateAsync(toInstallInput(docker));
       await utils.apps.installed.invalidate();
       handleClose();
     } catch (err) {
@@ -108,7 +101,6 @@ export function AddCustomAppDialog() {
   };
 
   const isSubmitting = installDocker.isPending || addExternal.isPending;
-  const installPhase = useInstallPhase(installDocker.isPending);
 
   return (
     <Dialog
@@ -147,82 +139,7 @@ export function AddCustomAppDialog() {
 
         <Box>
           <Box sx={{ ...styles.form, ...(tab !== 0 && styles.hiddenTab) }} aria-hidden={tab !== 0}>
-            <TextField
-              label={t("customApp.name")}
-              value={docker.name}
-              onChange={(e) => updateDocker("name", e.target.value)}
-              fullWidth
-              required
-              size="small"
-            />
-            <TextField
-              label={t("customApp.image")}
-              value={docker.image}
-              onChange={(e) => updateDocker("image", e.target.value)}
-              fullWidth
-              size="small"
-              placeholder="nginx:latest"
-              disabled={Boolean(docker.composeYaml.trim())}
-            />
-            <TextField
-              label={t("customApp.port")}
-              value={docker.port}
-              onChange={(e) => updateDocker("port", e.target.value)}
-              fullWidth
-              required
-              size="small"
-              type="number"
-              helperText={t("customApp.portHelp")}
-              slotProps={{ htmlInput: { min: 1, max: 65535 } }}
-            />
-            <TextField
-              label={t("customApp.openPath")}
-              value={docker.path}
-              onChange={(e) => updateDocker("path", e.target.value)}
-              fullWidth
-              size="small"
-              placeholder="/ui"
-              helperText={t("customApp.openPathHelp")}
-            />
-            <TextField
-              label={t("customApp.icon")}
-              value={docker.icon}
-              onChange={(e) => updateDocker("icon", e.target.value)}
-              fullWidth
-              size="small"
-              placeholder="https://example.com/icon.png"
-            />
-            <Accordion
-              sx={styles.accordion}
-              disableGutters
-              elevation={0}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: colors.textSecondary }} />}>
-                <Typography variant="body2" sx={{ color: colors.textSecondary }}>
-                  {t("customApp.advanced")}
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails sx={styles.accordionDetails}>
-                <TextField
-                  label={t("customApp.composeYaml")}
-                  value={docker.composeYaml}
-                  onChange={(e) => updateDocker("composeYaml", e.target.value)}
-                  fullWidth
-                  multiline
-                  rows={6}
-                  size="small"
-                  placeholder={"services:\n  app:\n    image: nginx:latest"}
-                  helperText={t("customApp.composeYamlHelp")}
-                  sx={{ fontFamily: "monospace" }}
-                />
-                <SwitchWithHelp
-                  checked={allowPrivileged}
-                  onChange={setAllowPrivileged}
-                  label={t("customApp.allowPrivileged")}
-                  description={t("customApp.allowPrivilegedHelp")}
-                />
-              </AccordionDetails>
-            </Accordion>
+            <CustomAppFields values={docker} onChange={setDocker} nameEditable />
           </Box>
 
           <Box sx={{ ...styles.form, ...(tab !== 1 && styles.hiddenTab) }} aria-hidden={tab !== 1}>
@@ -290,16 +207,5 @@ const styles = {
   },
   hiddenTab: {
     display: "none" as const,
-  },
-  accordion: {
-    backgroundColor: "transparent",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "8px !important",
-    "&::before": { display: "none" },
-  },
-  accordionDetails: {
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: 2,
   },
 };

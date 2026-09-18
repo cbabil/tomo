@@ -2,10 +2,17 @@ import { readFile, writeFile, mkdir, rm, cp } from "node:fs/promises";
 import path from "node:path";
 import { createLogger } from "./logger.js";
 import { TOMO_DATA_DIR } from "./config.js";
-import { App, type AppInstance, type AppStatus, type AppType, type ProxyTarget } from "./app.js";
+import {
+  App,
+  type AppInstance,
+  type AppStatus,
+  type AppType,
+  type CustomSource,
+  type ProxyTarget,
+} from "./app.js";
 import { slugify } from "./utils.js";
 import { patchComposeFile, validateComposeFile, extractProxyTarget, dumpCompose } from "./compose-utils.js";
-import { resolveProxyTarget, DEFAULT_SERVICE } from "./custom-compose.js";
+import { resolveProxyTarget, unpublishProxiedPort, DEFAULT_SERVICE } from "./custom-compose.js";
 import { normalizeOpenPath } from "./open-path.js";
 import { prepareVolumeDirectories, fixVolumePermissions } from "./volume-utils.js";
 import { PortAllocator } from "./port-allocator.js";
@@ -140,6 +147,7 @@ export class Apps {
         path: meta.path,
         icon: meta.icon,
         templateId: meta.templateId,
+        source: meta.source,
       },
       this.docker,
     );
@@ -183,6 +191,36 @@ export class Apps {
     });
   }
 
+  /** The compose file for a custom app: the user's YAML, or one generated from an image. */
+  private buildCustomCompose(source: CustomSource): string {
+    if (source.composeYaml) return source.composeYaml;
+    if (source.image) {
+      return dumpCompose({
+        services: { [DEFAULT_SERVICE]: { image: source.image, restart: "unless-stopped" } },
+      });
+    }
+    throw new Error("Provide image or compose YAML");
+  }
+
+  /**
+   * Write a custom app's compose file and prepare it for Tomo. The proxied
+   * port's host mapping is removed so the app is only reachable through the
+   * proxy, and the app's services are attached to the Tomo network.
+   */
+  private async writeCustomCompose(
+    appDir: string,
+    source: CustomSource,
+    target: ProxyTarget,
+  ): Promise<string | undefined> {
+    const composeContent = unpublishProxiedPort(this.buildCustomCompose(source), target);
+    await writeFile(path.join(appDir, "docker-compose.yml"), composeContent, "utf-8");
+    const { composeContent: patchedContent } = await patchComposeFile(appDir, target.service);
+    await validateComposeFile(path.join(appDir, "docker-compose.yml"), {
+      allowPrivileged: source.allowPrivileged,
+    });
+    return patchedContent;
+  }
+
   async installCustom(input: {
     name: string;
     image?: string;
@@ -191,33 +229,25 @@ export class Apps {
     path?: string;
     icon?: string;
     allowPrivileged?: boolean;
+    ownAuth?: boolean;
   }): Promise<AppInstance> {
     const id = slugify(input.name);
     const openPath = normalizeOpenPath(input.path ?? "");
     if (!id) throw new Error("Invalid app name");
     if (this.instances.has(id)) throw new Error(`App ID already in use: ${id}`);
+    const source: CustomSource = {
+      image: input.image,
+      composeYaml: input.composeYaml,
+      containerPort: input.containerPort,
+      allowPrivileged: input.allowPrivileged,
+    };
 
     const appDir = this.safeAppDir(id);
     await mkdir(appDir, { recursive: true });
 
     return this.withInstallRollback(id, appDir, async () => {
-      let composeContent: string;
-      if (input.composeYaml) {
-        composeContent = input.composeYaml;
-      } else if (input.image) {
-        composeContent = dumpCompose({
-          services: { [DEFAULT_SERVICE]: { image: input.image, restart: "unless-stopped" } },
-        });
-      } else {
-        throw new Error("Provide image or compose YAML");
-      }
-      const target = resolveProxyTarget(composeContent, input.containerPort, id);
-
-      await writeFile(path.join(appDir, "docker-compose.yml"), composeContent, "utf-8");
-      const { composeContent: patchedContent } = await patchComposeFile(appDir);
-      await validateComposeFile(path.join(appDir, "docker-compose.yml"), {
-        allowPrivileged: input.allowPrivileged,
-      });
+      const target = resolveProxyTarget(this.buildCustomCompose(source), input.containerPort, id);
+      const patchedContent = await this.writeCustomCompose(appDir, source, target);
 
       return this.finishInstall({
         id,
@@ -227,7 +257,8 @@ export class Apps {
         type: "custom",
         path: openPath,
         icon: input.icon,
-        proxyTarget: this.portAllocator.assign(target),
+        source,
+        proxyTarget: this.portAllocator.assign({ ...target, ownAuth: input.ownAuth || undefined }),
         patchedContent,
       });
     });
@@ -252,7 +283,7 @@ export class Apps {
       const composeContent = this.buildTemplateCompose(template, setupValues);
       const target = resolveProxyTarget(composeContent, template.containerPort, id);
       await writeFile(path.join(appDir, "docker-compose.yml"), composeContent, "utf-8");
-      const { composeContent: patchedContent } = await patchComposeFile(appDir);
+      const { composeContent: patchedContent } = await patchComposeFile(appDir, target.service);
 
       await this.appendEnvFile(path.join(appDir, ".env"), {
         ...template.environment,
@@ -374,27 +405,75 @@ export class Apps {
   }
 
   /**
-   * Change where a custom or template app opens, and its icon, without
-   * reinstalling. Containers and proxy routing are not touched.
+   * Edit a custom or template app: where it opens, its icon, whether it
+   * handles its own sign-in, and, for custom apps, the image or compose YAML
+   * it runs. A changed source redeploys the app in place, keeping its data.
    *
-   * @throws when the app is not installed, is a store app, or the path is invalid
+   * @throws when the app is not installed, is a store app, the path is
+   *   invalid, or a source is given for an app that is not custom
    */
-  async updatePresentation(
+  async updateCustom(
     appId: string,
-    input: { path?: string; icon?: string },
+    input: { path?: string; icon?: string; ownAuth?: boolean; source?: CustomSource },
   ): Promise<AppInstance> {
     const app = this.getApp(appId);
     if (app.type !== "custom" && app.type !== "template") {
       throw new Error("Only custom and template apps can be edited");
     }
-    const updated = app.withChanges({
+    if (input.source && app.type !== "custom") {
+      throw new Error("Only custom apps can be redeployed with new settings");
+    }
+
+    const presented = app.withChanges({
       path: normalizeOpenPath(input.path ?? ""),
       icon: input.icon || undefined,
     });
-    await this.writeAppMeta(updated);
+    const ownAuth = (input.ownAuth ?? app.proxyTarget?.ownAuth) || undefined;
+    const updated = input.source
+      ? await this.redeploy(presented, input.source, ownAuth)
+      : await this.applyOwnAuth(presented, ownAuth);
+
     this.instances.set(appId, updated);
-    log.info("App presentation updated", { appId, path: updated.path });
+    await this.writeAppMeta(updated);
+    log.info("App updated by user", { appId, redeployed: Boolean(input.source) });
     return updated.toJSON();
+  }
+
+  /** Re-route an app with or without the Tomo login, when that changed. */
+  private async applyOwnAuth(app: App, ownAuth: boolean | undefined): Promise<App> {
+    if (!app.proxyTarget || app.proxyTarget.ownAuth === ownAuth) return app;
+    const proxyTarget = { ...app.proxyTarget, ownAuth };
+    await this.proxy.addApp(app.id, proxyTarget);
+    return app.withChanges({ proxyTarget });
+  }
+
+  /**
+   * Replace a custom app's compose file and recreate its containers. The
+   * data folder and proxy port are kept. If the new file is rejected or the
+   * app fails to start, the previous file is restored and the app restarted.
+   */
+  private async redeploy(app: App, source: CustomSource, ownAuth: boolean | undefined): Promise<App> {
+    const composePath = path.join(app.dataDir, "docker-compose.yml");
+    const previousCompose = await readFile(composePath, "utf-8");
+    const rawTarget = resolveProxyTarget(this.buildCustomCompose(source), source.containerPort, app.id);
+    const proxyTarget = this.portAllocator.assign({ ...rawTarget, ownAuth }, app.proxyTarget);
+
+    await app.stop();
+    const next = app.withChanges({ proxyTarget, source });
+    try {
+      const patchedContent = await this.writeCustomCompose(app.dataDir, source, rawTarget);
+      if (patchedContent) await prepareVolumeDirectories(app.dataDir, patchedContent);
+      await next.start();
+    } catch (err) {
+      log.warn("Redeploy failed; restoring the previous compose file", { appId: app.id, error: String(err) });
+      await writeFile(composePath, previousCompose, "utf-8");
+      await app.start().catch((restartErr: unknown) => {
+        log.error("Could not restart app after failed redeploy", { appId: app.id, error: String(restartErr) });
+      });
+      throw err;
+    }
+    await this.proxy.addApp(app.id, proxyTarget);
+    return next;
   }
 
   async update(appId: string): Promise<void> {
@@ -415,7 +494,9 @@ export class Apps {
     await app.stop();
     await cp(sourceDir, app.dataDir, { recursive: true });
 
-    const { proxyTarget } = await patchComposeFile(app.dataDir);
+    // Keep routing and network attachment on the same service if the refreshed
+    // compose file no longer declares an app_proxy block.
+    const { proxyTarget } = await patchComposeFile(app.dataDir, app.proxyTarget?.service);
     await validateComposeFile(path.join(app.dataDir, "docker-compose.yml"));
 
     const baseTarget = proxyTarget ?? app.proxyTarget;
@@ -453,6 +534,7 @@ export class Apps {
     patchedContent?: string;
     path?: string;
     icon?: string;
+    source?: CustomSource;
   }): Promise<AppInstance> {
     const { id, name, version, appDir, type, templateId, proxyTarget, patchedContent } = params;
 
@@ -470,6 +552,7 @@ export class Apps {
         path: params.path,
         icon: params.icon,
         templateId,
+        source: params.source,
       },
       this.docker,
     );
@@ -616,6 +699,7 @@ export class Apps {
       path: app.path,
       icon: app.icon,
       templateId: app.templateId,
+      source: app.source,
     };
     await writeFile(metaPath, JSON.stringify(meta), "utf-8");
   }
@@ -641,4 +725,5 @@ interface AppMeta {
   templateId?: string;
   path?: string;
   icon?: string;
+  source?: CustomSource;
 }

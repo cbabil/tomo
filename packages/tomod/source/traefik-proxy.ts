@@ -73,11 +73,24 @@ export function upstreamHost(appId: string, target: ProxyTarget): string {
     : `tomo-${appId}-${target.service}-1`;
 }
 
-function generateAppConfig(appId: string, target: ProxyTarget): string {
+/** Dynamic Traefik config routing one app's entry point to its container. */
+export function generateAppConfig(appId: string, target: ProxyTarget): string {
   if (!target.hostPort) {
     throw new Error(`Missing hostPort for app ${appId}`);
   }
   const { hostPort } = target;
+  // An app with its own sign-in (API keys, its own accounts) is served
+  // without the Tomo login, so tools outside the browser can reach it.
+  const middlewares = target.ownAuth ? "middlewares: []" : "middlewares:\n        - forward-auth";
+  const middlewareDefinitions = target.ownAuth
+    ? ""
+    : `
+  middlewares:
+    forward-auth:
+      forwardAuth:
+        address: "${TOMOD_URL}/auth/verify"
+        authResponseHeaders: []
+`;
   return `http:
   routers:
     app-${appId}:
@@ -85,21 +98,14 @@ function generateAppConfig(appId: string, target: ProxyTarget): string {
       entryPoints:
         - app-${hostPort}
       service: app-${appId}
-      middlewares:
-        - forward-auth
+      ${middlewares}
 
   services:
     app-${appId}:
       loadBalancer:
         servers:
           - url: "http://${upstreamHost(appId, target)}:${target.port}"
-
-  middlewares:
-    forward-auth:
-      forwardAuth:
-        address: "${TOMOD_URL}/auth/verify"
-        authResponseHeaders: []
-`;
+${middlewareDefinitions}`;
 }
 
 export class TraefikProxy {

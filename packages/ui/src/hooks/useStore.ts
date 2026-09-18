@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Sheet, SettingsTab, ThemeMode, AppTemplate } from "../types";
+import type { Sheet, SettingsTab, ThemeMode, AppTemplate, AppType, CustomSource } from "../types";
 
 interface EditingExternalApp {
   id: string;
@@ -11,8 +11,11 @@ interface EditingExternalApp {
 interface EditingCustomApp {
   id: string;
   name: string;
+  type?: AppType;
   path?: string;
   icon?: string;
+  ownAuth?: boolean;
+  source?: CustomSource;
 }
 
 interface LogsApp {

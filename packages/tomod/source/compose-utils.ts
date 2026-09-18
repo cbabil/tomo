@@ -55,10 +55,10 @@ export async function validateComposeFile(
 export type ComposeService = Record<string, unknown>;
 export type ComposeServices = Record<string, ComposeService>;
 
-type ComposeRoot = Record<string, unknown>;
+export type ComposeRoot = Record<string, unknown>;
 
 /** Parse compose YAML into its root mapping. @throws Error("Invalid compose YAML: ...") */
-function loadRoot(content: string): ComposeRoot | undefined {
+export function loadRoot(content: string): ComposeRoot | undefined {
   let doc: unknown;
   try {
     doc = yaml.load(content);
@@ -73,7 +73,7 @@ function loadRoot(content: string): ComposeRoot | undefined {
  * when there is none. A service with no body (`web:`) parses as null and is
  * normalised to an empty object so callers never see null.
  */
-function servicesOf(root: ComposeRoot | undefined): ComposeServices | undefined {
+export function servicesOf(root: ComposeRoot | undefined): ComposeServices | undefined {
   const services = root?.services;
   if (!services || typeof services !== "object" || Array.isArray(services)) {
     return undefined;
@@ -101,6 +101,12 @@ export function loadServices(content: string): ComposeServices | undefined {
   return servicesOf(loadRoot(content));
 }
 
+/** Compose's implicit per-project network, which keeps an app's services private to it. */
+const DEFAULT_NETWORK = "default";
+
+const TOMO_ENV_LIST = ["APP_DATA_DIR=${APP_DATA_DIR}", "APP_PASSWORD=${APP_PASSWORD}"];
+const TOMO_ENV_MAP = { APP_DATA_DIR: "${APP_DATA_DIR}", APP_PASSWORD: "${APP_PASSWORD}" };
+
 /** True when the service already sits on the Tomo network or cannot join one. */
 function isOnTomoNetwork(svc: ComposeService): boolean {
   // docker-compose rejects services that combine network_mode with networks
@@ -111,6 +117,10 @@ function isOnTomoNetwork(svc: ComposeService): boolean {
   return false;
 }
 
+/**
+ * Add the Tomo network to a service. A service that declares no networks
+ * would otherwise drop off compose's default network, so that is kept too.
+ */
 function withTomoNetwork(svc: ComposeService): ComposeService {
   const existing = svc.networks;
   if (Array.isArray(existing)) {
@@ -119,35 +129,61 @@ function withTomoNetwork(svc: ComposeService): ComposeService {
   if (existing && typeof existing === "object") {
     return { ...svc, networks: { ...existing, [DOCKER_NETWORK_NAME]: {} } };
   }
-  return { ...svc, networks: [DOCKER_NETWORK_NAME] };
+  return { ...svc, networks: [DEFAULT_NETWORK, DOCKER_NETWORK_NAME] };
 }
 
 /**
- * Attach every service to the Tomo network and declare it as external.
- * Returns the content unchanged when there is nothing to attach.
+ * Attach the proxied service to the Tomo network, where Traefik can reach it,
+ * and declare that network as external. Every other service stays on the
+ * app's own private network, so a `db` in one app can never be confused
+ * with a `db` in another.
  *
- * @throws Error("Invalid compose YAML: ...") when the YAML does not parse.
+ * @returns the compose YAML, unchanged when there is nothing to attach
+ * @throws Error("Invalid compose YAML: ...") when the YAML does not parse
  */
-export function attachTomoNetwork(content: string): string {
+export function attachTomoNetwork(content: string, proxyService: string | undefined): string {
+  if (proxyService === undefined) return content;
   const root = loadRoot(content);
   const services = servicesOf(root);
-  if (!root || !services) return content;
-  if (Object.values(services).every(isOnTomoNetwork)) return content;
+  const service = services?.[proxyService];
+  if (!root || !services || !service || isOnTomoNetwork(service)) return content;
 
-  const patched: ComposeRoot = {
+  return dumpCompose({
     ...root,
-    services: Object.fromEntries(
-      Object.entries(services).map(([name, svc]) => [
-        name,
-        isOnTomoNetwork(svc) ? svc : withTomoNetwork(svc),
-      ]),
-    ),
+    services: { ...services, [proxyService]: withTomoNetwork(service) },
     networks: {
       ...((root.networks ?? {}) as Record<string, unknown>),
       [DOCKER_NETWORK_NAME]: { external: true },
     },
-  };
-  return dumpCompose(patched);
+  });
+}
+
+/**
+ * Give the app's service the Tomo variables (APP_DATA_DIR, APP_PASSWORD), in
+ * whichever style its environment uses. Without a known proxied service, the
+ * first service that declares an environment gets them. Files that already
+ * reference APP_DATA_DIR are left alone.
+ *
+ * @throws Error("Invalid compose YAML: ...") when the YAML does not parse
+ */
+export function injectTomoEnvironment(content: string, proxyService?: string): string {
+  if (content.includes("APP_DATA_DIR")) return content;
+  const root = loadRoot(content);
+  const services = servicesOf(root);
+  const entry =
+    services &&
+    (proxyService !== undefined && proxyService in services
+      ? ([proxyService, services[proxyService]] as const)
+      : Object.entries(services).find(([, svc]) => svc.environment !== undefined));
+  if (!root || !services || !entry) return content;
+
+  const [name, svc] = entry;
+  const env = svc.environment;
+  const patched =
+    env && typeof env === "object" && !Array.isArray(env)
+      ? { ...TOMO_ENV_MAP, ...env }
+      : [...TOMO_ENV_LIST, ...(Array.isArray(env) ? env : [])];
+  return dumpCompose({ ...root, services: { ...services, [name]: { ...svc, environment: patched } } });
 }
 
 export function extractProxyTarget(
@@ -175,8 +211,18 @@ export function extractProxyTarget(
   return { service, port: parseInt(portMatch[1], 10) };
 }
 
+/**
+ * Prepare an app's compose file for Tomo: write its .env, inject the Tomo
+ * variables, strip any Umbrel app_proxy block, and attach the proxied service
+ * to the Tomo network.
+ *
+ * @param proxyService the service Traefik will dial when the file has no
+ *   app_proxy block naming one: the resolved service for custom and template
+ *   apps, or the previously known service when a store app is updated
+ */
 export async function patchComposeFile(
   appDir: string,
+  proxyService?: string,
 ): Promise<{ proxyTarget?: ProxyTarget; composeContent?: string }> {
   const composePath = path.join(appDir, "docker-compose.yml");
 
@@ -197,19 +243,13 @@ export async function patchComposeFile(
     { mode: 0o600 },
   );
 
-  if (!content.includes("APP_DATA_DIR")) {
-    content = content.replace(
-      /environment:/,
-      `environment:\n      - APP_DATA_DIR=\${APP_DATA_DIR}\n      - APP_PASSWORD=\${APP_PASSWORD}`,
-    );
-  }
-
   content = content.replace(
     /^ {2}app_proxy:\n(?:\x20{4}[^\n]*\n|\s*\n)*/m,
     "",
   );
-
-  content = attachTomoNetwork(content);
+  const appService = proxyTarget?.service ?? proxyService;
+  content = injectTomoEnvironment(content, appService);
+  content = attachTomoNetwork(content, appService);
 
   await writeFile(composePath, content, "utf-8");
   return { proxyTarget, composeContent: content };

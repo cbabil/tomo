@@ -6,6 +6,7 @@ import type { Apps } from "../apps.js";
 import type { AppStore } from "../app-store.js";
 import type { TemplateRegistry } from "../templates.js";
 import { manifestOpenPath, MAX_OPEN_PATH_LENGTH } from "../open-path.js";
+import { inspectCompose } from "../custom-compose.js";
 
 const appIdSchema = z
   .string()
@@ -24,8 +25,18 @@ const httpUrlSchema = z
 // Shape only; the rules live in normalizeOpenPath, applied by Apps.
 const openPathSchema = z.string().max(MAX_OPEN_PATH_LENGTH);
 
-const MAX_EXTERNAL_APPS = 100;
 const MAX_COMPOSE_YAML_LENGTH = 32_000;
+
+const customSourceSchema = z
+  .object({
+    image: z.string().optional(),
+    composeYaml: z.string().max(MAX_COMPOSE_YAML_LENGTH).optional(),
+    containerPort: z.number().int().min(1).max(65535),
+    allowPrivileged: z.boolean().optional(),
+  })
+  .refine((d) => d.image || d.composeYaml, "Provide image or compose YAML");
+
+const MAX_EXTERNAL_APPS = 100;
 
 export function createAppsRouter(
   apps: Apps,
@@ -71,6 +82,7 @@ export function createAppsRouter(
           webPort: app.proxyTarget?.hostPort ?? manifest?.port,
           // Where the tile opens when the web UI is not at "/".
           webPath: app.path ?? manifestOpenPath(manifest?.path),
+          ownAuth: app.proxyTarget?.ownAuth ?? false,
           // System apps (the built-in Terminal) are hidden from app lists.
           hidden: SYSTEM_APP_IDS.has(app.id),
         };
@@ -165,6 +177,7 @@ export function createAppsRouter(
               path: openPathSchema.optional(),
               icon: httpUrlSchema.optional(),
               allowPrivileged: z.boolean().optional(),
+              ownAuth: z.boolean().optional(),
             })
             .refine(
               (d) => d.image || d.composeYaml,
@@ -175,17 +188,30 @@ export function createAppsRouter(
           return apps.installCustom(input);
         }),
 
+      /** What a pasted compose file implies, for the Add dialog to prefill and explain. */
+      inspectCompose: privateProcedure
+        .input(
+          z.object({
+            composeYaml: z.string().max(MAX_COMPOSE_YAML_LENGTH),
+            name: z.string().max(64),
+            containerPort: z.number().int().min(1).max(65535).optional(),
+          }),
+        )
+        .query(({ input }) => inspectCompose(input.composeYaml, input.name, input.containerPort)),
+
       updateApp: privateProcedure
         .input(
           z.object({
             id: appIdSchema,
             path: openPathSchema.optional(),
             icon: httpUrlSchema.optional(),
+            ownAuth: z.boolean().optional(),
+            source: customSourceSchema.optional(),
           }),
         )
         .mutation(async ({ input }) => {
-          const { id, ...presentation } = input;
-          return apps.updatePresentation(id, presentation);
+          const { id, ...changes } = input;
+          return apps.updateCustom(id, changes);
         }),
 
       addExternal: privateProcedure

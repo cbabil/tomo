@@ -35,6 +35,14 @@ export interface AppTemplate {
   setupFields?: SetupField[];
 }
 
+/** What the user gave Tomo to build a custom app; editable after install. */
+export interface CustomSource {
+  image?: string;
+  composeYaml?: string;
+  containerPort: number;
+  allowPrivileged?: boolean;
+}
+
 export interface InstalledApp extends App {
   status:
     | "running"
@@ -52,6 +60,10 @@ export interface InstalledApp extends App {
   externalUrl?: string;
   /** System apps (e.g. the built-in Terminal) hidden from app lists. */
   hidden?: boolean;
+  /** The app has its own sign-in and is served without the Tomo login. */
+  ownAuth?: boolean;
+  /** Set for custom apps. */
+  source?: CustomSource;
 }
 
 export interface SystemStats {

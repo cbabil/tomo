@@ -21,6 +21,16 @@ export interface ProxyTarget {
   port: number;
   hostPort?: number;
   hostNetwork?: boolean;
+  /** The app has its own sign-in; serve it without the Tomo login. */
+  ownAuth?: boolean;
+}
+
+/** What the user gave Tomo to build a custom app, kept so it can be edited. */
+export interface CustomSource {
+  image?: string;
+  composeYaml?: string;
+  containerPort: number;
+  allowPrivileged?: boolean;
 }
 
 export interface AppInstance {
@@ -38,6 +48,8 @@ export interface AppInstance {
   icon?: string;
   /** Set for apps installed from a template. */
   templateId?: string;
+  /** Set for custom apps. */
+  source?: CustomSource;
 }
 
 export class App {
@@ -52,6 +64,7 @@ export class App {
   readonly path: string | undefined;
   readonly icon: string | undefined;
   readonly templateId: string | undefined;
+  readonly source: CustomSource | undefined;
   private status: AppStatus;
   private readonly docker: Docker;
 
@@ -69,6 +82,7 @@ export class App {
       path?: string;
       icon?: string;
       templateId?: string;
+      source?: CustomSource;
     },
     docker: Docker,
   ) {
@@ -83,6 +97,7 @@ export class App {
     this.path = props.path;
     this.icon = props.icon;
     this.templateId = props.templateId;
+    this.source = props.source;
     this.status = props.status ?? "unknown";
     this.docker = docker;
   }
@@ -236,6 +251,7 @@ export class App {
       path: this.path,
       icon: this.icon,
       templateId: this.templateId,
+      source: this.source,
     };
   }
 }
