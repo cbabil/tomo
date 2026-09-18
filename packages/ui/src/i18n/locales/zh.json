@@ -153,15 +153,29 @@
     },
     "update": {
       "title": "更新",
-      "currentVersion": "当前版本",
-      "latestVersion": "最新版本",
-      "upToDate": "已是最新",
-      "updateAvailable": "有可用更新",
-      "updateNow": "立即更新",
-      "updating": "更新中...",
-      "restartWarning": "更新后 Tomo 将自动重启。",
-      "checkFailed": "无法检查更新",
-      "status": "状态"
+      "restartWarning": "您的应用会继续运行。Tomo 本身会重启,大约需要一分钟。",
+      "state": {
+        "available": "Tomo {{version}} 可用",
+        "current": "Tomo 已是最新版本",
+        "unknown": "无法检查更新"
+      },
+      "running": "当前运行 {{version}}",
+      "checked": "{{when}}检查",
+      "checkAgain": "重新检查",
+      "checking": "正在检查...",
+      "updateTo": "更新到 {{version}}",
+      "steps": {
+        "download": "正在下载 {{version}}",
+        "install": "正在安装并重启 Tomo",
+        "reload": "正在重新加载此页面"
+      },
+      "slow": "花费的时间比平时长。Tomo 可能仍在重启。",
+      "reload": "重新加载",
+      "whatsNew_one": "新功能",
+      "whatsNew_other": "{{count}} 个版本的新功能",
+      "inThisVersion": "此版本内容",
+      "viewOnGitHub": "在 GitHub 上查看",
+      "noNotes": "此版本没有说明。"
     },
     "aiAccess": {
       "title": "代理"

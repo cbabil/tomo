@@ -153,15 +153,29 @@
     },
     "update": {
       "title": "Mise à jour",
-      "currentVersion": "Version actuelle",
-      "latestVersion": "Dernière version",
-      "upToDate": "À jour",
-      "updateAvailable": "Mise à jour disponible",
-      "updateNow": "Mettre à jour",
-      "updating": "Mise à jour...",
-      "restartWarning": "Tomo redémarrera automatiquement après la mise à jour.",
-      "checkFailed": "Impossible de vérifier les mises à jour",
-      "status": "Statut"
+      "restartWarning": "Vos applications continuent de fonctionner. Tomo redémarre, ce qui prend environ une minute.",
+      "state": {
+        "available": "Tomo {{version}} est disponible",
+        "current": "Tomo est à jour",
+        "unknown": "Impossible de vérifier les mises à jour"
+      },
+      "running": "Version {{version}} en cours",
+      "checked": "vérifié {{when}}",
+      "checkAgain": "Vérifier à nouveau",
+      "checking": "Vérification...",
+      "updateTo": "Mettre à jour vers {{version}}",
+      "steps": {
+        "download": "Téléchargement de {{version}}",
+        "install": "Installation et redémarrage de Tomo",
+        "reload": "Rechargement de cette page"
+      },
+      "slow": "Cela prend plus de temps que d'habitude. Tomo est peut-être encore en train de redémarrer.",
+      "reload": "Recharger",
+      "whatsNew_one": "Nouveautés",
+      "whatsNew_other": "Nouveautés de {{count}} versions",
+      "inThisVersion": "Dans cette version",
+      "viewOnGitHub": "Voir sur GitHub",
+      "noNotes": "Aucune note pour cette version."
     },
     "aiAccess": {
       "title": "Agents"

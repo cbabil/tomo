@@ -5,31 +5,18 @@ import { TOMO_VERSION } from "../config.js";
 import { createLogger } from "../logger.js";
 import type { Hardware } from "../hardware.js";
 import type { Docker } from "../docker.js";
+import { ReleaseFeed, releaseStatus } from "../releases.js";
 
 const log = createLogger("system");
 
-const GITHUB_RELEASE_URL =
-  "https://api.github.com/repos/cbabil/tomo/releases/latest";
-
-interface GitHubRelease {
-  tag_name: string;
-}
-
-async function fetchLatestVersion(): Promise<string | null> {
-  try {
-    const res = await fetch(GITHUB_RELEASE_URL, {
-      headers: { Accept: "application/vnd.github.v3+json" },
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as GitHubRelease;
-    return data.tag_name.replace(/^v/, "");
-  } catch {
-    return null;
-  }
-}
-
 export function createSystemRouter(hardware: Hardware, docker: Docker) {
+  const feed = new ReleaseFeed();
+  const status = async (force = false) => ({
+    current: TOMO_VERSION,
+    ...releaseStatus(await feed.list(force), TOMO_VERSION),
+    checkedAt: feed.checkedAt(),
+  });
+
   return router({
     stats: privateProcedure.query(async () => {
       const [cpuInfo, memory, disks, sysInfo] = await Promise.all([
@@ -66,21 +53,17 @@ export function createSystemRouter(hardware: Hardware, docker: Docker) {
       };
     }),
 
-    version: privateProcedure.query(async () => {
-      const latest = await fetchLatestVersion();
-      return {
-        current: TOMO_VERSION,
-        latest,
-        updateAvailable: latest !== null && latest !== TOMO_VERSION,
-      };
-    }),
+    version: privateProcedure.query(() => status()),
+
+    /** Ask GitHub again now, skipping the cache. */
+    checkForUpdates: userProcedure.mutation(() => status(true)),
 
     update: userProcedure.mutation(async () => {
-      const latest = await fetchLatestVersion();
+      const { latest, updateAvailable } = await status();
       if (!latest) {
         throw new Error("Could not fetch latest version from GitHub");
       }
-      if (latest === TOMO_VERSION) {
+      if (!updateAvailable) {
         return { success: true, version: TOMO_VERSION };
       }
 

@@ -153,15 +153,29 @@
     },
     "update": {
       "title": "アップデート",
-      "currentVersion": "現在のバージョン",
-      "latestVersion": "最新バージョン",
-      "upToDate": "最新です",
-      "updateAvailable": "アップデートあり",
-      "updateNow": "今すぐ更新",
-      "updating": "更新中...",
-      "restartWarning": "アップデート後、Tomoは自動的に再起動します。",
-      "checkFailed": "アップデートを確認できません",
-      "status": "ステータス"
+      "restartWarning": "アプリは動作し続けます。Tomo 本体が再起動し、約1分かかります。",
+      "state": {
+        "available": "Tomo {{version}} が利用可能です",
+        "current": "Tomo は最新です",
+        "unknown": "アップデートを確認できませんでした"
+      },
+      "running": "{{version}} を実行中",
+      "checked": "{{when}}に確認",
+      "checkAgain": "再確認",
+      "checking": "確認中...",
+      "updateTo": "{{version}} にアップデート",
+      "steps": {
+        "download": "{{version}} をダウンロード中",
+        "install": "Tomo をインストールして再起動中",
+        "reload": "このページを再読み込み中"
+      },
+      "slow": "通常より時間がかかっています。Tomo はまだ再起動中かもしれません。",
+      "reload": "再読み込み",
+      "whatsNew_one": "新機能",
+      "whatsNew_other": "{{count}} 件のリリースの新機能",
+      "inThisVersion": "このバージョンの内容",
+      "viewOnGitHub": "GitHub で見る",
+      "noNotes": "このリリースのノートはありません。"
     },
     "aiAccess": {
       "title": "エージェント"
