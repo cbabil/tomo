@@ -54,6 +54,14 @@ describe("ReleaseFeed", () => {
     expect(feed.checkedAt()).toBe(new Date(now).toISOString());
   });
 
+  it("ignores releases whose tag is not a plain vX.Y.Z version", async () => {
+    // Tag names reach the update URL and the signature identity, so anything
+    // else (regex metacharacters, pre-release suffixes) must never be offered.
+    const fetchJson = vi.fn(async () => github(["0.0.75", "0.0.79.|", "0.0.80-rc1", "0.0.7.8.9"]));
+    const feed = new ReleaseFeed(fetchJson, () => 0);
+    expect((await feed.list())?.map((r) => r.version)).toEqual(["0.0.75"]);
+  });
+
   it("shares one request between callers that ask at the same time", async () => {
     const fetchJson = vi.fn(async () => github(["0.0.75"]));
     const feed = new ReleaseFeed(fetchJson, () => 0);

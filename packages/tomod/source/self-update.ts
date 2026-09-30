@@ -11,7 +11,9 @@
 
 import fs from "node:fs/promises";
 import { spawn as nodeSpawn } from "node:child_process";
+import path from "node:path";
 import { verify as sigstoreVerify, type Bundle } from "sigstore";
+import { TOMO_DATA_DIR } from "./config.js";
 import { createLogger } from "./logger.js";
 
 const log = createLogger("self-update");
@@ -20,10 +22,32 @@ export const TOMO_RELEASE_REPO = "cbabil/tomo";
 export const RELEASE_WORKFLOW = "release.yml";
 /** GitHub Actions' OIDC issuer: the only issuer accepted for release signatures. */
 export const SIGSTORE_ISSUER = "https://token.actions.githubusercontent.com";
+/**
+ * Sigstore's trust-root cache. The library defaults to the user's home, which
+ * tomod can't write under ProtectHome=yes; the data dir is root-owned and
+ * writable by the service, and nothing else may write there.
+ */
+export const TUF_CACHE_DIR = path.join(TOMO_DATA_DIR, "sigstore-tuf");
+
+const VERSION = /^\d+\.\d+\.\d+$/;
+const ARCHES = new Set(["amd64", "arm64"]);
 
 /** The certificate identity of a release.yml run on the tag for `version`. */
 export function releaseIdentity(version: string): string {
   return `https://github.com/${TOMO_RELEASE_REPO}/.github/workflows/${RELEASE_WORKFLOW}@refs/tags/v${version}`;
+}
+
+/**
+ * sigstore treats `certificateIdentityURI` as an unanchored regular
+ * expression, so the identity is escaped and anchored: only that exact
+ * workflow at that exact tag verifies.
+ */
+export function identityPattern(version: string): string {
+  return `^${releaseIdentity(version).replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}$`;
+}
+
+export function verifyOptionsFor(version: string): VerifyOptions {
+  return { certificateIssuer: SIGSTORE_ISSUER, certificateIdentityURI: identityPattern(version), tufCachePath: TUF_CACHE_DIR };
 }
 
 export function debAssetUrl(version: string, arch: string): string {
@@ -33,6 +57,7 @@ export function debAssetUrl(version: string, arch: string): string {
 export interface VerifyOptions {
   certificateIssuer: string;
   certificateIdentityURI: string;
+  tufCachePath: string;
 }
 
 /** Everything with side effects, injectable for tests. */
@@ -58,6 +83,9 @@ export class SelfUpdater {
 
   /** Download, verify and install release `version` for `arch` via `debPath`. */
   async install(version: string, arch: string, debPath: string): Promise<void> {
+    if (!VERSION.test(version) || !ARCHES.has(arch)) {
+      throw new Error(`Refusing to update to "${version}" for "${arch}": not a plain release version`);
+    }
     const debUrl = debAssetUrl(version, arch);
     log.info("Downloading update", { version, arch, debUrl });
 
@@ -65,10 +93,7 @@ export class SelfUpdater {
     const bundle = await this.downloadBundle(`${debUrl}.sigstore.json`, version);
 
     try {
-      await this.deps.verify(bundle, artifact, {
-        certificateIssuer: SIGSTORE_ISSUER,
-        certificateIdentityURI: releaseIdentity(version),
-      });
+      await this.deps.verify(bundle, artifact, verifyOptionsFor(version));
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       throw new Error(`Release v${version} failed signature verification: ${reason}`);

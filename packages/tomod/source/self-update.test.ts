@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { SelfUpdater, releaseIdentity, debAssetUrl, SIGSTORE_ISSUER, type SelfUpdateDeps } from "./self-update.js";
+import { SelfUpdater, releaseIdentity, identityPattern, verifyOptionsFor, debAssetUrl, SIGSTORE_ISSUER, TUF_CACHE_DIR, type SelfUpdateDeps } from "./self-update.js";
 
 const deb = Buffer.from("deb bytes");
 const bundle = { mediaType: "application/vnd.dev.sigstore.bundle.v0.3+json" };
@@ -35,6 +35,24 @@ describe("release identity", () => {
     expect(SIGSTORE_ISSUER).toBe("https://token.actions.githubusercontent.com");
   });
 
+  it("matches the identity exactly: anchored and escaped, since sigstore treats it as a regex", () => {
+    const pattern = identityPattern("0.0.7");
+    expect(pattern.startsWith("^")).toBe(true);
+    expect(pattern.endsWith("$")).toBe(true);
+    expect(new RegExp(pattern).test(releaseIdentity("0.0.7"))).toBe(true);
+    expect(new RegExp(pattern).test(releaseIdentity("0.0.78"))).toBe(false);
+    expect(new RegExp(pattern).test("https://github.com/cbabil/tomoX.github/workflows/release.yml@refs/tags/v0.0.7")).toBe(false);
+  });
+
+  it("keeps the trust-root cache in the data dir, which the hardened unit can write", () => {
+    expect(TUF_CACHE_DIR.startsWith("/")).toBe(true);
+    expect(verifyOptionsFor("0.0.7")).toEqual({
+      certificateIssuer: SIGSTORE_ISSUER,
+      certificateIdentityURI: identityPattern("0.0.7"),
+      tufCachePath: TUF_CACHE_DIR,
+    });
+  });
+
   it("builds the .deb asset URL for the arch", () => {
     expect(debAssetUrl("0.0.77", "arm64")).toBe(
       "https://github.com/cbabil/tomo/releases/download/v0.0.77/tomo_0.0.77_arm64.deb",
@@ -48,10 +66,7 @@ describe("SelfUpdater.install", () => {
     const updater = new SelfUpdater(deps);
     await updater.install("0.0.77", "amd64", "/opt/tomo/data/tomo_update.deb");
 
-    expect(deps.verify).toHaveBeenCalledWith(bundle, deb, {
-      certificateIssuer: SIGSTORE_ISSUER,
-      certificateIdentityURI: releaseIdentity("0.0.77"),
-    });
+    expect(deps.verify).toHaveBeenCalledWith(bundle, deb, verifyOptionsFor("0.0.77"));
     expect(deps.writeFile).toHaveBeenCalledWith("/opt/tomo/data/tomo_update.deb", deb);
     expect(deps.spawn).toHaveBeenCalledWith(
       "systemd-run",
@@ -81,8 +96,17 @@ describe("SelfUpdater.install", () => {
     const deps = makeDeps();
     await new SelfUpdater(deps).install("0.0.78", "arm64", "/tmp/x.deb");
     const options = (deps.verify as ReturnType<typeof vi.fn>).mock.calls[0][2];
-    expect(options.certificateIdentityURI).toBe(releaseIdentity("0.0.78"));
+    expect(options.certificateIdentityURI).toBe(identityPattern("0.0.78"));
     expect(options.certificateIdentityURI).not.toContain("0.0.77");
+  });
+
+  it("rejects a version or arch that is not plain before touching the network", async () => {
+    const deps = makeDeps();
+    for (const bad of ["0.0.79.|", "0.0.80-rc1", "../x", "0.0.7.8.9"]) {
+      await expect(new SelfUpdater(deps).install(bad, "amd64", "/tmp/x.deb")).rejects.toThrow("Refusing to update to");
+    }
+    await expect(new SelfUpdater(deps).install("0.0.77", "x86", "/tmp/x.deb")).rejects.toThrow("Refusing to update to");
+    expect(deps.fetch).not.toHaveBeenCalled();
   });
 
   it("fails when the .deb itself cannot be downloaded", async () => {

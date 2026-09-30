@@ -29,6 +29,9 @@ interface GitHubRelease {
 }
 
 /** Negative when `a` is older than `b`. Compares dotted numbers, so 0.0.9 is older than 0.0.10. */
+/** A release tag Tomo will offer as an update: exactly vX.Y.Z. */
+export const RELEASE_TAG = /^v\d+\.\d+\.\d+$/;
+
 export function compareVersions(a: string, b: string): number {
   const left = a.split(".").map(Number);
   const right = b.split(".").map(Number);
@@ -90,8 +93,10 @@ export class ReleaseFeed {
 
   private async refresh(): Promise<void> {
     try {
+      // Only plain vX.Y.Z tags: the version becomes part of the download URL
+      // and of the signature identity the updater pins.
       const releases = (await this.fetchJson())
-        .filter((r) => !r.draft && !r.prerelease)
+        .filter((r) => !r.draft && !r.prerelease && RELEASE_TAG.test(r.tag_name))
         .map((r) => ({ version: r.tag_name.replace(/^v/, ""), publishedAt: r.published_at, notes: r.body ?? "", url: r.html_url }))
         .sort((a, b) => compareVersions(b.version, a.version));
       this.cache = { at: this.now(), releases };
