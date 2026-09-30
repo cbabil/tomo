@@ -7,7 +7,12 @@ import { createLogger } from "./logger.js";
 
 const log = createLogger("releases");
 
-const RELEASES_URL = "https://api.github.com/repos/cbabil/tomo/releases?per_page=15";
+/** The GitHub repository releases come from. Its release workflow signs them. */
+export const TOMO_REPO = "cbabil/tomo";
+/** A version Tomo will offer and install: exactly X.Y.Z (tagged vX.Y.Z). */
+export const RELEASE_VERSION = /^\d+\.\d+\.\d+$/;
+
+const RELEASES_URL = `https://api.github.com/repos/${TOMO_REPO}/releases?per_page=15`;
 const CACHE_MS = 10 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 10_000;
 
@@ -90,9 +95,12 @@ export class ReleaseFeed {
 
   private async refresh(): Promise<void> {
     try {
+      // Only plain vX.Y.Z tags: the version becomes part of the download URL
+      // and of the signature identity the updater pins.
       const releases = (await this.fetchJson())
         .filter((r) => !r.draft && !r.prerelease)
         .map((r) => ({ version: r.tag_name.replace(/^v/, ""), publishedAt: r.published_at, notes: r.body ?? "", url: r.html_url }))
+        .filter((r) => RELEASE_VERSION.test(r.version))
         .sort((a, b) => compareVersions(b.version, a.version));
       this.cache = { at: this.now(), releases };
     } catch (err) {
