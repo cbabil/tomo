@@ -62,6 +62,9 @@ jobs:
     name: Create GitHub Release
     needs: build-deb
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write   # keyless Sigstore signing under this workflow's identity
     steps:
       - uses: actions/checkout@v4
         with:
@@ -83,6 +86,32 @@ jobs:
       - name: Generate checksums
         working-directory: dist
         run: sha256sum *.deb > checksums.sha256
+
+      # Every asset gets a Sigstore bundle (<asset>.sigstore.json). tomod's
+      # self-updater and the Kura OS image build verify it against this
+      # workflow's identity at the release tag; no signing key to manage.
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign assets (Sigstore, keyless)
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          for f in *.deb checksums.sha256; do
+            cosign sign-blob --yes --bundle "${f}.sigstore.json" "${f}"
+          done
+
+      - name: Verify our own signatures
+        working-directory: dist
+        env:
+          IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/release.yml@${{ github.ref }}
+        run: |
+          set -euo pipefail
+          for f in *.deb checksums.sha256; do
+            cosign verify-blob --bundle "${f}.sigstore.json" \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+              --certificate-identity "${IDENTITY}" "${f}"
+          done
 
       - name: Generate release notes
         id: notes
@@ -143,5 +172,6 @@ jobs:
           gh release create "${{ github.ref_name }}" \
             dist/*.deb \
             dist/checksums.sha256 \
+            dist/*.sigstore.json \
             --title "Tomo ${{ github.ref_name }}" \
             --notes-file /tmp/release-notes.md
