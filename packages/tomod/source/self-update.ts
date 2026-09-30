@@ -12,14 +12,13 @@
 import fs from "node:fs/promises";
 import { spawn as nodeSpawn } from "node:child_process";
 import path from "node:path";
-import { verify as sigstoreVerify, type Bundle } from "sigstore";
+import type { Bundle } from "sigstore";
 import { TOMO_DATA_DIR } from "./config.js";
 import { createLogger } from "./logger.js";
+import { RELEASE_VERSION, TOMO_REPO } from "./releases.js";
 
 const log = createLogger("self-update");
 
-export const TOMO_RELEASE_REPO = "cbabil/tomo";
-export const RELEASE_WORKFLOW = "release.yml";
 /** GitHub Actions' OIDC issuer: the only issuer accepted for release signatures. */
 export const SIGSTORE_ISSUER = "https://token.actions.githubusercontent.com";
 /**
@@ -28,19 +27,24 @@ export const SIGSTORE_ISSUER = "https://token.actions.githubusercontent.com";
  * writable by the service, and nothing else may write there.
  */
 export const TUF_CACHE_DIR = path.join(TOMO_DATA_DIR, "sigstore-tuf");
+/**
+ * Where the downloaded .deb goes: the data dir is in the unit's ReadWritePaths
+ * and, unlike /tmp (PrivateTmp), visible to the systemd-run unit that installs it.
+ */
+export const UPDATE_DEB_PATH = path.join(TOMO_DATA_DIR, "tomo_update.deb");
 
-const VERSION = /^\d+\.\d+\.\d+$/;
+const RELEASE_WORKFLOW = "release.yml";
 const ARCHES = new Set(["amd64", "arm64"]);
 
 /** The certificate identity of a release.yml run on the tag for `version`. */
 export function releaseIdentity(version: string): string {
-  return `https://github.com/${TOMO_RELEASE_REPO}/.github/workflows/${RELEASE_WORKFLOW}@refs/tags/v${version}`;
+  return `https://github.com/${TOMO_REPO}/.github/workflows/${RELEASE_WORKFLOW}@refs/tags/v${version}`;
 }
 
 /**
  * sigstore treats `certificateIdentityURI` as an unanchored regular
- * expression, so the identity is escaped and anchored: only that exact
- * workflow at that exact tag verifies.
+ * expression, so the identity is escaped and anchored; the signer it returns
+ * is then compared to the identity exactly.
  */
 export function identityPattern(version: string): string {
   return `^${releaseIdentity(version).replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}$`;
@@ -51,7 +55,7 @@ export function verifyOptionsFor(version: string): VerifyOptions {
 }
 
 export function debAssetUrl(version: string, arch: string): string {
-  return `https://github.com/${TOMO_RELEASE_REPO}/releases/download/v${version}/tomo_${version}_${arch}.deb`;
+  return `https://github.com/${TOMO_REPO}/releases/download/v${version}/tomo_${version}_${arch}.deb`;
 }
 
 export interface VerifyOptions {
@@ -60,10 +64,17 @@ export interface VerifyOptions {
   tufCachePath: string;
 }
 
+/** What sigstore's verify() reports about the signer: enough to check the identity. */
+export interface VerifiedSigner {
+  identity?: { subjectAlternativeName?: string };
+}
+
 /** Everything with side effects, injectable for tests. */
 export interface SelfUpdateDeps {
+  /** Debian architecture of this host. */
+  arch: string;
   fetch: typeof fetch;
-  verify: (bundle: Bundle, artifact: Buffer, options: VerifyOptions) => Promise<unknown>;
+  verify: (bundle: Bundle, artifact: Buffer, options: VerifyOptions) => Promise<VerifiedSigner>;
   writeFile: (path: string, data: Buffer) => Promise<void>;
   spawn: typeof nodeSpawn;
   /** Runs `fn` after the tRPC response has been sent (default: 1 s). */
@@ -71,8 +82,10 @@ export interface SelfUpdateDeps {
 }
 
 const defaultDeps: SelfUpdateDeps = {
+  arch: process.arch === "arm64" ? "arm64" : "amd64",
   fetch,
-  verify: (bundle, artifact, options) => sigstoreVerify(bundle, artifact, options),
+  // Loaded on demand: updates are rare and the sigstore tree is large
+  verify: async (bundle, artifact, options) => (await import("sigstore")).verify(bundle, artifact, options),
   writeFile: (path, data) => fs.writeFile(path, data),
   spawn: nodeSpawn,
   schedule: (fn) => setTimeout(fn, 1000),
@@ -81,27 +94,20 @@ const defaultDeps: SelfUpdateDeps = {
 export class SelfUpdater {
   constructor(private readonly deps: SelfUpdateDeps = defaultDeps) {}
 
-  /** Download, verify and install release `version` for `arch` via `debPath`. */
-  async install(version: string, arch: string, debPath: string): Promise<void> {
-    if (!VERSION.test(version) || !ARCHES.has(arch)) {
+  /** Download, verify and install release `version` for this host. */
+  async install(version: string, debPath = UPDATE_DEB_PATH): Promise<void> {
+    const { arch } = this.deps;
+    if (!RELEASE_VERSION.test(version) || !ARCHES.has(arch)) {
       throw new Error(`Refusing to update to "${version}" for "${arch}": not a plain release version`);
     }
     const debUrl = debAssetUrl(version, arch);
     log.info("Downloading update", { version, arch, debUrl });
 
-    const artifact = await this.download(debUrl);
+    // The bundle first: an unsigned release is refused before the big download
     const bundle = await this.downloadBundle(`${debUrl}.sigstore.json`, version);
+    const artifact = await this.download(debUrl);
+    await this.verify(bundle, artifact, version);
 
-    try {
-      await this.deps.verify(bundle, artifact, verifyOptionsFor(version));
-    } catch (err) {
-      const reason = err instanceof Error ? err.message : String(err);
-      throw new Error(`Release v${version} failed signature verification: ${reason}`);
-    }
-    log.info("Update signature verified", { version, identity: releaseIdentity(version) });
-
-    // Write to the data dir (in ReadWritePaths) instead of /tmp (PrivateTmp) so
-    // the systemd-run transient unit can read the file.
     await this.deps.writeFile(debPath, artifact);
     log.info("Installing update", { debPath });
 
@@ -116,6 +122,22 @@ export class SelfUpdater {
       );
       child.unref();
     });
+  }
+
+  private async verify(bundle: Bundle, artifact: Buffer, version: string): Promise<void> {
+    const identity = releaseIdentity(version);
+    let signer: VerifiedSigner;
+    try {
+      signer = await this.deps.verify(bundle, artifact, verifyOptionsFor(version));
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      throw new Error(`Release v${version} failed signature verification: ${reason}`);
+    }
+    const signedBy = signer.identity?.subjectAlternativeName;
+    if (signedBy !== identity) {
+      throw new Error(`Release v${version} was signed by "${signedBy ?? "unknown"}", not by ${identity}`);
+    }
+    log.info("Update signature verified", { version, identity });
   }
 
   private async download(url: string): Promise<Buffer> {

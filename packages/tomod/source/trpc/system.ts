@@ -64,13 +64,9 @@ export function createSystemRouter(hardware: Hardware, docker: Docker) {
         return { success: true, version: TOMO_VERSION };
       }
 
-      const arch = process.arch === "arm64" ? "arm64" : "amd64";
-      // Write to /opt/tomo/data/ (in ReadWritePaths) instead of /tmp (PrivateTmp)
-      // so the systemd-run transient unit can access the file.
-      const debPath = "/opt/tomo/data/tomo_update.deb";
       // Downloads, verifies the release signature (refuses unsigned or
       // tampered releases) and installs via systemd-run + dpkg.
-      await updater.install(latest, arch, debPath);
+      await updater.install(latest);
 
       return { success: true, version: latest };
     }),

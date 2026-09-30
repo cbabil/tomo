@@ -1,5 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
-import { SelfUpdater, releaseIdentity, identityPattern, verifyOptionsFor, debAssetUrl, SIGSTORE_ISSUER, TUF_CACHE_DIR, type SelfUpdateDeps } from "./self-update.js";
+import {
+  SelfUpdater,
+  releaseIdentity,
+  identityPattern,
+  verifyOptionsFor,
+  debAssetUrl,
+  SIGSTORE_ISSUER,
+  TUF_CACHE_DIR,
+  UPDATE_DEB_PATH,
+  type SelfUpdateDeps,
+} from "./self-update.js";
 
 const deb = Buffer.from("deb bytes");
 const bundle = { mediaType: "application/vnd.dev.sigstore.bundle.v0.3+json" };
@@ -16,10 +26,14 @@ function fakeFetch(opts: { bundle?: boolean; debStatus?: number } = {}) {
   });
 }
 
+// A fake sigstore: reports the signer the release pipeline would be.
+const signedBy = (identity: string) => vi.fn(async () => ({ identity: { subjectAlternativeName: identity } }));
+
 function makeDeps(overrides: Partial<SelfUpdateDeps> = {}): SelfUpdateDeps & { writeFile: ReturnType<typeof vi.fn>; spawn: ReturnType<typeof vi.fn> } {
   return {
+    arch: "amd64",
     fetch: fakeFetch() as unknown as typeof fetch,
-    verify: vi.fn(async () => {}),
+    verify: signedBy(releaseIdentity("0.0.77")),
     writeFile: vi.fn(async () => {}),
     spawn: vi.fn(() => ({ unref: vi.fn() })),
     schedule: (fn: () => void) => fn(),
@@ -44,8 +58,9 @@ describe("release identity", () => {
     expect(new RegExp(pattern).test("https://github.com/cbabil/tomoX.github/workflows/release.yml@refs/tags/v0.0.7")).toBe(false);
   });
 
-  it("keeps the trust-root cache in the data dir, which the hardened unit can write", () => {
+  it("keeps the trust-root cache and the downloaded .deb in the data dir, which the hardened unit can write", () => {
     expect(TUF_CACHE_DIR.startsWith("/")).toBe(true);
+    expect(UPDATE_DEB_PATH.endsWith("/tomo_update.deb")).toBe(true);
     expect(verifyOptionsFor("0.0.7")).toEqual({
       certificateIssuer: SIGSTORE_ISSUER,
       certificateIdentityURI: identityPattern("0.0.7"),
@@ -64,7 +79,7 @@ describe("SelfUpdater.install", () => {
   it("verifies the bundle against the release identity, then writes and installs the .deb", async () => {
     const deps = makeDeps();
     const updater = new SelfUpdater(deps);
-    await updater.install("0.0.77", "amd64", "/opt/tomo/data/tomo_update.deb");
+    await updater.install("0.0.77", "/opt/tomo/data/tomo_update.deb");
 
     expect(deps.verify).toHaveBeenCalledWith(bundle, deb, verifyOptionsFor("0.0.77"));
     expect(deps.writeFile).toHaveBeenCalledWith("/opt/tomo/data/tomo_update.deb", deb);
@@ -75,10 +90,18 @@ describe("SelfUpdater.install", () => {
     );
   });
 
-  it("refuses a release that has no signature bundle, and writes nothing", async () => {
+  it("downloads the .deb for this host's architecture into the data dir by default", async () => {
+    const deps = makeDeps({ arch: "arm64" });
+    await new SelfUpdater(deps).install("0.0.77");
+    expect(deps.fetch).toHaveBeenCalledWith(debAssetUrl("0.0.77", "arm64"), expect.anything());
+    expect(deps.writeFile).toHaveBeenCalledWith(UPDATE_DEB_PATH, deb);
+  });
+
+  it("refuses a release that has no signature bundle, before downloading the .deb", async () => {
     const deps = makeDeps({ fetch: fakeFetch({ bundle: false }) as unknown as typeof fetch });
-    await expect(new SelfUpdater(deps).install("0.0.77", "amd64", "/tmp/x.deb"))
+    await expect(new SelfUpdater(deps).install("0.0.77", "/tmp/x.deb"))
       .rejects.toThrow("not signed by Tomo's release pipeline");
+    expect(deps.fetch).toHaveBeenCalledTimes(1);
     expect(deps.verify).not.toHaveBeenCalled();
     expect(deps.writeFile).not.toHaveBeenCalled();
     expect(deps.spawn).not.toHaveBeenCalled();
@@ -86,15 +109,26 @@ describe("SelfUpdater.install", () => {
 
   it("refuses a release whose signature does not verify", async () => {
     const deps = makeDeps({ verify: vi.fn(async () => { throw new Error("bad signature"); }) });
-    await expect(new SelfUpdater(deps).install("0.0.77", "amd64", "/tmp/x.deb"))
+    await expect(new SelfUpdater(deps).install("0.0.77", "/tmp/x.deb"))
       .rejects.toThrow("failed signature verification: bad signature");
     expect(deps.writeFile).not.toHaveBeenCalled();
     expect(deps.spawn).not.toHaveBeenCalled();
   });
 
+  it("refuses a valid signature from any other identity, even one the pattern would match loosely", async () => {
+    const other = "https://github.com/cbabil/tomo/.github/workflows/release.yml@refs/tags/v0.0.78";
+    const deps = makeDeps({ verify: signedBy(other) });
+    await expect(new SelfUpdater(deps).install("0.0.77", "/tmp/x.deb"))
+      .rejects.toThrow(`was signed by "${other}"`);
+    expect(deps.writeFile).not.toHaveBeenCalled();
+
+    const anonymous = makeDeps({ verify: vi.fn(async () => ({})) });
+    await expect(new SelfUpdater(anonymous).install("0.0.77", "/tmp/x.deb")).rejects.toThrow("unknown");
+  });
+
   it("verifies only against the requested version, never another tag", async () => {
-    const deps = makeDeps();
-    await new SelfUpdater(deps).install("0.0.78", "arm64", "/tmp/x.deb");
+    const deps = makeDeps({ verify: signedBy(releaseIdentity("0.0.78")) });
+    await new SelfUpdater(deps).install("0.0.78", "/tmp/x.deb");
     const options = (deps.verify as ReturnType<typeof vi.fn>).mock.calls[0][2];
     expect(options.certificateIdentityURI).toBe(identityPattern("0.0.78"));
     expect(options.certificateIdentityURI).not.toContain("0.0.77");
@@ -103,15 +137,15 @@ describe("SelfUpdater.install", () => {
   it("rejects a version or arch that is not plain before touching the network", async () => {
     const deps = makeDeps();
     for (const bad of ["0.0.79.|", "0.0.80-rc1", "../x", "0.0.7.8.9"]) {
-      await expect(new SelfUpdater(deps).install(bad, "amd64", "/tmp/x.deb")).rejects.toThrow("Refusing to update to");
+      await expect(new SelfUpdater(deps).install(bad, "/tmp/x.deb")).rejects.toThrow("Refusing to update to");
     }
-    await expect(new SelfUpdater(deps).install("0.0.77", "x86", "/tmp/x.deb")).rejects.toThrow("Refusing to update to");
+    await expect(new SelfUpdater(makeDeps({ arch: "x86" })).install("0.0.77", "/tmp/x.deb")).rejects.toThrow("Refusing to update to");
     expect(deps.fetch).not.toHaveBeenCalled();
   });
 
   it("fails when the .deb itself cannot be downloaded", async () => {
     const deps = makeDeps({ fetch: fakeFetch({ debStatus: 500 }) as unknown as typeof fetch });
-    await expect(new SelfUpdater(deps).install("0.0.77", "amd64", "/tmp/x.deb"))
+    await expect(new SelfUpdater(deps).install("0.0.77", "/tmp/x.deb"))
       .rejects.toThrow("Failed to download .deb: 500");
     expect(deps.verify).not.toHaveBeenCalled();
   });

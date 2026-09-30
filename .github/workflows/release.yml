@@ -93,21 +93,14 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
 
-      - name: Sign assets (Sigstore, keyless)
-        working-directory: dist
-        run: |
-          set -euo pipefail
-          for f in *.deb checksums.sha256; do
-            cosign sign-blob --yes --bundle "${f}.sigstore.json" "${f}"
-          done
-
-      - name: Verify our own signatures
+      - name: Sign assets (Sigstore, keyless) and verify our own signatures
         working-directory: dist
         env:
           IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/release.yml@${{ github.ref }}
         run: |
           set -euo pipefail
           for f in *.deb checksums.sha256; do
+            cosign sign-blob --yes --bundle "${f}.sigstore.json" "${f}"
             cosign verify-blob --bundle "${f}.sigstore.json" \
               --certificate-oidc-issuer https://token.actions.githubusercontent.com \
               --certificate-identity "${IDENTITY}" "${f}"
