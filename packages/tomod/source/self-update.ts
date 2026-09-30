@@ -19,8 +19,6 @@ import { RELEASE_VERSION, TOMO_REPO } from "./releases.js";
 
 const log = createLogger("self-update");
 
-/** GitHub Actions' OIDC issuer: the only issuer accepted for release signatures. */
-const SIGSTORE_ISSUER = "https://token.actions.githubusercontent.com";
 /**
  * Sigstore's trust-root cache. The library defaults to the user's home, which
  * tomod can't write under ProtectHome=yes; the data dir is root-owned and
@@ -36,11 +34,14 @@ export const UPDATE_DEB_PATH = path.join(TOMO_DATA_DIR, "tomo_update.deb");
 const ARCHES = new Set(["amd64", "arm64"]);
 
 /**
- * What sigstore checks while verifying: the issuer. The signer's identity is
- * then compared to the release workflow's exactly (sigstore would treat an
- * identity option as a regular expression).
+ * What sigstore checks while verifying: GitHub Actions' OIDC issuer. The
+ * signer's identity is then compared to the release workflow's exactly
+ * (sigstore would treat an identity option as a regular expression).
  */
-export const VERIFY_OPTIONS: VerifyOptions = { certificateIssuer: SIGSTORE_ISSUER, tufCachePath: TUF_CACHE_DIR };
+export const VERIFY_OPTIONS: VerifyOptions = {
+  certificateIssuer: "https://token.actions.githubusercontent.com",
+  tufCachePath: TUF_CACHE_DIR,
+};
 
 /** The certificate identity of a release.yml run on the tag for `version`. */
 function releaseIdentity(version: string): string {

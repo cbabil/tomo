@@ -74,19 +74,21 @@ describe("SelfUpdater.install", () => {
     expect(deps.spawn).not.toHaveBeenCalled();
   });
 
-  it("accepts only Tomo's release workflow at the requested tag as the signer", async () => {
-    for (const other of [
-      identity("0.0.78"),
-      "https://github.com/cbabil/tomo/.github/workflows/ci.yml@refs/tags/v0.0.77",
-      "https://github.com/cbabil/tomo/.github/workflows/release.yml@refs/heads/dev",
-      "https://github.com/someone/tomo/.github/workflows/release.yml@refs/tags/v0.0.77",
-    ]) {
-      const deps = makeDeps({ verify: signedBy(other) });
-      await expect(new SelfUpdater(deps).install("0.0.77")).rejects.toThrow(`was signed by "${other}"`);
-      expect(deps.writeFile).not.toHaveBeenCalled();
-    }
-    const anonymous = makeDeps({ verify: vi.fn(async () => ({})) });
-    await expect(new SelfUpdater(anonymous).install("0.0.77")).rejects.toThrow("unknown");
+  it.each([
+    ["another tag", identity("0.0.78")],
+    ["another workflow", "https://github.com/cbabil/tomo/.github/workflows/ci.yml@refs/tags/v0.0.77"],
+    ["a branch", "https://github.com/cbabil/tomo/.github/workflows/release.yml@refs/heads/dev"],
+    ["another repository", "https://github.com/someone/tomo/.github/workflows/release.yml@refs/tags/v0.0.77"],
+  ])("refuses a signer from %s", async (_what, other) => {
+    const deps = makeDeps({ verify: signedBy(other) });
+    await expect(new SelfUpdater(deps).install("0.0.77")).rejects.toThrow(`was signed by "${other}"`);
+    expect(deps.writeFile).not.toHaveBeenCalled();
+  });
+
+  it("refuses a signer with no identity", async () => {
+    const deps = makeDeps({ verify: vi.fn(async () => ({})) });
+    await expect(new SelfUpdater(deps).install("0.0.77")).rejects.toThrow("unknown");
+    expect(deps.writeFile).not.toHaveBeenCalled();
   });
 
   it("rejects a version or arch that is not plain before touching the network", async () => {
