@@ -12,7 +12,7 @@
 import fs from "node:fs/promises";
 import { spawn as nodeSpawn } from "node:child_process";
 import path from "node:path";
-import type { Bundle } from "sigstore";
+import type { Bundle, VerifyOptions } from "sigstore";
 import { TOMO_DATA_DIR } from "./config.js";
 import { createLogger } from "./logger.js";
 import { RELEASE_VERSION, TOMO_REPO } from "./releases.js";
@@ -20,7 +20,7 @@ import { RELEASE_VERSION, TOMO_REPO } from "./releases.js";
 const log = createLogger("self-update");
 
 /** GitHub Actions' OIDC issuer: the only issuer accepted for release signatures. */
-export const SIGSTORE_ISSUER = "https://token.actions.githubusercontent.com";
+const SIGSTORE_ISSUER = "https://token.actions.githubusercontent.com";
 /**
  * Sigstore's trust-root cache. The library defaults to the user's home, which
  * tomod can't write under ProtectHome=yes; the data dir is root-owned and
@@ -33,35 +33,22 @@ export const TUF_CACHE_DIR = path.join(TOMO_DATA_DIR, "sigstore-tuf");
  */
 export const UPDATE_DEB_PATH = path.join(TOMO_DATA_DIR, "tomo_update.deb");
 
-const RELEASE_WORKFLOW = "release.yml";
 const ARCHES = new Set(["amd64", "arm64"]);
 
-/** The certificate identity of a release.yml run on the tag for `version`. */
-export function releaseIdentity(version: string): string {
-  return `https://github.com/${TOMO_REPO}/.github/workflows/${RELEASE_WORKFLOW}@refs/tags/v${version}`;
-}
-
 /**
- * sigstore treats `certificateIdentityURI` as an unanchored regular
- * expression, so the identity is escaped and anchored; the signer it returns
- * is then compared to the identity exactly.
+ * What sigstore checks while verifying: the issuer. The signer's identity is
+ * then compared to the release workflow's exactly (sigstore would treat an
+ * identity option as a regular expression).
  */
-export function identityPattern(version: string): string {
-  return `^${releaseIdentity(version).replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}$`;
+export const VERIFY_OPTIONS: VerifyOptions = { certificateIssuer: SIGSTORE_ISSUER, tufCachePath: TUF_CACHE_DIR };
+
+/** The certificate identity of a release.yml run on the tag for `version`. */
+function releaseIdentity(version: string): string {
+  return `https://github.com/${TOMO_REPO}/.github/workflows/release.yml@refs/tags/v${version}`;
 }
 
-export function verifyOptionsFor(version: string): VerifyOptions {
-  return { certificateIssuer: SIGSTORE_ISSUER, certificateIdentityURI: identityPattern(version), tufCachePath: TUF_CACHE_DIR };
-}
-
-export function debAssetUrl(version: string, arch: string): string {
+function debAssetUrl(version: string, arch: string): string {
   return `https://github.com/${TOMO_REPO}/releases/download/v${version}/tomo_${version}_${arch}.deb`;
-}
-
-export interface VerifyOptions {
-  certificateIssuer: string;
-  certificateIdentityURI: string;
-  tufCachePath: string;
 }
 
 /** What sigstore's verify() reports about the signer: enough to check the identity. */
@@ -95,7 +82,7 @@ export class SelfUpdater {
   constructor(private readonly deps: SelfUpdateDeps = defaultDeps) {}
 
   /** Download, verify and install release `version` for this host. */
-  async install(version: string, debPath = UPDATE_DEB_PATH): Promise<void> {
+  async install(version: string): Promise<void> {
     const { arch } = this.deps;
     if (!RELEASE_VERSION.test(version) || !ARCHES.has(arch)) {
       throw new Error(`Refusing to update to "${version}" for "${arch}": not a plain release version`);
@@ -108,8 +95,8 @@ export class SelfUpdater {
     const artifact = await this.download(debUrl);
     await this.verify(bundle, artifact, version);
 
-    await this.deps.writeFile(debPath, artifact);
-    log.info("Installing update", { debPath });
+    await this.deps.writeFile(UPDATE_DEB_PATH, artifact);
+    log.info("Installing update", { debPath: UPDATE_DEB_PATH });
 
     // dpkg must run outside tomod's ProtectSystem=strict sandbox: a detached
     // child inherits the mount restrictions, a systemd-run transient unit
@@ -117,7 +104,7 @@ export class SelfUpdater {
     this.deps.schedule(() => {
       const child = this.deps.spawn(
         "systemd-run",
-        ["--unit=tomo-update", "--no-block", "--", "dpkg", "-i", debPath],
+        ["--unit=tomo-update", "--no-block", "--", "dpkg", "-i", UPDATE_DEB_PATH],
         { detached: true, stdio: "ignore" },
       );
       child.unref();
@@ -128,7 +115,7 @@ export class SelfUpdater {
     const identity = releaseIdentity(version);
     let signer: VerifiedSigner;
     try {
-      signer = await this.deps.verify(bundle, artifact, verifyOptionsFor(version));
+      signer = await this.deps.verify(bundle, artifact, VERIFY_OPTIONS);
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       throw new Error(`Release v${version} failed signature verification: ${reason}`);
